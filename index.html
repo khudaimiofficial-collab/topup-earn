@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Automatic Game Top-Up Rewards</title>
+  <title>Free Top-Up & Game Credits</title>
 
   <!-- 1. Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -181,7 +181,7 @@
 
   <div class="container">
     <div class="brand-header">
-      <div class="brand-title">🎮 Automatic Game Top-Up</div>
+      <div class="brand-title">💎 Free Top-Up & Credits</div>
       <div id="userName" style="font-size: 13px; color: var(--text-dim);">User</div>
     </div>
 
@@ -198,7 +198,7 @@
       </div>
     </div>
 
-    <!-- Watch Ad Button (Direct Pay, No Wait) -->
+    <!-- Direct Watch Ad Button -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10 PTS)
     </button>
@@ -238,11 +238,14 @@
     // ============================================================
     const AD_FUNCTION_NAME = 'show_11862560';
 
-    // (Optional) Paste Bot Token & Admin Chat ID to get instant Telegram alerts:
-    const BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";       // from @BotFather
-    const ADMIN_CHAT_ID = "YOUR_CHAT_ID_HERE";     // from @userinfobot
+    // 1. Paste your bot token from @BotFather below:
+    const BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"; 
 
-    const MIN_WITHDRAW_POINTS = 50.00;             // Minimum points needed to withdraw
+    // 2. Your Channel and Admin ID:
+    const CHANNEL_ID = "@KhudaimiOfficialStore";
+    const ADMIN_CHAT_ID = "8960497898"; 
+
+    const MIN_WITHDRAW_POINTS = 50.00;
 
     // ---------- Telegram WebApp Init ----------
     const tg = window.Telegram.WebApp;
@@ -252,6 +255,37 @@
     const user = tg.initDataUnsafe?.user;
     if (user?.first_name) {
       document.getElementById('userName').innerText = user.first_name;
+    }
+
+    // Helper: Send message from Bot to Telegram User/Chat
+    function sendBotMessage(targetChatId, text) {
+      if (!targetChatId || BOT_TOKEN === "8815063188:AAGG-LlRfXgPiWd6wP3E_zoQHL6DLg8L078) return;
+
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: targetChatId,
+          text: text,
+          parse_mode: 'Markdown'
+        })
+      }).catch(err => console.error("Bot message error:", err));
+    }
+
+    // ============================================================
+    // 🚀 AUTO-SEND WELCOME MESSAGE TO CHAT ON START / FIRST LAUNCH
+    // ============================================================
+    if (user?.id && !localStorage.getItem('chat_welcome_sent')) {
+      const welcomeChatText = `👋 *Welcome to Free Top-Up & Game Credits, ${user.first_name || 'Gamer'}!*\n\n` +
+        `🎮 You have successfully launched the app!\n\n` +
+        `💎 *How to Earn:*\n` +
+        `• Tap *Watch Ad* to receive *+10.00 PTS* per ad completed.\n` +
+        `• Reach *50.00 PTS* to request a game top-up.\n` +
+        `• Credits are added directly to your account on *automaticgametopup.iceiy.com*!\n\n` +
+        `👇 Tap the menu button below to open the app anytime!`;
+
+      sendBotMessage(user.id, welcomeChatText);
+      localStorage.setItem('chat_welcome_sent', 'true');
     }
 
     // ---------- Balance & Storage ----------
@@ -264,7 +298,7 @@
     }
     updateUI();
 
-    // ---------- Instant Reward (Direct Pay) ----------
+    // ---------- Reward Logic + Send Bot Chat Message ----------
     function giveReward() {
       balance += 10.00;
       totalWatched += 1;
@@ -276,6 +310,16 @@
         tg.HapticFeedback.notificationOccurred('success');
       }
       tg.showAlert("🎉 +10.00 Points added to your balance!");
+
+      // Send points earned alert directly to user's chat
+      if (user?.id) {
+        const earnText = `⚡ *Reward Credited!* ⚡\n\n` +
+          `🎉 You watched an ad and earned *+10.00 PTS*!\n` +
+          `💰 *Total Balance:* \`${balance.toFixed(2)} PTS\`\n` +
+          `🎯 Reach 50 PTS to redeem on *automaticgametopup.iceiy.com*!`;
+        
+        sendBotMessage(user.id, earnText);
+      }
     }
 
     // ---------- Trigger Monetag Ad ----------
@@ -284,7 +328,7 @@
       const originalText = "▶ Watch Ad (+10 PTS)";
 
       if (typeof window[AD_FUNCTION_NAME] !== 'function') {
-        tg.showAlert("Ad is loading or unavailable in your area right now. Please try again shortly.");
+        tg.showAlert("Ad is loading or unavailable in your region right now. Please try again shortly.");
         return;
       }
 
@@ -293,7 +337,6 @@
 
       window[AD_FUNCTION_NAME]()
         .then(() => {
-          // Direct pay immediately when ad finishes
           giveReward();
         })
         .catch((err) => {
@@ -322,7 +365,7 @@
       tg.openLink("https://automaticgametopup.iceiy.com");
     }
 
-    // ---------- Process Withdrawal by Registered Email ----------
+    // ---------- Process Withdrawal + Messages to User & Channel ----------
     function processWithdrawal() {
       const email = document.getElementById('accountEmail').value.trim();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -337,27 +380,29 @@
       submitBtn.disabled = true;
       submitBtn.innerText = "Submitting...";
 
-      // Send instant withdrawal alert to Telegram Admin
-      if (BOT_TOKEN !== "8815063188:AAGG-LlRfXgPiWd6wP3E_zoQHL6DLg8L078" && ADMIN_CHAT_ID !== "8960497898) {
-        const messageText = `🎮 *New Game Top-Up Withdrawal* 🎮\n\n` +
-          `👤 *User:* ${user?.first_name || 'Anonymous'} (@${user?.username || 'NoUsername'})\n` +
-          `🆔 *Telegram ID:* \`${user?.id || 'N/A'}\`\n` +
-          `📧 *Registered Email:* \`${email}\`\n` +
-          `💰 *Amount:* ${amountToWithdraw.toFixed(2)} Points\n` +
-          `🌐 *Website:* automaticgametopup.iceiy.com`;
+      // 1. Receipt Message to your Channel: @KhudaimiOfficialStore
+      const channelText = `🎮 *NEW TOP-UP WITHDRAWAL* 🎮\n\n` +
+        `👤 *User:* ${user?.first_name || 'Anonymous'} (@${user?.username || 'NoUsername'})\n` +
+        `🆔 *Telegram ID:* \`${user?.id || 'N/A'}\`\n` +
+        `📧 *Registered Email:* \`${email}\`\n` +
+        `💰 *Points Claimed:* ${amountToWithdraw.toFixed(2)} PTS\n` +
+        `🌐 *Website:* automaticgametopup.iceiy.com\n` +
+        `📅 *Status:* ⏳ Pending Admin Top-Up`;
 
-        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: ADMIN_CHAT_ID,
-            text: messageText,
-            parse_mode: 'Markdown'
-          })
-        }).catch(err => console.error("Notification error:", err));
+      sendBotMessage(CHANNEL_ID, channelText);
+
+      // 2. Private Confirmation Message directly to the User in their Bot Chat
+      if (user?.id) {
+        const userConfirmText = `✅ *Withdrawal Request Submitted!*\n\n` +
+          `💰 *Points Claimed:* ${amountToWithdraw.toFixed(2)} PTS\n` +
+          `📧 *Account Email:* \`${email}\`\n` +
+          `🌐 *Store:* automaticgametopup.iceiy.com\n\n` +
+          `Your request has been received by the admin! Your website balance will be credited soon.`;
+
+        sendBotMessage(user.id, userConfirmText);
       }
 
-      // Reset user balance
+      // Reset balance
       balance = 0;
       localStorage.setItem('topup_balance', 0);
       updateUI();
@@ -366,8 +411,8 @@
       closeModal();
 
       tg.showPopup({
-        title: "Request Received!",
-        message: `Your request of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been submitted. Credits will be added to your website account!`,
+        title: "Request Submitted!",
+        message: `Your withdrawal of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been submitted! A confirmation message was sent to your chat.`,
         buttons: [{ type: "ok" }]
       });
     }
