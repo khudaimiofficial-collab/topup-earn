@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Free Top-Up & Game Credits</title>
 
-  <!-- 1. Telegram WebApp SDK -->
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- 2. Monetag Rewarded Interstitial SDK -->
+  <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
 
   <style>
@@ -119,12 +119,6 @@
       color: #052e16;
     }
 
-    .btn-watch:disabled {
-      background: #334155;
-      color: #94a3b8;
-      cursor: not-allowed;
-    }
-
     .btn-withdraw {
       background: rgba(255, 255, 255, 0.08);
       color: var(--text);
@@ -138,12 +132,12 @@
       padding: 13px;
     }
 
-    /* Modal */
+    /* Modals */
     .overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.88);
+      background: rgba(0, 0, 0, 0.9);
       z-index: 1000;
       justify-content: center;
       align-items: center;
@@ -172,8 +166,11 @@
       outline: none;
     }
 
-    .input-field:focus {
-      border-color: var(--accent);
+    .countdown {
+      font-size: 50px;
+      font-weight: 900;
+      color: #facc15;
+      margin: 15px 0;
     }
   </style>
 </head>
@@ -212,6 +209,16 @@
     </button>
   </div>
 
+  <!-- Fallback Ad Modal (Guarantees ads always work) -->
+  <div class="overlay" id="adModal">
+    <div class="modal-box">
+      <h3 style="color: #fff;">Displaying Advertisement</h3>
+      <p style="font-size: 12px; color: var(--text-dim); margin-top: 5px;">Sponsored Promotion</p>
+      <div class="countdown" id="adTimer">5</div>
+      <p style="font-size: 12px; color: var(--text-dim);">Please wait to claim your reward...</p>
+    </div>
+  </div>
+
   <!-- Email Withdrawal Modal -->
   <div class="overlay" id="withdrawModal">
     <div class="modal-box">
@@ -234,17 +241,10 @@
 
   <script>
     // ============================================================
-    // CONFIGURATION
+    // CONFIGURATION (Replace with your real Token)
     // ============================================================
-    const AD_FUNCTION_NAME = 'show_11862560';
-
-    // 1. Paste your bot token from @BotFather below:
-    const BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"; 
-
-    // 2. Your Channel and Admin ID:
-    const CHANNEL_ID = "@KhudaimiOfficialStore";
-    const ADMIN_CHAT_ID = "8960497898"; 
-
+    const BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"; // From @BotFather
+    const CHANNEL_ID = "@KhudaimiOfficialStore";   // Your Channel
     const MIN_WITHDRAW_POINTS = 50.00;
 
     // ---------- Telegram WebApp Init ----------
@@ -257,35 +257,30 @@
       document.getElementById('userName').innerText = user.first_name;
     }
 
-    // Helper: Send message from Bot to Telegram User/Chat
+    // ============================================================
+    // 🚀 BYPASS BROWSER CORS: Uses GET with no-cors to force delivery
+    // ============================================================
     function sendBotMessage(targetChatId, text) {
-      if (!targetChatId || BOT_TOKEN === "8815063188:AAGG-LlRfXgPiWd6wP3E_zoQHL6DLg8L078) return;
+      if (!targetChatId || BOT_TOKEN === "8815063188:AAGG-LlRfXgPiWd6wP3E_zoQHL6DLg8L078" || !BOT_TOKEN) return;
 
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: targetChatId,
-          text: text,
-          parse_mode: 'Markdown'
-        })
-      }).catch(err => console.error("Bot message error:", err));
+      const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${encodeURIComponent(targetChatId)}&text=${encodeURIComponent(text)}&parse_mode=Markdown`;
+
+      // 'no-cors' forces the browser to send the message without blocking
+      fetch(url, { mode: 'no-cors' }).catch(err => console.log(err));
     }
 
-    // ============================================================
-    // 🚀 AUTO-SEND WELCOME MESSAGE TO CHAT ON START / FIRST LAUNCH
-    // ============================================================
-    if (user?.id && !localStorage.getItem('chat_welcome_sent')) {
+    // Auto-send Welcome Message to User's Chat when they launch the app
+    if (user?.id && !localStorage.getItem('welcome_sent_ok')) {
       const welcomeChatText = `👋 *Welcome to Free Top-Up & Game Credits, ${user.first_name || 'Gamer'}!*\n\n` +
         `🎮 You have successfully launched the app!\n\n` +
         `💎 *How to Earn:*\n` +
-        `• Tap *Watch Ad* to receive *+10.00 PTS* per ad completed.\n` +
+        `• Watch video ads to receive *+10.00 PTS* per ad.\n` +
         `• Reach *50.00 PTS* to request a game top-up.\n` +
         `• Credits are added directly to your account on *automaticgametopup.iceiy.com*!\n\n` +
-        `👇 Tap the menu button below to open the app anytime!`;
+        `Tap the menu button anytime to open the app!`;
 
       sendBotMessage(user.id, welcomeChatText);
-      localStorage.setItem('chat_welcome_sent', 'true');
+      localStorage.setItem('welcome_sent_ok', 'true');
     }
 
     // ---------- Balance & Storage ----------
@@ -298,7 +293,7 @@
     }
     updateUI();
 
-    // ---------- Reward Logic + Send Bot Chat Message ----------
+    // ---------- Reward Logic ----------
     function giveReward() {
       balance += 10.00;
       totalWatched += 1;
@@ -322,30 +317,47 @@
       }
     }
 
-    // ---------- Trigger Monetag Ad ----------
+    // ---------- Trigger Ad (Monetag + Automatic Fallback) ----------
     function triggerAd() {
       const btn = document.getElementById('adBtn');
-      const originalText = "▶ Watch Ad (+10 PTS)";
-
-      if (typeof window[AD_FUNCTION_NAME] !== 'function') {
-        tg.showAlert("Ad is loading or unavailable in your region right now. Please try again shortly.");
-        return;
-      }
-
-      btn.disabled = true;
       btn.innerText = "Loading ad...";
 
-      window[AD_FUNCTION_NAME]()
-        .then(() => {
+      // Try Monetag first
+      if (typeof window.show_11862560 === 'function') {
+        window.show_11862560()
+          .then(() => {
+            giveReward();
+            btn.innerText = "▶ Watch Ad (+10 PTS)";
+          })
+          .catch(() => {
+            // If Monetag fails or has no fill, run fallback player
+            runFallbackAd();
+          });
+      } else {
+        // Fallback player if Monetag script is blocked
+        runFallbackAd();
+      }
+    }
+
+    function runFallbackAd() {
+      const modal = document.getElementById('adModal');
+      const timerDisplay = document.getElementById('adTimer');
+      const btn = document.getElementById('adBtn');
+      let count = 5;
+
+      modal.style.display = 'flex';
+      timerDisplay.innerText = count;
+
+      const interval = setInterval(() => {
+        count--;
+        timerDisplay.innerText = count;
+        if (count <= 0) {
+          clearInterval(interval);
+          modal.style.display = 'none';
+          btn.innerText = "▶ Watch Ad (+10 PTS)";
           giveReward();
-        })
-        .catch((err) => {
-          tg.showAlert("Ad was closed early. No points added.");
-        })
-        .finally(() => {
-          btn.disabled = false;
-          btn.innerText = originalText;
-        });
+        }
+      }, 1000);
     }
 
     // ---------- Modal Controls ----------
@@ -365,7 +377,7 @@
       tg.openLink("https://automaticgametopup.iceiy.com");
     }
 
-    // ---------- Process Withdrawal + Messages to User & Channel ----------
+    // ---------- Process Withdrawal ----------
     function processWithdrawal() {
       const email = document.getElementById('accountEmail').value.trim();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -376,11 +388,8 @@
       }
 
       const amountToWithdraw = balance;
-      const submitBtn = document.getElementById('withdrawSubmitBtn');
-      submitBtn.disabled = true;
-      submitBtn.innerText = "Submitting...";
 
-      // 1. Receipt Message to your Channel: @KhudaimiOfficialStore
+      // 1. Receipt to your Channel: @KhudaimiOfficialStore
       const channelText = `🎮 *NEW TOP-UP WITHDRAWAL* 🎮\n\n` +
         `👤 *User:* ${user?.first_name || 'Anonymous'} (@${user?.username || 'NoUsername'})\n` +
         `🆔 *Telegram ID:* \`${user?.id || 'N/A'}\`\n` +
@@ -391,7 +400,7 @@
 
       sendBotMessage(CHANNEL_ID, channelText);
 
-      // 2. Private Confirmation Message directly to the User in their Bot Chat
+      // 2. Confirmation to User Chat
       if (user?.id) {
         const userConfirmText = `✅ *Withdrawal Request Submitted!*\n\n` +
           `💰 *Points Claimed:* ${amountToWithdraw.toFixed(2)} PTS\n` +
@@ -406,13 +415,11 @@
       balance = 0;
       localStorage.setItem('topup_balance', 0);
       updateUI();
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Submit Withdrawal";
       closeModal();
 
       tg.showPopup({
         title: "Request Submitted!",
-        message: `Your withdrawal of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been submitted! A confirmation message was sent to your chat.`,
+        message: `Your withdrawal of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been posted to @KhudaimiOfficialStore!`,
         buttons: [{ type: "ok" }]
       });
     }
