@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Automatic Game Top-Up Rewards</title>
+
+  <!-- 1. Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- 2. Monetag Rewarded Interstitial SDK -->
+  <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131b2e;
+      --accent: #38bdf8;
+      --btn-bg: #22c55e;
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .brand-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--card);
+      padding: 24px 20px;
+      border-radius: 18px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .balance-label {
+      color: var(--text-dim);
+      font-size: 13px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .balance-value {
+      font-size: 44px;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 8px 0;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.2s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-watch {
+      background: var(--btn-bg);
+      color: #052e16;
+    }
+
+    .btn-watch:disabled {
+      background: #334155;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .btn-withdraw {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .btn-website {
+      background: #2563eb;
+      color: #ffffff;
+      margin-top: 4px;
+      font-size: 14px;
+      padding: 13px;
+    }
+
+    /* Modal */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--card);
+      width: 100%;
+      max-width: 340px;
+      padding: 24px;
+      border-radius: 16px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-size: 14px;
+      margin: 15px 0 10px 0;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="brand-header">
+      <div class="brand-title">🎮 Automatic Game Top-Up</div>
+      <div id="userName" style="font-size: 13px; color: var(--text-dim);">User</div>
+    </div>
+
+    <div class="card">
+      <div class="balance-label">Available Points</div>
+      <div class="balance-value">
+        <span id="balance">0.00</span>
+        <span style="font-size: 20px; color: var(--accent);">PTS</span>
+      </div>
+
+      <div class="badge-row">
+        <span class="badge">Reward: +10.00 PTS</span>
+        <span class="badge" id="adsWatchedCount">0 Ads Watched</span>
+      </div>
+    </div>
+
+    <!-- Watch Ad Button (Direct Pay, No Wait) -->
+    <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
+      ▶ Watch Ad (+10 PTS)
+    </button>
+
+    <button class="btn btn-withdraw" onclick="openWithdrawModal()">
+      Withdraw to Website Account
+    </button>
+
+    <button class="btn btn-website" onclick="openWebsite()">
+      🌐 Open automaticgametopup.iceiy.com
+    </button>
+  </div>
+
+  <!-- Email Withdrawal Modal -->
+  <div class="overlay" id="withdrawModal">
+    <div class="modal-box">
+      <h3>Withdraw to Account</h3>
+      <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;">
+        Enter your registered email on <b>automaticgametopup.iceiy.com</b>:
+      </p>
+      
+      <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
+      
+      <button class="btn btn-watch" id="withdrawSubmitBtn" onclick="processWithdrawal()">Submit Withdrawal</button>
+      <button
+        class="btn"
+        style="background: transparent; color: var(--text-dim); margin-top: 6px;"
+        onclick="closeModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // CONFIGURATION
+    // ============================================================
+    const AD_FUNCTION_NAME = 'show_11862560';
+
+    // (Optional) Paste Bot Token & Admin Chat ID to get instant Telegram alerts:
+    const BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";       // from @BotFather
+    const ADMIN_CHAT_ID = "YOUR_CHAT_ID_HERE";     // from @userinfobot
+
+    const MIN_WITHDRAW_POINTS = 50.00;             // Minimum points needed to withdraw
+
+    // ---------- Telegram WebApp Init ----------
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const user = tg.initDataUnsafe?.user;
+    if (user?.first_name) {
+      document.getElementById('userName').innerText = user.first_name;
+    }
+
+    // ---------- Balance & Storage ----------
+    let balance = parseFloat(localStorage.getItem('topup_balance')) || 0;
+    let totalWatched = parseInt(localStorage.getItem('topup_total_watched')) || 0;
+
+    function updateUI() {
+      document.getElementById('balance').innerText = balance.toFixed(2);
+      document.getElementById('adsWatchedCount').innerText = `${totalWatched} Ads Watched`;
+    }
+    updateUI();
+
+    // ---------- Instant Reward (Direct Pay) ----------
+    function giveReward() {
+      balance += 10.00;
+      totalWatched += 1;
+      localStorage.setItem('topup_balance', balance);
+      localStorage.setItem('topup_total_watched', totalWatched);
+      updateUI();
+
+      if (tg.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('success');
+      }
+      tg.showAlert("🎉 +10.00 Points added to your balance!");
+    }
+
+    // ---------- Trigger Monetag Ad ----------
+    function triggerAd() {
+      const btn = document.getElementById('adBtn');
+      const originalText = "▶ Watch Ad (+10 PTS)";
+
+      if (typeof window[AD_FUNCTION_NAME] !== 'function') {
+        tg.showAlert("Ad is loading or unavailable in your area right now. Please try again shortly.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Loading ad...";
+
+      window[AD_FUNCTION_NAME]()
+        .then(() => {
+          // Direct pay immediately when ad finishes
+          giveReward();
+        })
+        .catch((err) => {
+          tg.showAlert("Ad was closed early. No points added.");
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        });
+    }
+
+    // ---------- Modal Controls ----------
+    function openWithdrawModal() {
+      if (balance < MIN_WITHDRAW_POINTS) {
+        tg.showAlert(`Minimum withdrawal is ${MIN_WITHDRAW_POINTS} Points.`);
+        return;
+      }
+      document.getElementById('withdrawModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('withdrawModal').style.display = 'none';
+    }
+
+    function openWebsite() {
+      tg.openLink("https://automaticgametopup.iceiy.com");
+    }
+
+    // ---------- Process Withdrawal by Registered Email ----------
+    function processWithdrawal() {
+      const email = document.getElementById('accountEmail').value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!email || !emailRegex.test(email)) {
+        tg.showAlert("Please enter a valid registered email address.");
+        return;
+      }
+
+      const amountToWithdraw = balance;
+      const submitBtn = document.getElementById('withdrawSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
+
+      // Send instant withdrawal alert to Telegram Admin
+      if (BOT_TOKEN !== "YOUR_BOT_TOKEN_HERE" && ADMIN_CHAT_ID !== "YOUR_CHAT_ID_HERE") {
+        const messageText = `🎮 *New Game Top-Up Withdrawal* 🎮\n\n` +
+          `👤 *User:* ${user?.first_name || 'Anonymous'} (@${user?.username || 'NoUsername'})\n` +
+          `🆔 *Telegram ID:* \`${user?.id || 'N/A'}\`\n` +
+          `📧 *Registered Email:* \`${email}\`\n` +
+          `💰 *Amount:* ${amountToWithdraw.toFixed(2)} Points\n` +
+          `🌐 *Website:* automaticgametopup.iceiy.com`;
+
+        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ADMIN_CHAT_ID,
+            text: messageText,
+            parse_mode: 'Markdown'
+          })
+        }).catch(err => console.error("Notification error:", err));
+      }
+
+      // Reset user balance
+      balance = 0;
+      localStorage.setItem('topup_balance', 0);
+      updateUI();
+      submitBtn.disabled = false;
+      submitBtn.innerText = "Submit Withdrawal";
+      closeModal();
+
+      tg.showPopup({
+        title: "Request Received!",
+        message: `Your request of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been submitted. Credits will be added to your website account!`,
+        buttons: [{ type: "ok" }]
+      });
+    }
+  </script>
+</body>
+</html>
