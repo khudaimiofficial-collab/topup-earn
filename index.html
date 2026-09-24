@@ -4,13 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Free Top-Up & Game Credits</title>
-
-  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
-
   <style>
     :root {
       --bg: #090d16;
@@ -20,158 +15,26 @@
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .brand-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card);
-      padding: 12px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .brand-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--accent);
-    }
-
-    .card {
-      background: var(--card);
-      padding: 24px 20px;
-      border-radius: 18px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    .balance-label {
-      color: var(--text-dim);
-      font-size: 13px;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-
-    .balance-value {
-      font-size: 44px;
-      font-weight: 900;
-      color: #ffffff;
-      margin: 8px 0;
-    }
-
-    .badge-row {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-
-    .badge {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      font-size: 16px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform 0.1s ease, background 0.2s ease;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-watch {
-      background: var(--btn-bg);
-      color: #052e16;
-    }
-
-    .btn-withdraw {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-    }
-
-    .btn-website {
-      background: #2563eb;
-      color: #ffffff;
-      margin-top: 4px;
-      font-size: 14px;
-      padding: 13px;
-    }
-
-    /* Modals */
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .modal-box {
-      background: var(--card);
-      width: 100%;
-      max-width: 340px;
-      padding: 24px;
-      border-radius: 16px;
-      text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 13px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.3);
-      color: #fff;
-      font-size: 14px;
-      margin: 15px 0 10px 0;
-      outline: none;
-    }
-
-    .countdown {
-      font-size: 50px;
-      font-weight: 900;
-      color: #facc15;
-      margin: 15px 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
+    .container { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 14px; }
+    .brand-header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .brand-title { font-size: 15px; font-weight: 800; color: var(--accent); }
+    .card { background: var(--card); padding: 24px 20px; border-radius: 18px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    .balance-label { color: var(--text-dim); font-size: 13px; text-transform: uppercase; font-weight: 600; }
+    .balance-value { font-size: 44px; font-weight: 900; color: #ffffff; margin: 8px 0; }
+    .badge-row { display: flex; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+    .badge { background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 20px; }
+    .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-watch { background: var(--btn-bg); color: #052e16; }
+    .btn-withdraw { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+    .btn-website { background: #2563eb; color: #ffffff; margin-top: 4px; font-size: 14px; padding: 13px; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--card); width: 100%; max-width: 340px; padding: 24px; border-radius: 16px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .input-field { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.3); color: #fff; font-size: 14px; margin: 15px 0 10px 0; outline: none; }
+    .countdown { font-size: 50px; font-weight: 900; color: #facc15; margin: 15px 0; }
   </style>
 </head>
 <body>
@@ -179,7 +42,7 @@
   <div class="container">
     <div class="brand-header">
       <div class="brand-title">💎 Free Top-Up & Credits</div>
-      <div id="userName" style="font-size: 13px; color: var(--text-dim);">User</div>
+      <div id="userName" style="font-size: 13px; color: var(--text-dim);">Gamer</div>
     </div>
 
     <div class="card">
@@ -195,146 +58,121 @@
       </div>
     </div>
 
-    <!-- Direct Watch Ad Button -->
-    <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
-      ▶ Watch Ad (+10 PTS)
-    </button>
-
-    <button class="btn btn-withdraw" onclick="openWithdrawModal()">
-      Withdraw to Website Account
-    </button>
-
-    <button class="btn btn-website" onclick="openWebsite()">
-      🌐 Open automaticgametopup.iceiy.com
-    </button>
+    <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">▶ Watch Ad (+10 PTS)</button>
+    <button class="btn btn-withdraw" onclick="openWithdrawModal()">Withdraw to Website Account</button>
+    <button class="btn btn-website" onclick="openWebsite()">🌐 Open automaticgametopup.iceiy.com</button>
   </div>
 
-  <!-- Fallback Ad Modal (Guarantees ads always work) -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
-      <h3 style="color: #fff;">Displaying Advertisement</h3>
+      <h3>Displaying Advertisement</h3>
       <p style="font-size: 12px; color: var(--text-dim); margin-top: 5px;">Sponsored Promotion</p>
       <div class="countdown" id="adTimer">5</div>
       <p style="font-size: 12px; color: var(--text-dim);">Please wait to claim your reward...</p>
     </div>
   </div>
 
-  <!-- Email Withdrawal Modal -->
   <div class="overlay" id="withdrawModal">
     <div class="modal-box">
       <h3>Withdraw to Account</h3>
       <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;">
         Enter your registered email on <b>automaticgametopup.iceiy.com</b>:
       </p>
-      
       <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
-      
       <button class="btn btn-watch" id="withdrawSubmitBtn" onclick="processWithdrawal()">Submit Withdrawal</button>
-      <button
-        class="btn"
-        style="background: transparent; color: var(--text-dim); margin-top: 6px;"
-        onclick="closeModal()">
-        Cancel
-      </button>
+      <button class="btn" style="background: transparent; color: var(--text-dim); margin-top: 6px;" onclick="closeModal()">Cancel</button>
     </div>
   </div>
 
   <script>
-    // ============================================================
-    // CONFIGURATION (Replace with your real Token)
-    // ============================================================
-    const BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN_HERE"; // From @BotFather
-    const CHANNEL_ID = "@KhudaimiOfficialStore";   // Your Channel
-    const MIN_WITHDRAW_POINTS = 50.00;
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
 
-    // ---------- Telegram WebApp Init ----------
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    const user = tg?.initDataUnsafe?.user || {
+      id: "demo_guest_user",
+      first_name: "Guest",
+      username: "guest"
+    };
 
-    const user = tg.initDataUnsafe?.user;
     if (user?.first_name) {
       document.getElementById('userName').innerText = user.first_name;
     }
 
-    // ============================================================
-    // 🚀 BYPASS BROWSER CORS: Uses GET with no-cors to force delivery
-    // ============================================================
-    function sendBotMessage(targetChatId, text) {
-      if (!targetChatId || BOT_TOKEN === "8815063188:AAGG-LlRfXgPiWd6wP3E_zoQHL6DLg8L078" || !BOT_TOKEN) return;
+    let currentBalance = 0.00;
+    const MIN_WITHDRAW_POINTS = 50.00;
 
-      const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${encodeURIComponent(targetChatId)}&text=${encodeURIComponent(text)}&parse_mode=Markdown`;
-
-      // 'no-cors' forces the browser to send the message without blocking
-      fetch(url, { mode: 'no-cors' }).catch(err => console.log(err));
+    function loadUserData() {
+      fetch('/api/get-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          username: user.username
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          currentBalance = parseFloat(data.balance);
+          document.getElementById('balance').innerText = currentBalance.toFixed(2);
+          document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+        }
+      })
+      .catch(err => console.error("Error loading user profile:", err));
     }
+    loadUserData();
 
-    // Auto-send Welcome Message to User's Chat when they launch the app
-    if (user?.id && !localStorage.getItem('welcome_sent_ok')) {
-      const welcomeChatText = `👋 *Welcome to Free Top-Up & Game Credits, ${user.first_name || 'Gamer'}!*\n\n` +
-        `🎮 You have successfully launched the app!\n\n` +
-        `💎 *How to Earn:*\n` +
-        `• Watch video ads to receive *+10.00 PTS* per ad.\n` +
-        `• Reach *50.00 PTS* to request a game top-up.\n` +
-        `• Credits are added directly to your account on *automaticgametopup.iceiy.com*!\n\n` +
-        `Tap the menu button anytime to open the app!`;
-
-      sendBotMessage(user.id, welcomeChatText);
-      localStorage.setItem('welcome_sent_ok', 'true');
-    }
-
-    // ---------- Balance & Storage ----------
-    let balance = parseFloat(localStorage.getItem('topup_balance')) || 0;
-    let totalWatched = parseInt(localStorage.getItem('topup_total_watched')) || 0;
-
-    function updateUI() {
-      document.getElementById('balance').innerText = balance.toFixed(2);
-      document.getElementById('adsWatchedCount').innerText = `${totalWatched} Ads Watched`;
-    }
-    updateUI();
-
-    // ---------- Reward Logic ----------
     function giveReward() {
-      balance += 10.00;
-      totalWatched += 1;
-      localStorage.setItem('topup_balance', balance);
-      localStorage.setItem('topup_total_watched', totalWatched);
-      updateUI();
+      const btn = document.getElementById('adBtn');
+      btn.disabled = true;
+      btn.innerText = "Syncing reward...";
 
-      if (tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('success');
-      }
-      tg.showAlert("🎉 +10.00 Points added to your balance!");
+      fetch('/api/reward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          username: user.username
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          currentBalance = parseFloat(data.balance);
+          document.getElementById('balance').innerText = currentBalance.toFixed(2);
+          document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
 
-      // Send points earned alert directly to user's chat
-      if (user?.id) {
-        const earnText = `⚡ *Reward Credited!* ⚡\n\n` +
-          `🎉 You watched an ad and earned *+10.00 PTS*!\n` +
-          `💰 *Total Balance:* \`${balance.toFixed(2)} PTS\`\n` +
-          `🎯 Reach 50 PTS to redeem on *automaticgametopup.iceiy.com*!`;
-        
-        sendBotMessage(user.id, earnText);
-      }
+          tg?.HapticFeedback?.notificationOccurred('success');
+          alert("🎉 +10.00 Points credited to your account!");
+        } else {
+          alert(data.message || "Could not save reward.");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to connect to reward server.");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "▶ Watch Ad (+10 PTS)";
+      });
     }
 
-    // ---------- Trigger Ad (Monetag + Automatic Fallback) ----------
     function triggerAd() {
       const btn = document.getElementById('adBtn');
       btn.innerText = "Loading ad...";
+      btn.disabled = true;
 
-      // Try Monetag first
       if (typeof window.show_11862560 === 'function') {
         window.show_11862560()
-          .then(() => {
-            giveReward();
-            btn.innerText = "▶ Watch Ad (+10 PTS)";
-          })
-          .catch(() => {
-            // If Monetag fails or has no fill, run fallback player
-            runFallbackAd();
-          });
+          .then(() => giveReward())
+          .catch(() => runFallbackAd());
       } else {
-        // Fallback player if Monetag script is blocked
         runFallbackAd();
       }
     }
@@ -342,7 +180,6 @@
     function runFallbackAd() {
       const modal = document.getElementById('adModal');
       const timerDisplay = document.getElementById('adTimer');
-      const btn = document.getElementById('adBtn');
       let count = 5;
 
       modal.style.display = 'flex';
@@ -354,16 +191,14 @@
         if (count <= 0) {
           clearInterval(interval);
           modal.style.display = 'none';
-          btn.innerText = "▶ Watch Ad (+10 PTS)";
           giveReward();
         }
       }, 1000);
     }
 
-    // ---------- Modal Controls ----------
     function openWithdrawModal() {
-      if (balance < MIN_WITHDRAW_POINTS) {
-        tg.showAlert(`Minimum withdrawal is ${MIN_WITHDRAW_POINTS} Points.`);
+      if (currentBalance < MIN_WITHDRAW_POINTS) {
+        alert(`Minimum withdrawal is ${MIN_WITHDRAW_POINTS.toFixed(2)} Points.`);
         return;
       }
       document.getElementById('withdrawModal').style.display = 'flex';
@@ -374,53 +209,54 @@
     }
 
     function openWebsite() {
-      tg.openLink("https://automaticgametopup.iceiy.com");
+      if (tg?.openLink) {
+        tg.openLink("https://automaticgametopup.iceiy.com");
+      } else {
+        window.open("https://automaticgametopup.iceiy.com", "_blank");
+      }
     }
 
-    // ---------- Process Withdrawal ----------
     function processWithdrawal() {
-      const email = document.getElementById('accountEmail').value.trim();
+      const emailInput = document.getElementById('accountEmail');
+      const email = emailInput.value.trim();
+      const submitBtn = document.getElementById('withdrawSubmitBtn');
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       if (!email || !emailRegex.test(email)) {
-        tg.showAlert("Please enter a valid registered email address.");
+        alert("Please enter a valid email address.");
         return;
       }
 
-      const amountToWithdraw = balance;
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
 
-      // 1. Receipt to your Channel: @KhudaimiOfficialStore
-      const channelText = `🎮 *NEW TOP-UP WITHDRAWAL* 🎮\n\n` +
-        `👤 *User:* ${user?.first_name || 'Anonymous'} (@${user?.username || 'NoUsername'})\n` +
-        `🆔 *Telegram ID:* \`${user?.id || 'N/A'}\`\n` +
-        `📧 *Registered Email:* \`${email}\`\n` +
-        `💰 *Points Claimed:* ${amountToWithdraw.toFixed(2)} PTS\n` +
-        `🌐 *Website:* automaticgametopup.iceiy.com\n` +
-        `📅 *Status:* ⏳ Pending Admin Top-Up`;
-
-      sendBotMessage(CHANNEL_ID, channelText);
-
-      // 2. Confirmation to User Chat
-      if (user?.id) {
-        const userConfirmText = `✅ *Withdrawal Request Submitted!*\n\n` +
-          `💰 *Points Claimed:* ${amountToWithdraw.toFixed(2)} PTS\n` +
-          `📧 *Account Email:* \`${email}\`\n` +
-          `🌐 *Store:* automaticgametopup.iceiy.com\n\n` +
-          `Your request has been received by the admin! Your website balance will be credited soon.`;
-
-        sendBotMessage(user.id, userConfirmText);
-      }
-
-      // Reset balance
-      balance = 0;
-      localStorage.setItem('topup_balance', 0);
-      updateUI();
-      closeModal();
-
-      tg.showPopup({
-        title: "Request Submitted!",
-        message: `Your withdrawal of ${amountToWithdraw.toFixed(2)} Points for:\n${email}\nhas been posted to @KhudaimiOfficialStore!`,
-        buttons: [{ type: "ok" }]
+      fetch('/api/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: user.id,
+          email: email
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          currentBalance = 0.00;
+          document.getElementById('balance').innerText = "0.00";
+          emailInput.value = "";
+          closeModal();
+          alert(`Withdrawal submitted for ${data.points} PTS! Check status on the website.`);
+        } else {
+          alert(data.message || "Failed to submit withdrawal.");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Server error processing withdrawal.");
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Withdrawal";
       });
     }
   </script>
