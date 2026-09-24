@@ -96,6 +96,7 @@
     tg.BackButton.hide();
 
     const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
+    const referrerId = tg.initDataUnsafe?.start_param || null;
     let currentBalance = 0.00;
 
     // Load Header & Footer
@@ -105,10 +106,15 @@
         const el = document.getElementById('userName');
         if (el) el.innerText = user.first_name;
       }
+      const savedName = sessionStorage.getItem('bot_name');
+      if (savedName) {
+        const titleEl = document.getElementById('botTitle');
+        if (titleEl) titleEl.innerText = savedName;
+      }
     });
+
     fetch('/footer.html').then(r => r.text()).then(html => {
       document.getElementById('footer-container').innerHTML = html;
-      // Re-run glow activation after injection
       const s = document.createElement('script');
       s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
       document.body.appendChild(s);
@@ -118,7 +124,12 @@
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+        body: JSON.stringify({ 
+          telegram_id: user.id, 
+          first_name: user.first_name, 
+          username: user.username,
+          referrer_id: referrerId
+        })
       })
       .then(r => r.json())
       .then(data => {
@@ -126,6 +137,12 @@
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+
+          if (data.bot_name) {
+            sessionStorage.setItem('bot_name', data.bot_name);
+            const titleEl = document.getElementById('botTitle');
+            if (titleEl) titleEl.innerText = data.bot_name;
+          }
         }
       });
     }
