@@ -15,7 +15,9 @@ export default async function handler(req, res) {
       return res.status(200).json(doc.exists ? doc.data() : {
         bot_token: process.env.BOT_TOKEN || '',
         channel_id: process.env.CHANNEL_ID || '@KhudaimiOfficialStore',
-        min_withdraw: 50.00
+        min_withdraw: 50.00,
+        website_url: 'https://automaticgametopup.iceiy.com',
+        banner_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80'
       });
     }
 
@@ -24,24 +26,53 @@ export default async function handler(req, res) {
     return res.status(200).json({ withdrawals: list });
   }
 
-  // Handle POST (Approve/Reject or Save Settings)
+  // Handle POST
   if (req.method === 'POST') {
     const { action } = req.body || {};
 
-    // 1. Save Settings
+    // 1. Activate Telegram Webhook Server-Side
+    if (action === 'set_webhook') {
+      const configDoc = await db.collection('settings').doc('config').get();
+      const botToken = configDoc.exists ? configDoc.data().bot_token : process.env.BOT_TOKEN;
+
+      if (!botToken) {
+        return res.status(400).json({ error: 'Please save your Bot Token first!' });
+      }
+
+      const host = req.headers.host;
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const webhookUrl = `${protocol}://${host}/api/webhook`;
+
+      try {
+        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+        const tgData = await tgRes.json();
+
+        if (tgData.ok) {
+          return res.status(200).json({ success: true, message: 'Webhook activated successfully! /start will now reply instantly.' });
+        } else {
+          return res.status(400).json({ error: tgData.description || 'Telegram rejected webhook' });
+        }
+      } catch (err) {
+        return res.status(500).json({ error: 'Failed to contact Telegram API' });
+      }
+    }
+
+    // 2. Save App Configuration
     if (action === 'save_settings') {
-      const { bot_token, channel_id, min_withdraw } = req.body;
+      const { bot_token, channel_id, min_withdraw, website_url, banner_url } = req.body;
       await db.collection('settings').doc('config').set({
         bot_token: bot_token || '',
         channel_id: channel_id || '',
         min_withdraw: Number(min_withdraw) || 50.00,
+        website_url: website_url || 'https://automaticgametopup.iceiy.com',
+        banner_url: banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80',
         updated_at: new Date().toISOString()
       }, { merge: true });
 
-      return res.status(200).json({ success: true, message: 'Settings saved!' });
+      return res.status(200).json({ success: true, message: 'Settings saved successfully!' });
     }
 
-    // 2. Approve or Reject Withdrawal
+    // 3. Approve or Reject Withdrawal
     const { id } = req.body;
     const withdrawDoc = await db.collection('withdrawals').doc(id).get();
     if (!withdrawDoc.exists) {
@@ -51,31 +82,22 @@ export default async function handler(req, res) {
     const requestData = withdrawDoc.data();
     const status = action === 'approve' ? 'approved' : 'rejected';
 
-    // Update status in Firestore
     await db.collection('withdrawals').doc(id).update({ status });
 
     if (action === 'approve') {
-      // 📩 Send Approval message to User
-      const approveText = `✅ *WITHDRAWAL APPROVED!* ✅\n\n` +
-        `🎉 Great news! Your withdrawal request has been approved by the admin.\n\n` +
-        `💰 *Points Claimed:* ${Number(requestData.points).toFixed(2)} PTS\n` +
-        `📧 *Account Email:* \`${requestData.email}\`\n` +
-        `🌐 *Store:* automaticgametopup.iceiy.com\n\n` +
-        `Your website credits have been added! Thank you for playing.`;
-
+      const approveText = `✅ <b>WITHDRAWAL APPROVED!</b> ✅\n\n` +
+        `🎉 Your withdrawal of <b>${Number(requestData.points).toFixed(2)} PTS</b> for <code>${requestData.email}</code> has been approved!\n\n` +
+        `🌐 Credits have been added on <b>automaticgametopup.iceiy.com</b>.`;
       await sendTelegramMessage(requestData.telegram_id, approveText);
-
     } else if (action === 'reject') {
-      // Refund points back to user balance if rejected
+      // Refund points
       await db.collection('users').doc(requestData.telegram_id).update({
         balance: FieldValue.increment(Number(requestData.points))
       });
 
-      // 📩 Send Rejection & Refund message to User
-      const rejectText = `❌ *WITHDRAWAL REJECTED* ❌\n\n` +
-        `Your withdrawal request of *${Number(requestData.points).toFixed(2)} PTS* for email \`${requestData.email}\` was declined.\n\n` +
-        `🔄 *Your points have been refunded back to your balance!* Please check that your email exists on automaticgametopup.iceiy.com and try again.`;
-
+      const rejectText = `❌ <b>WITHDRAWAL REJECTED</b> ❌\n\n` +
+        `Your withdrawal request of <b>${Number(requestData.points).toFixed(2)} PTS</b> for <code>${requestData.email}</code> was declined.\n\n` +
+        `🔄 <b>Your points have been refunded to your balance!</b>`;
       await sendTelegramMessage(requestData.telegram_id, rejectText);
     }
 
