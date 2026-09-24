@@ -1,10 +1,96 @@
+import crypto from 'crypto';
 import { db, FieldValue, sendTelegramMessage } from '../lib/firebase.js';
 
+// Your designated Admin Telegram ID
+const ADMIN_TELEGRAM_ID = '8960497898';
+
 export default async function handler(req, res) {
-  const adminSecret = req.headers['x-admin-secret'];
-  if (adminSecret !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  // 1. PUBLIC ACTION: Send OTP to Telegram ID
+  if (req.method === 'POST' && req.body?.action === 'send_otp') {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
+
+    // Save OTP in Firestore
+    await db.collection('settings').doc('admin_auth').set({
+      otp,
+      expires_at: expiresAt
+    }, { merge: true });
+
+    // Send OTP to your Telegram account
+    const message = `🔐 <b>Admin Login OTP</b>\n\n` +
+                    `Your one-time login code is: <code>${otp}</code>\n\n` +
+                    `⏳ Valid for 5 minutes. Do not share this code with anyone.`;
+
+    const sent = await sendTelegramMessage(ADMIN_TELEGRAM_ID, message);
+
+    if (sent) {
+      return res.status(200).json({ success: true, message: 'OTP sent to your Telegram account!' });
+    } else {
+      return res.status(500).json({ error: 'Failed to send OTP. Make sure you have started @AdBoostEarningBot in Telegram.' });
+    }
   }
+
+  // 2. PUBLIC ACTION: Verify OTP & Issue Persistent Session Token
+  if (req.method === 'POST' && req.body?.action === 'verify_otp') {
+    const { otp } = req.body;
+    const doc = await db.collection('settings').doc('admin_auth').get();
+
+    if (!doc.exists) {
+      return res.status(400).json({ error: 'No OTP requested. Please click Send OTP.' });
+    }
+
+    const data = doc.data();
+
+    if (!data.otp || data.otp !== String(otp).trim()) {
+      return res.status(400).json({ error: 'Incorrect OTP code.' });
+    }
+
+    if (Date.now() > data.expires_at) {
+      return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Generate a secure, persistent session token
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+
+    // Save session token in Firestore & clear the OTP
+    await db.collection('settings').doc('admin_auth').set({
+      session_token: sessionToken,
+      otp: null,
+      expires_at: null,
+      authenticated_at: new Date().toISOString()
+    }, { merge: true });
+
+    return res.status(200).json({ success: true, session_token: sessionToken });
+  }
+
+  // ============================================================
+  // AUTHENTICATION CHECK FOR ALL OTHER ACTIONS
+  // ============================================================
+  const clientToken = req.headers['x-admin-token'];
+  const clientSecret = req.headers['x-admin-secret'];
+
+  let isAuthorized = false;
+
+  // Verify persistent token from database
+  if (clientToken) {
+    const authDoc = await db.collection('settings').doc('admin_auth').get();
+    if (authDoc.exists && authDoc.data().session_token === clientToken) {
+      isAuthorized = true;
+    }
+  }
+
+  // Fallback to legacy secret if token is not used
+  if (!isAuthorized && clientSecret && clientSecret === process.env.ADMIN_PASSWORD) {
+    isAuthorized = true;
+  }
+
+  if (!isAuthorized) {
+    return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+  }
+
+  // ============================================================
+  // PROTECTED ADMIN ACTIONS
+  // ============================================================
 
   // Handle GET (Settings or Withdrawals list)
   if (req.method === 'GET') {
@@ -30,7 +116,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { action } = req.body || {};
 
-    // 1. Activate Telegram Webhook Server-Side
+    // 1. Activate Telegram Webhook
     if (action === 'set_webhook') {
       const configDoc = await db.collection('settings').doc('config').get();
       const botToken = configDoc.exists ? configDoc.data().bot_token : process.env.BOT_TOKEN;
@@ -48,7 +134,7 @@ export default async function handler(req, res) {
         const tgData = await tgRes.json();
 
         if (tgData.ok) {
-          return res.status(200).json({ success: true, message: 'Webhook activated successfully! /start will now reply instantly.' });
+          return res.status(200).json({ success: true, message: 'Webhook activated! /start will now reply instantly.' });
         } else {
           return res.status(400).json({ error: tgData.description || 'Telegram rejected webhook' });
         }
@@ -57,7 +143,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 2. Save App Configuration
+    // 2. Save Settings
     if (action === 'save_settings') {
       const { bot_token, channel_id, min_withdraw, website_url, banner_url } = req.body;
       await db.collection('settings').doc('config').set({
@@ -90,7 +176,6 @@ export default async function handler(req, res) {
         `🌐 Credits have been added on <b>automaticgametopup.iceiy.com</b>.`;
       await sendTelegramMessage(requestData.telegram_id, approveText);
     } else if (action === 'reject') {
-      // Refund points
       await db.collection('users').doc(requestData.telegram_id).update({
         balance: FieldValue.increment(Number(requestData.points))
       });
