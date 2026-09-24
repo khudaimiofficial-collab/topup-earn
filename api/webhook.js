@@ -1,7 +1,6 @@
-import { db, getBotConfig } from '../lib/firebase.js';
+import { db, FieldValue, getBotConfig, sendTelegramMessage } from '../lib/firebase.js';
 
 export default async function handler(req, res) {
-  // Always return 200 OK fast so Telegram doesn't retry
   if (req.method !== 'POST') {
     return res.status(200).send('OK');
   }
@@ -17,7 +16,7 @@ export default async function handler(req, res) {
   const text = message.text.trim();
   const user = message.from;
 
-  // Triggers INSTANTLY every single time user sends /start
+  // Handle /start and /start <referrer_id>
   if (text.startsWith('/start')) {
     const { botToken, minWithdraw } = await getBotConfig();
 
@@ -25,41 +24,69 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // Register user in database if first time
+    // 1. EXTRACT REFERRER ID (e.g. from "/start 8960497898")
+    const parts = text.split(' ');
+    const referrerId = (parts.length > 1 && parts[1].trim()) ? parts[1].trim() : null;
+
+    // 2. REGISTER USER & ATTACH REFERRAL
     if (chatId) {
-      const userRef = db.collection('users').doc(String(chatId));
+      const tid = String(chatId);
+      const userRef = db.collection('users').doc(tid);
       const doc = await userRef.get();
+
       if (!doc.exists) {
+        let validReferrer = null;
+
+        // Check if referrer exists and is not self-referral
+        if (referrerId && referrerId !== tid) {
+          const refDoc = await db.collection('users').doc(referrerId).get();
+          if (refDoc.exists) {
+            validReferrer = referrerId;
+
+            // Increment referrer's invited count
+            await db.collection('users').doc(referrerId).update({
+              invited_count: FieldValue.increment(1)
+            });
+
+            // Send instant celebration message to the referrer
+            await sendTelegramMessage(
+              referrerId,
+              `🎉 <b>New Referral!</b> <b>${user?.first_name || 'A friend'}</b> joined using your invite link!\n\n` +
+              `💰 You will earn <b>10% commission (+1.00 PTS)</b> every time they watch an ad!`
+            );
+          }
+        }
+
         await userRef.set({
-          telegram_id: String(chatId),
+          telegram_id: tid,
           first_name: user?.first_name || '',
           username: user?.username || '',
           balance: 0.00,
           ads_watched: 0,
+          invited_count: 0,
+          referral_earnings: 0.00,
+          referred_by: validReferrer,
+          welcome_sent: true,
           created_at: new Date().toISOString()
         });
       }
     }
 
-    // Determine domain & links
+    // 3. SEND WELCOME BANNER & LAUNCH BUTTON
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers.host;
     const webAppUrl = `${protocol}://${host}`;
-
-    // Your official top-up website link
     const websiteStoreUrl = 'https://automaticgametopup.iceiy.com';
-
-    // Banner image URL
-    const bannerUrl = 'https://testwebsite.iceiy.com/uploads/gallery/img_12c3ca98c4808aed.png';
+    const bannerUrl = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
 
     const caption = `👋 <b>Welcome to Free Top-Up & Game Credits!</b>\n\n` +
       `⛏️ <b>Earn Free Game Credits & Top-Up:</b>\n` +
       `⚡ Watch video ads to earn <b>+10.00 PTS</b> each.\n` +
+      `👥 Invite friends to earn <b>10% lifetime commission</b>!\n` +
       `🎯 Minimum withdrawal: <b>${minWithdraw.toFixed(2)} PTS</b>.\n` +
       `🌐 Direct account balance top-up to <b>automaticgametopup.iceiy.com</b>!\n\n` +
       `Click below to launch the Mini App or visit our website:`;
 
-    // Photo + Caption + 2 Direct Buttons
     const payload = {
       chat_id: chatId,
       photo: bannerUrl,
@@ -70,13 +97,13 @@ export default async function handler(req, res) {
           [
             {
               text: '🚀 Launch Top-Up App',
-              web_app: { url: webAppUrl } // Opens Mini App directly inside Telegram
+              web_app: { url: webAppUrl }
             }
           ],
           [
             {
               text: '🌐 Visit Top-Up Website',
-              url: websiteStoreUrl // Opens automaticgametopup.iceiy.com directly
+              url: websiteStoreUrl
             }
           ]
         ]
