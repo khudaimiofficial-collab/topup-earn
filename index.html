@@ -75,7 +75,7 @@
   <div class="overlay" id="withdrawModal">
     <div class="modal-box">
       <h3>Withdraw to Account</h3>
-      <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;">
+      <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;" id="withdrawMinText">
         Enter your registered email on <b>automaticgametopup.iceiy.com</b>:
       </p>
       <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
@@ -102,7 +102,8 @@
     }
 
     let currentBalance = 0.00;
-    const MIN_WITHDRAW_POINTS = 50.00;
+    // DYNAMIC: Updated from Admin settings via /api/get-user
+    let minWithdrawPoints = 50.00; 
 
     function loadUserData() {
       fetch('/api/get-user', {
@@ -120,6 +121,11 @@
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+
+          // Apply minimum withdrawal set by admin
+          if (data.min_withdraw) {
+            minWithdrawPoints = parseFloat(data.min_withdraw);
+          }
         }
       })
       .catch(err => console.error("Error loading user profile:", err));
@@ -146,6 +152,10 @@
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+          
+          if (data.min_withdraw) {
+            minWithdrawPoints = parseFloat(data.min_withdraw);
+          }
 
           tg?.HapticFeedback?.notificationOccurred('success');
           alert("🎉 +10.00 Points credited to your account!");
@@ -197,10 +207,12 @@
     }
 
     function openWithdrawModal() {
-      if (currentBalance < MIN_WITHDRAW_POINTS) {
-        alert(`Minimum withdrawal is ${MIN_WITHDRAW_POINTS.toFixed(2)} Points.`);
+      if (currentBalance < minWithdrawPoints) {
+        alert(`Minimum withdrawal is ${minWithdrawPoints.toFixed(2)} Points.`);
         return;
       }
+      document.getElementById('withdrawMinText').innerHTML = 
+        `Min withdrawal is <b>${minWithdrawPoints.toFixed(2)} PTS</b>.<br>Enter your email on <b>automaticgametopup.iceiy.com</b>:`;
       document.getElementById('withdrawModal').style.display = 'flex';
     }
 
