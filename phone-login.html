@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phone SMS Login</title>
+
+  <!-- Firebase App & Auth SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #070a12; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; }
+    .card { background: #0f172a; padding: 24px; border-radius: 18px; width: 100%; max-width: 380px; border: 1px solid rgba(56, 189, 248, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+    input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155; background: rgba(0,0,0,0.4); color: #fff; font-size: 15px; margin: 10px 0; outline: none; box-sizing: border-box; }
+    input:focus { border-color: #38bdf8; }
+    button { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 800; font-size: 15px; cursor: pointer; transition: transform 0.1s ease; }
+    button:active { transform: scale(0.98); }
+    .btn-send { background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; }
+    .btn-verify { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2 style="color: #38bdf8; margin-bottom: 6px;">📱 Phone Verification</h2>
+    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">Firebase SMS Authentication</p>
+
+    <!-- STEP 1: ENTER PHONE NUMBER -->
+    <div id="stepPhone">
+      <input type="tel" id="phoneNumber" placeholder="+91 9876543210" value="+91 ">
+      <div id="recaptcha-container" style="margin: 10px 0;"></div>
+      <button class="btn-send" id="btnSendCode" onclick="sendOtpCode()">Send Verification SMS</button>
+    </div>
+
+    <!-- STEP 2: ENTER OTP -->
+    <div id="stepOtp" style="display: none;">
+      <p style="font-size: 13px; color: #cbd5e1;">Enter the 6-digit code sent to your phone:</p>
+      <input type="text" id="otpCode" placeholder="123456" maxlength="6" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: 800;">
+      <button class="btn-verify" id="btnVerifyCode" onclick="verifyOtpCode()">Verify & Sign In</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. YOUR FIREBASE WEB CONFIGURATION
+    // Get this from Firebase Console -> Project Settings -> General -> Your apps -> Web (</>)
+    const firebaseConfig = {
+      apiKey: "YOUR_FIREBASE_WEB_API_KEY",
+      authDomain: "adsboostearning-bot.firebaseapp.com",
+      projectId: "adsboostearning-bot",
+      storageBucket: "adsboostearning-bot.appspot.com",
+      messagingSenderId: "101276979256",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    let confirmationResult = null;
+
+    // 2. INITIALIZE INVISIBLE RECAPTCHA
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      size: 'invisible',
+      callback: () => {
+        // reCAPTCHA solved
+      }
+    });
+
+    // 3. SEND SMS OTP
+    async function sendOtpCode() {
+      const phone = document.getElementById('phoneNumber').value.trim();
+      const btn = document.getElementById('btnSendCode');
+
+      if (!phone.startsWith('+') || phone.length < 10) {
+        return alert('Please enter phone with country code (e.g. +91 9876543210)');
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Sending SMS...";
+
+      try {
+        confirmationResult = await firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier);
+        alert('📩 Verification code sent!');
+        document.getElementById('stepPhone').style.display = 'none';
+        document.getElementById('stepOtp').style.display = 'block';
+      } catch (error) {
+        console.error('SMS Error:', error);
+        alert('❌ Error: ' + error.message);
+        window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Send Verification SMS";
+      }
+    }
+
+    // 4. VERIFY OTP CODE
+    async function verifyOtpCode() {
+      const code = document.getElementById('otpCode').value.trim();
+      const btn = document.getElementById('btnVerifyCode');
+
+      if (code.length < 6) return alert('Enter full 6-digit OTP');
+
+      btn.disabled = true;
+      btn.innerText = "Verifying...";
+
+      try {
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        alert(`✅ Verified successfully! Logged in as: ${user.phoneNumber}`);
+      } catch (error) {
+        alert('❌ Invalid or expired OTP code.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Verify & Sign In";
+      }
+    }
+  </script>
+</body>
+  </html>
