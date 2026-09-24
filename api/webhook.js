@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     const websiteStoreUrl = 'https://automaticgametopup.iceiy.com';
 
     // Banner image URL
-    const bannerUrl = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
+    const bannerUrl = 'https://testwebsite.iceiy.com/uploads/gallery/img_12c3ca98c4808aed.png';
 
     const caption = `👋 <b>Welcome to Free Top-Up & Game Credits!</b>\n\n` +
       `⛏️ <b>Earn Free Game Credits & Top-Up:</b>\n` +
