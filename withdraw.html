@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Withdraw - Free Top-Up</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131b2e;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #38bdf8;
+      --btn-bg: #22c55e;
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 95px 14px; }
+    .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--card); padding: 22px 18px; border-radius: 18px; border: 1px solid var(--card-border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    .balance-badge { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: var(--accent); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; display: inline-block; margin-bottom: 8px; }
+    .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.4); color: #fff; font-size: 14px; margin: 12px 0 16px 0; outline: none; }
+    .input-field:focus { border-color: var(--accent); }
+    .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; }
+    .rule-item { display: flex; gap: 10px; font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="header-container"></div>
+
+    <div class="card" style="text-align: center;">
+      <span class="balance-badge">Available Balance</span>
+      <h1 style="font-size: 38px; font-weight: 900; margin: 4px 0 12px 0;">
+        <span id="displayBalance">0.00</span> <span style="font-size: 18px; color: var(--accent);">PTS</span>
+      </h1>
+      <p style="font-size: 12px; color: var(--text-dim);" id="minNotice">
+        Minimum required: <b>50.00 PTS</b>
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="color: var(--accent); margin-bottom: 6px;">Request Withdrawal</h3>
+      <p style="font-size: 12px; color: var(--text-dim);">
+        Credits are directly applied to your registered website email:
+      </p>
+
+      <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
+
+      <button class="btn btn-withdraw" id="submitBtn" onclick="processWithdrawal()">
+        Submit Withdrawal Request
+      </button>
+
+      <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+        <div class="rule-item">
+          <span>⚡</span>
+          <span>Automatic notifications are sent to your bot chat when approved.</span>
+        </div>
+        <div class="rule-item">
+          <span>🌐</span>
+          <span>Ensure your email matches your account on <b>automaticgametopup.iceiy.com</b>.</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="footer-container"></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.initData || tg.initData.length === 0) {
+      location.href = '/index.html';
+    }
+    tg.ready();
+    tg.expand();
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => { location.href = '/index.html'; });
+
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
+    let currentBalance = 0.00;
+    let minPoints = 50.00;
+
+    // Load Header & Footer
+    fetch('/header.html').then(r => r.text()).then(html => {
+      document.getElementById('header-container').innerHTML = html;
+      if (user?.first_name) {
+        const el = document.getElementById('userName');
+        if (el) el.innerText = user.first_name;
+      }
+    });
+    fetch('/footer.html').then(r => r.text()).then(html => {
+      document.getElementById('footer-container').innerHTML = html;
+    });
+
+    // Fetch user balance
+    fetch('/api/get-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        currentBalance = parseFloat(data.balance);
+        document.getElementById('displayBalance').innerText = currentBalance.toFixed(2);
+        if (data.min_withdraw) {
+          minPoints = parseFloat(data.min_withdraw);
+          document.getElementById('minNotice').innerHTML = `Minimum required: <b>${minPoints.toFixed(2)} PTS</b>`;
+        }
+      }
+    });
+
+    function processWithdrawal() {
+      const email = document.getElementById('accountEmail').value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (currentBalance < minPoints) {
+        return alert(`You need at least ${minPoints.toFixed(2)} PTS to withdraw.`);
+      }
+      if (!email || !emailRegex.test(email)) {
+        return alert("Please enter a valid email address.");
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = "Submitting...";
+
+      fetch('/api/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: user.id, email: email })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert(`✅ Withdrawal submitted for ${data.points} PTS!`);
+          location.href = '/profile.html';
+        } else {
+          alert(data.message || "Failed to submit withdrawal.");
+        }
+      })
+      .catch(() => alert("Network error."))
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "Submit Withdrawal Request";
+      });
+    }
+  </script>
+</body>
+</html>
