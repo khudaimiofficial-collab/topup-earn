@@ -3,225 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Free Top-Up & Game Credits</title>
-
-  <!-- Telegram WebApp SDK -->
+  <title>Earn - Free Top-Up</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
-
   <style>
     :root {
-      --bg: #090d16;
-      --card: #131b2e;
-      --card-border: rgba(255, 255, 255, 0.07);
+      --bg: #070a12;
+      --card: #0f172a;
+      --card-border: rgba(56, 189, 248, 0.12);
       --accent: #38bdf8;
-      --btn-bg: #22c55e;
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px 14px 95px 14px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    /* Card */
-    .card {
-      background: var(--card);
-      padding: 24px 20px;
-      border-radius: 20px;
-      text-align: center;
-      border: 1px solid var(--card-border);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    .balance-label {
-      color: var(--text-dim);
-      font-size: 12px;
-      text-transform: uppercase;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-    }
-
-    .balance-value {
-      font-size: 46px;
-      font-weight: 900;
-      color: #ffffff;
-      margin: 8px 0;
-      display: flex;
-      justify-content: center;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .balance-pts {
-      font-size: 20px;
-      color: var(--accent);
-      font-weight: 800;
-    }
-
-    .badge-row {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 4px;
-    }
-
-    .badge {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 6px 12px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      font-weight: 600;
-    }
-
-    /* Buttons */
-    .btn {
-      width: 100%;
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.1s ease;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .btn-watch {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #052e16;
-      box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
-    }
-
-    .btn-withdraw {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text);
-      border: 1px solid var(--card-border);
-    }
-
-    .store-card {
-      background: linear-gradient(135deg, #1e1b4b, #172554);
-      padding: 16px;
-      border-radius: 16px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .store-info h4 {
-      font-size: 14px;
-      color: #fff;
-      margin-bottom: 3px;
-    }
-
-    .store-info p {
-      font-size: 11px;
-      color: #94a3b8;
-    }
-
-    .store-arrow {
-      font-size: 20px;
-      color: var(--accent);
-    }
-
-    /* Modals */
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.92);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .modal-box {
-      background: var(--card);
-      width: 100%;
-      max-width: 340px;
-      padding: 24px;
-      border-radius: 18px;
-      text-align: center;
-      border: 1px solid var(--card-border);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.4);
-      color: #fff;
-      font-size: 14px;
-      margin: 15px 0 12px 0;
-      outline: none;
-    }
-
-    .countdown {
-      font-size: 52px;
-      font-weight: 900;
-      color: #facc15;
-      margin: 15px 0;
-    }
-
-    .profile-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      font-size: 13px;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 90px 14px; }
+    .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--card); padding: 22px 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); text-align: center; }
+    .balance-label { color: var(--text-dim); font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; }
+    .balance-value { font-size: 46px; font-weight: 900; color: #ffffff; margin: 8px 0; display: flex; justify-content: center; align-items: baseline; gap: 6px; }
+    .balance-pts { font-size: 20px; color: var(--accent); font-weight: 800; text-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
+    .badge-row { display: flex; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+    .badge { background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 600; }
+    .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-watch { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35); }
+    .btn-withdraw { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--card-border); }
+    .store-card { background: linear-gradient(135deg, #131b2e, #1e1b4b); padding: 16px; border-radius: 16px; border: 1px solid rgba(56, 189, 248, 0.25); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .store-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
+    .store-info p { font-size: 11px; color: #94a3b8; }
+    .store-arrow { font-size: 20px; color: var(--accent); }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--card); width: 100%; max-width: 340px; padding: 24px; border-radius: 18px; text-align: center; border: 1px solid var(--card-border); }
+    .countdown { font-size: 52px; font-weight: 900; color: #facc15; margin: 15px 0; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <!-- Dynamic Header Loaded from header.html -->
     <div id="header-container"></div>
 
-    <!-- BALANCE CARD -->
     <div class="card">
       <div class="balance-label">Available Points</div>
       <div class="balance-value">
@@ -235,16 +56,14 @@
       </div>
     </div>
 
-    <!-- BUTTONS -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10.00 PTS)
     </button>
 
-    <button class="btn btn-withdraw" onclick="openWithdrawModal()">
-      💳 Withdraw to Website Account
+    <button class="btn btn-withdraw" onclick="location.href='/withdraw.html'">
+      💳 Request Top-Up Withdrawal
     </button>
 
-    <!-- STORE PROMOTION CARD -->
     <div class="store-card" onclick="openWebsite()">
       <div class="store-info">
         <h4>🛒 Automated Top-Up Store</h4>
@@ -253,11 +72,9 @@
       <div class="store-arrow">➔</div>
     </div>
 
-    <!-- Dynamic Footer Loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
-  <!-- FALLBACK AD MODAL -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
       <h3 style="color:#fff;">Displaying Advertisement</h3>
@@ -267,149 +84,53 @@
     </div>
   </div>
 
-  <!-- WITHDRAWAL MODAL -->
-  <div class="overlay" id="withdrawModal">
-    <div class="modal-box">
-      <h3 style="color:#fff;">Withdraw to Account</h3>
-      <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;" id="withdrawMinText">
-        Enter your registered email on <b>automaticgametopup.iceiy.com</b>:
-      </p>
-      <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
-      <button class="btn btn-watch" id="withdrawSubmitBtn" onclick="processWithdrawal()">Submit Withdrawal</button>
-      <button class="btn" style="background: transparent; color: var(--text-dim); margin-top: 6px;" onclick="closeModal('withdrawModal')">Cancel</button>
-    </div>
-  </div>
-
-  <!-- INVITE MODAL -->
-  <div class="overlay" id="inviteModal">
-    <div class="modal-box">
-      <h3 style="color:#38bdf8;">👥 Invite Friends</h3>
-      <p style="font-size: 13px; color: var(--text-dim); margin-top: 6px;">
-        Share your link with friends to play and earn top-up credits together!
-      </p>
-      <input type="text" id="inviteLinkInput" class="input-field" readonly />
-      <button class="btn btn-watch" onclick="copyInviteLink()">📋 Copy Link</button>
-      <button class="btn" style="background: #2563eb; color: #fff; margin-top: 8px;" onclick="shareInvite()">🚀 Share via Telegram</button>
-      <button class="btn" style="background: transparent; color: var(--text-dim); margin-top: 6px;" onclick="closeModal('inviteModal')">Close</button>
-    </div>
-  </div>
-
-  <!-- PROFILE MODAL -->
-  <div class="overlay" id="profileModal">
-    <div class="modal-box" style="text-align: left;">
-      <h3 style="color:#38bdf8; text-align: center; margin-bottom: 12px;">👤 User Profile</h3>
-      
-      <div class="profile-item">
-        <span style="color: var(--text-dim);">First Name</span>
-        <b id="profileName">Gamer</b>
-      </div>
-      <div class="profile-item">
-        <span style="color: var(--text-dim);">Username</span>
-        <b id="profileUsername">@None</b>
-      </div>
-      <div class="profile-item">
-        <span style="color: var(--text-dim);">Telegram ID</span>
-        <code id="profileId" style="color: #38bdf8;">-</code>
-      </div>
-      <div class="profile-item">
-        <span style="color: var(--text-dim);">Total Balance</span>
-        <b id="profileBalance" style="color: #22c55e;">0.00 PTS</b>
-      </div>
-      <div class="profile-item">
-        <span style="color: var(--text-dim);">Ads Watched</span>
-        <b id="profileAds">0</b>
-      </div>
-      <div class="profile-item" style="border-bottom: none;">
-        <span style="color: var(--text-dim);">Store</span>
-        <span style="font-size: 11px; color: #94a3b8;">automaticgametopup</span>
-      </div>
-
-      <button class="btn btn-withdraw" style="margin-top: 14px;" onclick="closeModal('profileModal')">Close</button>
-    </div>
-  </div>
-
   <script>
-    // ============================================================
-    // 🛡️ TELEGRAM ONLY GATEKEEPER
-    // ============================================================
     const tg = window.Telegram?.WebApp;
-    const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
-
-    if (!isTelegram) {
-      document.body.innerHTML = `
-        <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; background: #090d16; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="background: rgba(56, 189, 248, 0.1); width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 20px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);">
-            ✈️
-          </div>
-          <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #38bdf8;">Telegram Access Only</h2>
-          <p style="color: #94a3b8; font-size: 14px; max-width: 320px; line-height: 1.6; margin-bottom: 26px;">
-            This application is exclusively available as a Telegram Mini App. Please open it inside Telegram to play and earn credits.
-          </p>
-          <a href="https://t.me/AdBoostEarningBot" style="background: #2563eb; color: #fff; text-decoration: none; padding: 15px 30px; border-radius: 14px; font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);">
-            🚀 Open @AdBoostEarningBot
-          </a>
-          <span style="color: #475569; font-size: 11px; margin-top: 25px;">automaticgametopup.iceiy.com</span>
-        </div>
-      `;
-      throw new Error("Access Denied: App opened outside Telegram.");
+    if (!tg?.initData || tg.initData.length === 0) {
+      document.body.innerHTML = `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;"><h2 style="color:#38bdf8;">Telegram Access Only</h2><p style="color:#94a3b8;margin:15px 0;">This app is exclusively available inside Telegram.</p><a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:bold;">🚀 Open @AdBoostEarningBot</a></div>`;
+      throw new Error("Access Denied");
     }
 
-    // Initialize Telegram WebApp
     tg.ready();
     tg.expand();
+    tg.BackButton.hide();
 
-    const user = tg.initDataUnsafe?.user || { id: "000000", first_name: "Gamer", username: "" };
-
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
     let currentBalance = 0.00;
-    let minWithdrawPoints = 50.00; 
 
-    // ============================================================
-    // LOAD HEADER & FOOTER
-    // ============================================================
-    fetch('/header.html')
-      .then(res => res.text())
-      .then(html => {
-        document.getElementById('header-container').innerHTML = html;
-        if (user?.first_name) {
-          const u = document.getElementById('userName');
-          if (u) u.innerText = user.first_name;
-        }
-      });
+    // Load Header & Footer
+    fetch('/header.html').then(r => r.text()).then(html => {
+      document.getElementById('header-container').innerHTML = html;
+      if (user?.first_name) {
+        const el = document.getElementById('userName');
+        if (el) el.innerText = user.first_name;
+      }
+    });
+    fetch('/footer.html').then(r => r.text()).then(html => {
+      document.getElementById('footer-container').innerHTML = html;
+      // Re-run glow activation after injection
+      const s = document.createElement('script');
+      s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
+      document.body.appendChild(s);
+    });
 
-    fetch('/footer.html')
-      .then(res => res.text())
-      .then(html => {
-        document.getElementById('footer-container').innerHTML = html;
-      });
-
-    // Load User Data
     function loadUserData() {
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          username: user.username
-        })
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
       })
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
-
-          if (data.min_withdraw) {
-            minWithdrawPoints = parseFloat(data.min_withdraw);
-          }
         }
-      })
-      .catch(err => console.error("Error loading profile:", err));
+      });
     }
     loadUserData();
 
-    // Reward Logic
     function giveReward() {
       const btn = document.getElementById('adBtn');
       btn.disabled = true;
@@ -418,26 +139,20 @@
       fetch('/api/reward', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          username: user.username
-        })
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
       })
-      .then(res => res.json())
+      .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
-
           tg.HapticFeedback?.notificationOccurred('success');
-          alert("🎉 +10.00 Points credited to your account!");
+          alert("🎉 +10.00 Points credited!");
         } else {
-          alert(data.message || "Could not save reward.");
+          alert(data.message || "Error");
         }
       })
-      .catch(err => alert("Failed to connect to reward server."))
       .finally(() => {
         btn.disabled = false;
         btn.innerText = "▶ Watch Ad (+10.00 PTS)";
@@ -450,9 +165,7 @@
       btn.disabled = true;
 
       if (typeof window.show_11862560 === 'function') {
-        window.show_11862560()
-          .then(() => giveReward())
-          .catch(() => runFallbackAd());
+        window.show_11862560().then(() => giveReward()).catch(() => runFallbackAd());
       } else {
         runFallbackAd();
       }
@@ -477,96 +190,12 @@
       }, 1000);
     }
 
-    // Modal Handlers
-    function openWithdrawModal() {
-      if (currentBalance < minWithdrawPoints) {
-        alert(`Minimum withdrawal is ${minWithdrawPoints.toFixed(2)} Points.`);
-        return;
-      }
-      document.getElementById('withdrawMinText').innerHTML = 
-        `Min withdrawal: <b>${minWithdrawPoints.toFixed(2)} PTS</b>.<br>Enter registered email on <b>automaticgametopup.iceiy.com</b>:`;
-      document.getElementById('withdrawModal').style.display = 'flex';
-    }
-
-    function openInviteModal() {
-      const inviteUrl = `https://t.me/AdBoostEarningBot?start=${user.id}`;
-      document.getElementById('inviteLinkInput').value = inviteUrl;
-      document.getElementById('inviteModal').style.display = 'flex';
-    }
-
-    function copyInviteLink() {
-      const input = document.getElementById('inviteLinkInput');
-      input.select();
-      navigator.clipboard.writeText(input.value);
-      alert("✅ Invite link copied to clipboard!");
-    }
-
-    function shareInvite() {
-      const shareUrl = `https://t.me/share/url?url=https://t.me/AdBoostEarningBot?start=${user.id}&text=🎮 Earn free game credits and top-ups by watching ads!`;
-      if (tg.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, '_blank');
-      }
-    }
-
-    function openProfileModal() {
-      document.getElementById('profileName').innerText = user.first_name || 'Gamer';
-      document.getElementById('profileUsername').innerText = user.username ? `@${user.username}` : '@None';
-      document.getElementById('profileId').innerText = user.id || '-';
-      document.getElementById('profileBalance').innerText = `${currentBalance.toFixed(2)} PTS`;
-      document.getElementById('profileAds').innerText = document.getElementById('adsWatchedCount').innerText;
-      document.getElementById('profileModal').style.display = 'flex';
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).style.display = 'none';
-    }
-
     function openWebsite() {
       if (tg.openLink) {
         tg.openLink("https://automaticgametopup.iceiy.com");
       } else {
         window.open("https://automaticgametopup.iceiy.com", "_blank");
       }
-    }
-
-    function processWithdrawal() {
-      const emailInput = document.getElementById('accountEmail');
-      const email = emailInput.value.trim();
-      const submitBtn = document.getElementById('withdrawSubmitBtn');
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!email || !emailRegex.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerText = "Submitting...";
-
-      fetch('/api/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, email: email })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          currentBalance = 0.00;
-          document.getElementById('balance').innerText = "0.00";
-          emailInput.value = "";
-          closeModal('withdrawModal');
-          alert(`Withdrawal submitted for ${data.points} PTS! Check status on the website.`);
-        } else {
-          alert(data.message || "Failed to submit withdrawal.");
-        }
-      })
-      .catch(err => alert("Server error processing withdrawal."))
-      .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Submit Withdrawal";
-      });
     }
   </script>
 </body>
