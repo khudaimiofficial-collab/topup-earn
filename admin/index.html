@@ -2,52 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Admin Dashboard</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #fff; padding: 24px; }
-    .card { background: #131b2e; padding: 24px; border-radius: 12px; max-width: 900px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); }
-    input { padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #090d16; color: #fff; width: 100%; font-size: 14px; box-sizing: border-box; margin-top: 6px; margin-bottom: 14px; }
-    button { padding: 10px 18px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
-    .btn-green { background: #22c55e; color: #000; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #090d16; color: #fff; padding: 16px; min-height: 100vh; }
+    .card { background: #131b2e; padding: 20px; border-radius: 14px; max-width: 900px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    h2, h3 { color: #38bdf8; margin-bottom: 8px; }
+    p { font-size: 13px; color: #94a3b8; margin-bottom: 14px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
+    label { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 14px; outline: none; }
+    input:focus { border-color: #38bdf8; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    button { padding: 12px 18px; border-radius: 8px; border: none; font-weight: 800; font-size: 14px; cursor: pointer; transition: transform 0.1s ease; }
+    button:active { transform: scale(0.98); }
+    .btn-blue { background: #38bdf8; color: #042f2e; }
+    .btn-purple { background: #a855f7; color: #fff; }
+    .btn-green { background: #22c55e; color: #052e16; }
     .btn-red { background: #ef4444; color: #fff; }
-    .btn-blue { background: #38bdf8; color: #000; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 12px; border-bottom: 1px solid #1f293d; text-align: left; font-size: 14px; }
-    th { background: rgba(0,0,0,0.3); color: #94a3b8; }
-    .pending { color: #facc15; font-weight: 600; }
-    .approved { color: #22c55e; font-weight: 600; }
-    .rejected { color: #ef4444; font-weight: 600; }
-    .form-group { display: flex; flex-direction: column; text-align: left; }
-    label { font-size: 13px; color: #94a3b8; font-weight: 600; }
+    .table-container { overflow-x: auto; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { padding: 12px; border-bottom: 1px solid #1f293d; text-align: left; font-size: 13px; }
+    th { background: rgba(0,0,0,0.3); color: #94a3b8; font-weight: 700; }
+    .pending { color: #facc15; font-weight: 800; }
+    .approved { color: #22c55e; font-weight: 800; }
+    .rejected { color: #ef4444; font-weight: 800; }
   </style>
 </head>
 <body>
 
   <!-- Login Card -->
-  <div class="card" id="authBox">
-    <h2>Admin Login</h2>
-    <p style="color: #94a3b8; font-size: 14px;">Enter your admin secret password to continue:</p>
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <input type="password" id="adminSecret" placeholder="Admin Secret Password" style="margin: 0; max-width: 300px;">
-      <button class="btn-green" onclick="unlockDashboard()">Sign In</button>
+  <div class="card" id="authBox" style="max-width: 400px; margin-top: 40px;">
+    <h2>🔐 Admin Sign In</h2>
+    <p>Enter your secret admin password to unlock the dashboard:</p>
+    <div class="form-group">
+      <input type="password" id="adminSecret" placeholder="Admin Secret Password">
     </div>
+    <button class="btn-green" style="width: 100%;" onclick="unlockDashboard()">Sign In</button>
   </div>
 
   <!-- Main Dashboard (Hidden until login) -->
   <div id="mainDashboard" style="display: none;">
-    
-    <!-- Bot & App Settings -->
+
+    <!-- Settings Card -->
     <div class="card">
       <h3>⚙️ Bot & App Settings</h3>
-      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Update your Telegram Bot token and destination channel anytime without touching code.</p>
-      
+      <p>Configure bot token, minimum withdrawal, and webhook.</p>
+
       <div class="form-group">
         <label>Telegram Bot Token (from @BotFather):</label>
         <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
       </div>
 
       <div class="form-group">
-        <label>Telegram Channel / Group Username:</label>
+        <label>Telegram Channel / Store Username:</label>
         <input type="text" id="settingChannelId" placeholder="@KhudaimiOfficialStore">
       </div>
 
@@ -56,29 +65,44 @@
         <input type="number" id="settingMinWithdraw" placeholder="50.00">
       </div>
 
-      <button class="btn-blue" onclick="saveSettings()">Save Configuration</button>
+      <div class="form-group">
+        <label>Top-Up Website URL:</label>
+        <input type="text" id="settingWebsiteUrl" placeholder="https://automaticgametopup.iceiy.com">
+      </div>
+
+      <div class="form-group">
+        <label>Start Message Banner Image Link:</label>
+        <input type="text" id="settingBannerUrl" placeholder="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-blue" onclick="saveSettings()">💾 Save Configuration</button>
+        <button class="btn-purple" onclick="activateWebhook()">⚡ Connect /start Instant Bot Messages</button>
+      </div>
     </div>
 
-    <!-- Withdrawals Table -->
+    <!-- Withdrawals Card -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3>📥 Withdrawal Requests</h3>
-        <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh List</button>
+        <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh</button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Telegram ID</th>
-            <th>Email</th>
-            <th>Points</th>
-            <th>Status</th>
-            <th>Requested Date</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="listBody"></tbody>
-      </table>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Telegram ID</th>
+              <th>Email</th>
+              <th>Points</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="listBody"></tbody>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -88,7 +112,7 @@
 
     async function unlockDashboard() {
       secret = document.getElementById('adminSecret').value.trim();
-      if (!secret) return alert('Enter password');
+      if (!secret) return alert('Please enter your password');
 
       try {
         const res = await fetch('/api/admin?type=settings', {
@@ -101,6 +125,8 @@
         document.getElementById('settingBotToken').value = settings.bot_token || '';
         document.getElementById('settingChannelId').value = settings.channel_id || '';
         document.getElementById('settingMinWithdraw').value = settings.min_withdraw || 50;
+        document.getElementById('settingWebsiteUrl').value = settings.website_url || 'https://automaticgametopup.iceiy.com';
+        document.getElementById('settingBannerUrl').value = settings.banner_url || '';
 
         document.getElementById('authBox').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'block';
@@ -115,6 +141,8 @@
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const channel_id = document.getElementById('settingChannelId').value.trim();
       const min_withdraw = document.getElementById('settingMinWithdraw').value.trim();
+      const website_url = document.getElementById('settingWebsiteUrl').value.trim();
+      const banner_url = document.getElementById('settingBannerUrl').value.trim();
 
       const res = await fetch('/api/admin', {
         method: 'POST',
@@ -123,15 +151,38 @@
           action: 'save_settings',
           bot_token,
           channel_id,
-          min_withdraw
+          min_withdraw,
+          website_url,
+          banner_url
         })
       });
 
       const data = await res.json();
       if (data.success) {
-        alert('✅ Settings saved! New Bot Token & Channel are now live.');
+        alert('✅ Settings saved successfully!');
       } else {
         alert('Failed to save settings.');
+      }
+    }
+
+    async function activateWebhook() {
+      if (!confirm("Activate bot webhook now?")) return;
+
+      try {
+        const res = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ action: 'set_webhook' })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert('🎉 ' + data.message);
+        } else {
+          alert('❌ Error: ' + (data.error || 'Failed to activate webhook'));
+        }
+      } catch (e) {
+        alert('Network error connecting to webhook service.');
       }
     }
 
@@ -143,7 +194,7 @@
 
       const tbody = document.getElementById('listBody');
       if (!data.withdrawals?.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No withdrawal requests found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding: 20px;">No withdrawal requests found.</td></tr>`;
         return;
       }
 
@@ -153,11 +204,11 @@
           <td>${w.email}</td>
           <td><b>${Number(w.points).toFixed(2)} PTS</b></td>
           <td class="${w.status}">${w.status.toUpperCase()}</td>
-          <td style="color:#94a3b8; font-size:12px;">${new Date(w.created_at).toLocaleString()}</td>
+          <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at).toLocaleString()}</td>
           <td>
             ${w.status === 'pending' ? `
-              <button class="btn-green" onclick="updateStatus('${w.id}', 'approve')">Approve</button>
-              <button class="btn-red" onclick="updateStatus('${w.id}', 'reject')">Reject</button>
+              <button class="btn-green" style="padding: 6px 10px; font-size: 12px;" onclick="updateStatus('${w.id}', 'approve')">Approve</button>
+              <button class="btn-red" style="padding: 6px 10px; font-size: 12px; margin-left: 4px;" onclick="updateStatus('${w.id}', 'reject')">Reject</button>
             ` : '—'}
           </td>
         </tr>
@@ -165,6 +216,8 @@
     }
 
     async function updateStatus(id, action) {
+      if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+
       await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
