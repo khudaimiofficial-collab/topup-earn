@@ -1,5 +1,5 @@
+// api/send-otp.js
 export default async function handler(req, res) {
-  // Allow your local HTML file to call this with zero CORS blocks
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
