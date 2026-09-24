@@ -9,6 +9,7 @@ export default async function handler(req, res) {
   const tid = String(telegram_id);
   const userRef = db.collection('users').doc(tid);
 
+  // Increment points
   await userRef.set({
     telegram_id: tid,
     first_name: first_name || '',
@@ -21,9 +22,19 @@ export default async function handler(req, res) {
   const data = updatedDoc.data();
   const newBalance = Number(data.balance);
 
+  // 10% Referral Commission (+1.00 PTS)
+  if (data.referred_by) {
+    const commission = 1.00;
+    await db.collection('users').doc(data.referred_by).update({
+      balance: FieldValue.increment(commission),
+      referral_earnings: FieldValue.increment(commission)
+    });
+
+    await sendTelegramMessage(data.referred_by, `🎁 <b>Referral Commission!</b> You earned <b>+1.00 PTS</b> (10%) because your invited friend watched an ad!`);
+  }
+
   const { minWithdraw } = await getBotConfig();
 
-  // 📩 Send points alert
   const earnHtml = `⚡ <b>Reward Credited!</b> ⚡\n\n` +
     `🎉 You earned <b>+10.00 PTS</b>!\n` +
     `💰 <b>Total Balance:</b> <code>${newBalance.toFixed(2)} PTS</code>\n` +
