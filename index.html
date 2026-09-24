@@ -4,8 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Earn - Free Top-Up</title>
+
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
+
   <style>
     :root {
       --bg: #070a12;
@@ -15,34 +20,190 @@
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 90px 14px; }
-    .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
-    .card { background: var(--card); padding: 22px 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); text-align: center; }
-    .balance-label { color: var(--text-dim); font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; }
-    .balance-value { font-size: 46px; font-weight: 900; color: #ffffff; margin: 8px 0; display: flex; justify-content: center; align-items: baseline; gap: 6px; }
-    .balance-pts { font-size: 20px; color: var(--accent); font-weight: 800; text-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
-    .badge-row { display: flex; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-dim); margin-top: 4px; }
-    .badge { background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 600; }
-    .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
-    .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-watch { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35); }
-    .btn-withdraw { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--card-border); }
-    .store-card { background: linear-gradient(135deg, #131b2e, #1e1b4b); padding: 16px; border-radius: 16px; border: 1px solid rgba(56, 189, 248, 0.25); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .store-info h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
-    .store-info p { font-size: 11px; color: #94a3b8; }
-    .store-arrow { font-size: 20px; color: var(--accent); }
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-    .modal-box { background: var(--card); width: 100%; max-width: 340px; padding: 24px; border-radius: 18px; text-align: center; border: 1px solid var(--card-border); }
-    .countdown { font-size: 52px; font-weight: 900; color: #facc15; margin: 15px 0; }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 14px 95px 14px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Balance Card */
+    .card {
+      background: var(--card);
+      padding: 22px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
+    .balance-label {
+      color: var(--text-dim);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+
+    .balance-value {
+      font-size: 46px;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 8px 0;
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .balance-pts {
+      font-size: 20px;
+      color: var(--accent);
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-watch {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #052e16;
+      box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35);
+    }
+
+    .btn-withdraw {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+
+    /* Store Promotion Banner */
+    .store-card {
+      background: linear-gradient(135deg, #131b2e, #1e1b4b);
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .store-info h4 {
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .store-info p {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .store-arrow {
+      font-size: 20px;
+      color: var(--accent);
+    }
+
+    /* Fallback Ad Modal */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--card);
+      width: 100%;
+      max-width: 340px;
+      padding: 24px;
+      border-radius: 18px;
+      text-align: center;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .countdown {
+      font-size: 52px;
+      font-weight: 900;
+      color: #facc15;
+      margin: 15px 0;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <!-- Header component dynamically loaded from header.html -->
     <div id="header-container"></div>
 
+    <!-- Balance Card -->
     <div class="card">
       <div class="balance-label">Available Points</div>
       <div class="balance-value">
@@ -56,6 +217,7 @@
       </div>
     </div>
 
+    <!-- Main Buttons -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10.00 PTS)
     </button>
@@ -64,6 +226,7 @@
       💳 Request Top-Up Withdrawal
     </button>
 
+    <!-- Top-Up Store Link -->
     <div class="store-card" onclick="openWebsite()">
       <div class="store-info">
         <h4>🛒 Automated Top-Up Store</h4>
@@ -72,9 +235,11 @@
       <div class="store-arrow">➔</div>
     </div>
 
+    <!-- Footer component dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
+  <!-- Fallback Countdown Modal -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
       <h3 style="color:#fff;">Displaying Advertisement</h3>
@@ -85,9 +250,27 @@
   </div>
 
   <script>
+    // ============================================================
+    // 🛡️ TELEGRAM GATEKEEPER (Blocks External Browsers)
+    // ============================================================
     const tg = window.Telegram?.WebApp;
-    if (!tg?.initData || tg.initData.length === 0) {
-      document.body.innerHTML = `<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;"><h2 style="color:#38bdf8;">Telegram Access Only</h2><p style="color:#94a3b8;margin:15px 0;">This app is exclusively available inside Telegram.</p><a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:bold;">🚀 Open @AdBoostEarningBot</a></div>`;
+    const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
+
+    if (!isTelegram) {
+      document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;font-family:-apple-system,sans-serif;">
+          <div style="background:rgba(56,189,248,0.1);width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;border:1px solid rgba(56,189,248,0.3);box-shadow:0 0 25px rgba(56,189,248,0.2);">
+            ✈️
+          </div>
+          <h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#38bdf8;">Telegram Access Only</h2>
+          <p style="color:#94a3b8;font-size:14px;max-width:320px;line-height:1.6;margin-bottom:26px;">
+            This application is exclusively available inside Telegram. Please launch the official bot to earn credits.
+          </p>
+          <a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:15px 30px;border-radius:14px;font-weight:800;font-size:15px;box-shadow:0 4px 20px rgba(37,99,235,0.4);">
+            🚀 Open @AdBoostEarningBot
+          </a>
+        </div>
+      `;
       throw new Error("Access Denied");
     }
 
@@ -95,11 +278,12 @@
     tg.expand();
     tg.BackButton.hide();
 
-    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
-    const referrerId = tg.initDataUnsafe?.start_param || null;
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "" };
     let currentBalance = 0.00;
 
-    // Load Header & Footer
+    // ============================================================
+    // LOAD SHARED HEADER & FOOTER
+    // ============================================================
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
       if (user?.first_name) {
@@ -120,7 +304,14 @@
       document.body.appendChild(s);
     });
 
+    // ============================================================
+    // LOAD USER DATA & TRACK REFERRAL
+    // ============================================================
     function loadUserData() {
+      // Extracts referral ID from startapp or query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || urlParams.get('startapp') || null;
+
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,16 +329,21 @@
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
 
+          // Live bot title synchronization
           if (data.bot_name) {
             sessionStorage.setItem('bot_name', data.bot_name);
             const titleEl = document.getElementById('botTitle');
             if (titleEl) titleEl.innerText = data.bot_name;
           }
         }
-      });
+      })
+      .catch(err => console.error("Error loading user profile:", err));
     }
     loadUserData();
 
+    // ============================================================
+    // REWARD & AD LOGIC
+    // ============================================================
     function giveReward() {
       const btn = document.getElementById('adBtn');
       btn.disabled = true;
@@ -156,7 +352,11 @@
       fetch('/api/reward', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+        body: JSON.stringify({ 
+          telegram_id: user.id, 
+          first_name: user.first_name, 
+          username: user.username 
+        })
       })
       .then(r => r.json())
       .then(data => {
@@ -164,11 +364,16 @@
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+
           tg.HapticFeedback?.notificationOccurred('success');
-          alert("🎉 +10.00 Points credited!");
+          alert("🎉 +10.00 Points credited to your account!");
         } else {
-          alert(data.message || "Error");
+          alert(data.message || "Failed to record reward.");
         }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to connect to reward server.");
       })
       .finally(() => {
         btn.disabled = false;
@@ -181,8 +386,11 @@
       btn.innerText = "Loading ad...";
       btn.disabled = true;
 
+      // Check Monetag SDK
       if (typeof window.show_11862560 === 'function') {
-        window.show_11862560().then(() => giveReward()).catch(() => runFallbackAd());
+        window.show_11862560()
+          .then(() => giveReward())
+          .catch(() => runFallbackAd());
       } else {
         runFallbackAd();
       }
@@ -208,7 +416,7 @@
     }
 
     function openWebsite() {
-      if (tg.openLink) {
+      if (tg?.openLink) {
         tg.openLink("https://automaticgametopup.iceiy.com");
       } else {
         window.open("https://automaticgametopup.iceiy.com", "_blank");
