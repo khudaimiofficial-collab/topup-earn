@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin if not already initialized
+// Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
@@ -8,83 +8,76 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+// Exact App Base URL
+const APP_URL = 'https://pheizubot.vercel.app';
+
 export default async function handler(req, res) {
+  // Only accept POST requests from Telegram
   if (req.method !== 'POST') {
-    return res.status(200).send('Webhook is active');
+    return res.status(200).send('Webhook active');
   }
 
   const update = req.body;
   if (!update || !update.message) {
-    return res.status(200).send('No message');
+    return res.status(200).send('No message payload');
   }
 
-  const { chat, from, text } = update.message;
+  const { chat, text } = update.message;
   const chatId = chat.id;
 
-  // Only handle /start commands
+  // Handle /start command
   if (text && text.startsWith('/start')) {
     try {
-      // 1. Fetch current settings from Firestore
+      // 1. Fetch live settings configured from your Admin Panel
       const settingsDoc = await db.collection('app_settings').doc('general').get();
       const settings = settingsDoc.exists ? settingsDoc.data() : {};
 
       const botToken = settings.bot_token || process.env.TELEGRAM_BOT_TOKEN;
-      const websiteUrl = settings.website_url || 'https://automaticgametopup.iceiy.com';
-      const bannerUrl = settings.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
-      
-      // Determine the Mini App URL (Your Vercel deployment URL or production domain)
-      const miniAppUrl = process.env.APP_URL || `https://${req.headers.host}`;
+      const bannerUrl = (settings.banner_url || '').trim();
 
-      // Extract referral if present (e.g. /start 123456789)
+      // Check if user joined with a referral code (e.g., /start 123456789)
       const parts = text.split(' ');
       const startParam = parts.length > 1 ? parts[1].trim() : null;
 
-      // 2. Fetch Bot Info to get the actual Bot Name ({title})
-      let botTitle = "Free Top-Up Bot";
+      // 2. Fetch live Bot Name from Telegram for dynamic {title}
+      let botTitle = 'Pheizu Top-Up';
       try {
-        const getMeRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
-        const getMeData = await getMeRes.json();
-        if (getMeData.ok && getMeData.result?.first_name) {
-          botTitle = getMeData.result.first_name;
+        const botInfoRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+        const botInfo = await botInfoRes.json();
+        if (botInfo.ok && botInfo.result?.first_name) {
+          botTitle = botInfo.result.first_name;
         }
-      } catch (err) {
-        console.warn("Could not fetch bot name, using default:", err);
+      } catch (e) {
+        console.warn('Could not fetch bot title:', e);
       }
 
-      // Append referral code to WebApp URL if invited by a friend
-      const webAppUrlWithParam = startParam 
-        ? `${miniAppUrl}/index.html?startapp=${startParam}` 
-        : `${miniAppUrl}/index.html`;
+      // 3. Mini App URL with optional referral parameter
+      const miniAppUrl = startParam 
+        ? `${APP_URL}/index.html?startapp=${startParam}` 
+        : `${APP_URL}/index.html`;
 
-      // 3. Caption text with dynamic {title}
+      // 4. Welcome message text with {title}
       const captionText = 
 `👋 Welcome to *${botTitle}*!
 
-🎮 Earn free points by watching ads and invite friends to earn top-up credits.
+🎮 Earn free points by watching ads and inviting friends to claim instant top-up credits.
 
-⚡ Fast, verified, and automated credits for your favorite games!`;
+⚡ Instant • Automated • 100% Free Credits`;
 
-      // 4. Inline Keyboard with "Launch Mini App" (web_app)
+      // 5. Button to Launch Mini App directly inside Telegram
       const replyMarkup = {
         inline_keyboard: [
           [
             {
               text: "🚀 Launch Mini App",
-              web_app: { url: webAppUrlWithParam }
-            }
-          ],
-          [
-            {
-              text: "🛒 Visit Top-Up Store",
-              url: websiteUrl
+              web_app: { url: miniAppUrl }
             }
           ]
         ]
       };
 
-      // 5. Send with Banner (sendPhoto). Fallback to sendMessage if image fails
-      let sentSuccessfully = false;
-
+      // 6. Send Banner Photo if configured, fallback to text if URL fails
+      let photoSent = false;
       if (bannerUrl && bannerUrl.startsWith('http')) {
         const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
           method: 'POST',
@@ -100,14 +93,14 @@ export default async function handler(req, res) {
 
         const photoData = await photoRes.json();
         if (photoData.ok) {
-          sentSuccessfully = true;
+          photoSent = true;
         } else {
-          console.warn("sendPhoto error from Telegram:", photoData);
+          console.warn('Telegram sendPhoto failed:', photoData.description);
         }
       }
 
-      // Fallback: If banner image URL is invalid or blocked by Telegram, send regular text
-      if (!sentSuccessfully) {
+      // Fallback: Send normal message if banner URL failed or is empty
+      if (!photoSent) {
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -120,10 +113,10 @@ export default async function handler(req, res) {
         });
       }
 
-    } catch (error) {
-      console.error("Error processing /start:", error);
+    } catch (err) {
+      console.error('Error handling /start:', err);
     }
   }
 
   return res.status(200).json({ ok: true });
-          }
+}
