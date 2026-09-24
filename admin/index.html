@@ -1,1 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #fff; padding: 24px; }
+    .card { background: #131b2e; padding: 24px; border-radius: 12px; max-width: 900px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); }
+    input { padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #090d16; color: #fff; width: 100%; font-size: 14px; box-sizing: border-box; margin-top: 6px; margin-bottom: 14px; }
+    button { padding: 10px 18px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+    .btn-green { background: #22c55e; color: #000; }
+    .btn-red { background: #ef4444; color: #fff; }
+    .btn-blue { background: #38bdf8; color: #000; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 12px; border-bottom: 1px solid #1f293d; text-align: left; font-size: 14px; }
+    th { background: rgba(0,0,0,0.3); color: #94a3b8; }
+    .pending { color: #facc15; font-weight: 600; }
+    .approved { color: #22c55e; font-weight: 600; }
+    .rejected { color: #ef4444; font-weight: 600; }
+    .form-group { display: flex; flex-direction: column; text-align: left; }
+    label { font-size: 13px; color: #94a3b8; font-weight: 600; }
+  </style>
+</head>
+<body>
 
+  <!-- Login Card -->
+  <div class="card" id="authBox">
+    <h2>Admin Login</h2>
+    <p style="color: #94a3b8; font-size: 14px;">Enter your admin secret password to continue:</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <input type="password" id="adminSecret" placeholder="Admin Secret Password" style="margin: 0; max-width: 300px;">
+      <button class="btn-green" onclick="unlockDashboard()">Sign In</button>
+    </div>
+  </div>
+
+  <!-- Main Dashboard (Hidden until login) -->
+  <div id="mainDashboard" style="display: none;">
+    
+    <!-- Bot & App Settings -->
+    <div class="card">
+      <h3>⚙️ Bot & App Settings</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Update your Telegram Bot token and destination channel anytime without touching code.</p>
+      
+      <div class="form-group">
+        <label>Telegram Bot Token (from @BotFather):</label>
+        <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+      </div>
+
+      <div class="form-group">
+        <label>Telegram Channel / Group Username:</label>
+        <input type="text" id="settingChannelId" placeholder="@KhudaimiOfficialStore">
+      </div>
+
+      <div class="form-group">
+        <label>Minimum Withdrawal Points:</label>
+        <input type="number" id="settingMinWithdraw" placeholder="50.00">
+      </div>
+
+      <button class="btn-blue" onclick="saveSettings()">Save Configuration</button>
+    </div>
+
+    <!-- Withdrawals Table -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>📥 Withdrawal Requests</h3>
+        <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh List</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Telegram ID</th>
+            <th>Email</th>
+            <th>Points</th>
+            <th>Status</th>
+            <th>Requested Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    let secret = '';
+
+    async function unlockDashboard() {
+      secret = document.getElementById('adminSecret').value.trim();
+      if (!secret) return alert('Enter password');
+
+      try {
+        const res = await fetch('/api/admin?type=settings', {
+          headers: { 'x-admin-secret': secret }
+        });
+
+        if (!res.ok) return alert('Invalid Password');
+
+        const settings = await res.json();
+        document.getElementById('settingBotToken').value = settings.bot_token || '';
+        document.getElementById('settingChannelId').value = settings.channel_id || '';
+        document.getElementById('settingMinWithdraw').value = settings.min_withdraw || 50;
+
+        document.getElementById('authBox').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
+
+        loadWithdrawals();
+      } catch (err) {
+        alert('Failed to connect to backend.');
+      }
+    }
+
+    async function saveSettings() {
+      const bot_token = document.getElementById('settingBotToken').value.trim();
+      const channel_id = document.getElementById('settingChannelId').value.trim();
+      const min_withdraw = document.getElementById('settingMinWithdraw').value.trim();
+
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({
+          action: 'save_settings',
+          bot_token,
+          channel_id,
+          min_withdraw
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Settings saved! New Bot Token & Channel are now live.');
+      } else {
+        alert('Failed to save settings.');
+      }
+    }
+
+    async function loadWithdrawals() {
+      const res = await fetch('/api/admin', {
+        headers: { 'x-admin-secret': secret }
+      });
+      const data = await res.json();
+
+      const tbody = document.getElementById('listBody');
+      if (!data.withdrawals?.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">No withdrawal requests found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.withdrawals.map(w => `
+        <tr>
+          <td><code>${w.telegram_id}</code></td>
+          <td>${w.email}</td>
+          <td><b>${Number(w.points).toFixed(2)} PTS</b></td>
+          <td class="${w.status}">${w.status.toUpperCase()}</td>
+          <td style="color:#94a3b8; font-size:12px;">${new Date(w.created_at).toLocaleString()}</td>
+          <td>
+            ${w.status === 'pending' ? `
+              <button class="btn-green" onclick="updateStatus('${w.id}', 'approve')">Approve</button>
+              <button class="btn-red" onclick="updateStatus('${w.id}', 'reject')">Reject</button>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function updateStatus(id, action) {
+      await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+        body: JSON.stringify({ id, action })
+      });
+      loadWithdrawals();
+    }
+  </script>
+</body>
+</html>
