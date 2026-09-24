@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneAPI SMS Tester</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #070a12; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .card { background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    h2 { color: #38bdf8; font-size: 20px; margin-bottom: 6px; text-align: center; }
+    p.subtitle { color: #94a3b8; font-size: 12px; margin-bottom: 20px; text-align: center; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+    input { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid #334155; border-radius: 10px; color: #fff; font-size: 14px; outline: none; }
+    input:focus { border-color: #38bdf8; }
+    button { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 800; font-size: 14px; cursor: pointer; transition: transform 0.1s ease; margin-top: 6px; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-blue { background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; }
+    .btn-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; }
+    .log-box { margin-top: 16px; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; font-size: 11px; font-family: monospace; color: #38bdf8; max-height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🧪 SMS Gateway Tester</h2>
+    <p class="subtitle">Direct Tester (via Vercel Bridge)</p>
+
+    <!-- STEP 1: SEND OTP -->
+    <div id="stepSend">
+      <div class="form-group">
+        <label>API Key:</label>
+        <input type="text" id="apiKey" placeholder="Enter your OneAPI Key">
+      </div>
+
+      <div class="form-group">
+        <label>Brand Name:</label>
+        <input type="text" id="brandName" value="OnePayment">
+      </div>
+
+      <div class="form-group">
+        <label>Customer Name:</label>
+        <input type="text" id="customerName" value="Ibne Alam Khan">
+      </div>
+
+      <div class="form-group">
+        <label>Mobile Number (10 Digits):</label>
+        <input type="tel" id="mobileNumber" placeholder="9365415910" value="9365415910">
+      </div>
+
+      <button class="btn-blue" id="btnSend" onclick="sendOtp()">🚀 Send OTP SMS</button>
+    </div>
+
+    <!-- STEP 2: VERIFY OTP -->
+    <div id="stepVerify" style="display: none;">
+      <div class="form-group" style="margin-top: 10px;">
+        <label>Enter 6-Digit OTP:</label>
+        <input type="text" id="inputOtp" placeholder="123456" maxlength="6" style="text-align: center; font-size: 22px; letter-spacing: 5px; font-weight: 800;">
+      </div>
+      <button class="btn-green" id="btnVerify" onclick="verifyOtp()">✅ Verify OTP</button>
+      <button style="background:transparent; border:none; color:#94a3b8; font-size:12px; margin-top:8px; width:100%; cursor:pointer;" onclick="resetForm()">← Send to Another Number</button>
+    </div>
+
+    <!-- API RESPONSE LOG -->
+    <div class="log-box" id="logBox">// API Response Logs will show here...</div>
+  </div>
+
+  <script>
+    let generatedOtp = null;
+
+    function log(msg) {
+      const box = document.getElementById('logBox');
+      box.innerText = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg;
+    }
+
+    async function sendOtp() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const brandName = document.getElementById('brandName').value.trim();
+      const customerName = document.getElementById('customerName').value.trim();
+      const numberRaw = document.getElementById('mobileNumber').value.trim();
+      const btn = document.getElementById('btnSend');
+
+      if (!apiKey) return alert('Please enter your OneAPI Key!');
+      if (!numberRaw || numberRaw.length < 10) return alert('Please enter a valid 10-digit number!');
+
+      const cleanNumber = Number(numberRaw.replace(/[^0-9]/g, '').slice(-10));
+      generatedOtp = Math.floor(100000 + Math.random() * 900000);
+
+      const payload = {
+        apiKey: apiKey,
+        brandName: brandName,
+        customerName: customerName,
+        number: cleanNumber,
+        otp: generatedOtp
+      };
+
+      btn.disabled = true;
+      btn.innerText = "Dispatching...";
+      log("Sending Payload:\n" + JSON.stringify(payload, null, 2));
+
+      // Uses your own Vercel app endpoint
+      const proxyUrl = 'https://pheizubot.vercel.app/api/send-otp';
+
+      try {
+        const response = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        log("API Response:\n" + JSON.stringify(data, null, 2));
+
+        alert("📩 Request completed! Check log box below.");
+        document.getElementById('stepSend').style.display = 'none';
+        document.getElementById('stepVerify').style.display = 'block';
+
+      } catch (err) {
+        log("Error:\n" + err.message);
+        alert("Failed to send request: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🚀 Send OTP SMS";
+      }
+    }
+
+    function verifyOtp() {
+      const enteredOtp = Number(document.getElementById('inputOtp').value.trim());
+
+      if (!enteredOtp) return alert('Enter the OTP received on SMS.');
+
+      if (enteredOtp === generatedOtp) {
+        alert('🎉 OTP Verified Successfully!');
+        log("STATUS: SUCCESS\nEntered OTP matches generated OTP (" + generatedOtp + ").");
+      } else {
+        alert('❌ Invalid OTP! Try again.');
+        log("STATUS: FAILED\nEntered: " + enteredOtp + " | Expected: " + generatedOtp);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('stepVerify').style.display = 'none';
+      document.getElementById('stepSend').style.display = 'block';
+      document.getElementById('inputOtp').value = '';
+    }
+  </script>
+</body>
+</html>
