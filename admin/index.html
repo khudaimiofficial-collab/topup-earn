@@ -7,49 +7,56 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #090d16; color: #fff; padding: 16px; min-height: 100vh; }
-    .card { background: #131b2e; padding: 22px; border-radius: 14px; max-width: 900px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .card { background: #131b2e; padding: 22px; border-radius: 14px; max-width: 950px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     h2, h3 { color: #38bdf8; margin-bottom: 8px; }
     p { font-size: 13px; color: #94a3b8; margin-bottom: 14px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
     label { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-    input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 15px; outline: none; }
+    input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 14px; outline: none; }
     input:focus { border-color: #38bdf8; }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    button { padding: 13px 18px; border-radius: 10px; border: none; font-weight: 800; font-size: 14px; cursor: pointer; transition: transform 0.1s ease; }
+    button { padding: 12px 16px; border-radius: 10px; border: none; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.1s ease; }
     button:active { transform: scale(0.98); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-blue { background: #38bdf8; color: #042f2e; }
     .btn-purple { background: #a855f7; color: #fff; }
     .btn-green { background: #22c55e; color: #052e16; }
     .btn-red { background: #ef4444; color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; }
+    
+    /* Navigation Bar */
+    .admin-nav { display: flex; gap: 8px; margin-bottom: 18px; max-width: 950px; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
+    .nav-btn { background: #131b2e; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+    .nav-btn.active { background: #38bdf8; color: #042f2e; border-color: #38bdf8; }
+
     .table-container { overflow-x: auto; margin-top: 14px; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    table { width: 100%; border-collapse: collapse; min-width: 650px; }
     th, td { padding: 12px; border-bottom: 1px solid #1f293d; text-align: left; font-size: 13px; }
     th { background: rgba(0,0,0,0.3); color: #94a3b8; font-weight: 700; }
     .pending { color: #facc15; font-weight: 800; }
     .approved { color: #22c55e; font-weight: 800; }
     .rejected { color: #ef4444; font-weight: 800; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .banned { color: #ef4444; font-weight: 800; }
+    .active-user { color: #22c55e; font-weight: 800; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+
+    /* Modals */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: #131b2e; width: 100%; max-width: 380px; padding: 24px; border-radius: 16px; border: 1px solid rgba(56, 189, 248, 0.2); }
   </style>
 </head>
 <body>
 
-  <!-- ============================================================
-       OTP LOGIN CARD (Visible only if not logged in)
-  ============================================================ -->
+  <!-- ================= AUTH BOX ================= -->
   <div class="card" id="authBox" style="max-width: 400px; margin-top: 40px;">
     <h2>🔐 Admin Verification</h2>
     <p>Authentication code will be sent to your Telegram account <code>(ID: 8960497898)</code>.</p>
 
-    <!-- Step 1: Send OTP -->
     <div id="stepSendOtp">
       <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="requestOtp()">
         📩 Send OTP to Telegram
       </button>
     </div>
 
-    <!-- Step 2: Enter & Verify OTP -->
     <div id="stepVerifyOtp" style="display: none; margin-top: 14px;">
       <div class="form-group">
         <label>Enter 6-Digit OTP:</label>
@@ -58,63 +65,29 @@
       <button class="btn-green" style="width: 100%;" onclick="verifyOtp()">
         ✅ Verify & Sign In
       </button>
-      <button class="btn-outline" id="btnResend" style="width: 100%; margin-top: 8px;" onclick="requestOtp()">
-        Resend OTP
-      </button>
     </div>
   </div>
 
-  <!-- ============================================================
-       MAIN DASHBOARD (Remains permanently open once verified)
-  ============================================================ -->
+  <!-- ================= MAIN DASHBOARD ================= -->
   <div id="mainDashboard" style="display: none;">
 
-    <div class="card">
+    <div class="card" style="padding: 16px 20px;">
       <div class="top-bar">
-        <h2>⚡ Admin Panel</h2>
+        <h2>⚡ Admin Control Panel</h2>
         <button class="btn-red" style="padding: 8px 14px; font-size: 12px;" onclick="logout()">Log Out</button>
       </div>
-      <p style="color: #22c55e;">● Authenticated as Admin (ID: 8960497898)</p>
+      <p style="color: #22c55e; margin: 4px 0 0 0;">● Authenticated as Master Admin (ID: 8960497898)</p>
     </div>
 
-    <!-- Bot & App Settings -->
-    <div class="card">
-      <h3>⚙️ Bot & App Settings</h3>
-      <p>Configure bot token, minimum withdrawal, and webhook.</p>
-
-      <div class="form-group">
-        <label>Telegram Bot Token (from @BotFather):</label>
-        <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
-      </div>
-
-      <div class="form-group">
-        <label>Telegram Channel / Store Username:</label>
-        <input type="text" id="settingChannelId" placeholder="@KhudaimiOfficialStore">
-      </div>
-
-      <div class="form-group">
-        <label>Minimum Withdrawal Points:</label>
-        <input type="number" id="settingMinWithdraw" placeholder="50.00">
-      </div>
-
-      <div class="form-group">
-        <label>Top-Up Website URL:</label>
-        <input type="text" id="settingWebsiteUrl" placeholder="https://automaticgametopup.iceiy.com">
-      </div>
-
-      <div class="form-group">
-        <label>Start Message Banner Image Link:</label>
-        <input type="text" id="settingBannerUrl" placeholder="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80">
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-blue" onclick="saveSettings()">💾 Save Configuration</button>
-        <button class="btn-purple" onclick="activateWebhook()">⚡ Connect /start Instant Bot Messages</button>
-      </div>
+    <!-- Navigation Tabs -->
+    <div class="admin-nav">
+      <button class="nav-btn active" id="btnTabWithdrawals" onclick="switchAdminTab('withdrawals')">📥 Withdrawals</button>
+      <button class="nav-btn" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Manage Users</button>
+      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ App Settings</button>
     </div>
 
-    <!-- Withdrawals Table -->
-    <div class="card">
+    <!-- SECTION 1: WITHDRAWALS -->
+    <div id="sectionWithdrawals" class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3>📥 Withdrawal Requests</h3>
         <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh</button>
@@ -132,21 +105,118 @@
               <th>Action</th>
             </tr>
           </thead>
-          <tbody id="listBody"></tbody>
+          <tbody id="withdrawalListBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- SECTION 2: USERS MANAGEMENT -->
+    <div id="sectionUsers" class="card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <h3>👥 Registered Users</h3>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-blue" onclick="openAddUserModal()">➕ Add User</button>
+          <button class="btn-green" onclick="loadUsers()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <div style="margin: 14px 0;">
+        <input type="text" id="userSearchInput" placeholder="Search by Telegram ID, Username, or Name..." onkeyup="filterUsers()">
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Telegram ID</th>
+              <th>User</th>
+              <th>Balance</th>
+              <th>Ads</th>
+              <th>Invited</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userListBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 3: SETTINGS -->
+    <div id="sectionSettings" class="card" style="display: none;">
+      <h3>⚙️ Bot & App Configuration</h3>
+      <p>Configure bot token, destination channel, and webhook.</p>
+
+      <div class="form-group">
+        <label>Telegram Bot Token:</label>
+        <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+      </div>
+
+      <div class="form-group">
+        <label>Telegram Channel Username:</label>
+        <input type="text" id="settingChannelId" placeholder="@KhudaimiOfficialStore">
+      </div>
+
+      <div class="form-group">
+        <label>Minimum Withdrawal Points:</label>
+        <input type="number" id="settingMinWithdraw" placeholder="50.00">
+      </div>
+
+      <div class="form-group">
+        <label>Top-Up Website URL:</label>
+        <input type="text" id="settingWebsiteUrl" placeholder="https://automaticgametopup.iceiy.com">
+      </div>
+
+      <div class="form-group">
+        <label>Start Message Banner Link:</label>
+        <input type="text" id="settingBannerUrl" placeholder="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-blue" onclick="saveSettings()">💾 Save Configuration</button>
+        <button class="btn-purple" onclick="activateWebhook()">⚡ Connect /start Instant Bot Messages</button>
       </div>
     </div>
 
   </div>
 
+  <!-- ADD USER MODAL -->
+  <div class="overlay" id="addUserModal">
+    <div class="modal-box">
+      <h3 style="margin-bottom: 12px;">➕ Add New User</h3>
+      
+      <div class="form-group">
+        <label>Telegram ID (Numeric):</label>
+        <input type="text" id="newUserId" placeholder="e.g. 123456789">
+      </div>
+
+      <div class="form-group">
+        <label>First Name:</label>
+        <input type="text" id="newUserName" placeholder="e.g. John">
+      </div>
+
+      <div class="form-group">
+        <label>Username (Optional):</label>
+        <input type="text" id="newUserUsername" placeholder="e.g. john_gamer">
+      </div>
+
+      <div class="form-group">
+        <label>Initial Balance (PTS):</label>
+        <input type="number" id="newUserBalance" placeholder="0.00" value="0.00">
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 14px;">
+        <button class="btn-green" style="flex: 1;" onclick="submitNewUser()">Save User</button>
+        <button class="btn-red" style="flex: 1;" onclick="closeModal('addUserModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let authToken = localStorage.getItem('admin_session_token') || '';
 
-    // Automatically log in on page load if session exists
     window.addEventListener('DOMContentLoaded', () => {
-      if (authToken) {
-        checkExistingSession();
-      }
+      if (authToken) checkExistingSession();
     });
 
     async function checkExistingSession() {
@@ -159,7 +229,6 @@
           const settings = await res.json();
           renderDashboard(settings);
         } else {
-          // Token expired or invalid
           localStorage.removeItem('admin_session_token');
           authToken = '';
         }
@@ -198,9 +267,7 @@
 
     async function verifyOtp() {
       const otpInput = document.getElementById('inputOtp').value.trim();
-      if (!otpInput || otpInput.length < 6) {
-        return alert('Please enter the full 6-digit OTP.');
-      }
+      if (!otpInput || otpInput.length < 6) return alert('Enter full 6-digit OTP.');
 
       try {
         const res = await fetch('/api/admin', {
@@ -211,10 +278,8 @@
 
         const data = await res.json();
         if (data.success && data.session_token) {
-          // Store token in browser permanently
           authToken = data.session_token;
           localStorage.setItem('admin_session_token', authToken);
-
           alert('✅ Verified successfully!');
           checkExistingSession();
         } else {
@@ -239,13 +304,232 @@
     }
 
     function logout() {
-      if (confirm('Are you sure you want to log out?')) {
+      if (confirm('Log out from Admin Dashboard?')) {
         localStorage.removeItem('admin_session_token');
         authToken = '';
         location.reload();
       }
     }
 
+    // ============================================================
+    // TAB SWITCHER
+    // ============================================================
+    function switchAdminTab(tabName) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sectionWithdrawals').style.display = 'none';
+      document.getElementById('sectionUsers').style.display = 'none';
+      document.getElementById('sectionSettings').style.display = 'none';
+
+      if (tabName === 'withdrawals') {
+        document.getElementById('btnTabWithdrawals').classList.add('active');
+        document.getElementById('sectionWithdrawals').style.display = 'block';
+        loadWithdrawals();
+      } else if (tabName === 'users') {
+        document.getElementById('btnTabUsers').classList.add('active');
+        document.getElementById('sectionUsers').style.display = 'block';
+        loadUsers();
+      } else if (tabName === 'settings') {
+        document.getElementById('btnTabSettings').classList.add('active');
+        document.getElementById('sectionSettings').style.display = 'block';
+      }
+    }
+
+    // ============================================================
+    // MANAGE USERS
+    // ============================================================
+    let cachedUsersList = [];
+
+    async function loadUsers() {
+      const res = await fetch('/api/admin?type=users', {
+        headers: { 'x-admin-token': authToken }
+      });
+      const data = await res.json();
+      cachedUsersList = data.users || [];
+      renderUsersTable(cachedUsersList);
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('userListBody');
+      if (!users.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding: 20px;">No users found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const isBanned = Boolean(u.is_banned);
+        return `
+          <tr>
+            <td><code>${u.telegram_id}</code></td>
+            <td><b>${u.first_name || 'Gamer'}</b><br><span style="font-size:11px; color:#94a3b8;">${u.username ? '@' + u.username : 'No username'}</span></td>
+            <td><b style="color:#38bdf8;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
+            <td>${u.ads_watched || 0}</td>
+            <td>${u.invited_count || 0}</td>
+            <td class="${isBanned ? 'banned' : 'active-user'}">${isBanned ? '🚫 BANNED' : '🟢 ACTIVE'}</td>
+            <td>
+              <button class="btn-blue" style="padding: 6px 10px; font-size: 11px;" onclick="editUserBalance('${u.telegram_id}', ${u.balance || 0})">✏️ PTS</button>
+              <button class="${isBanned ? 'btn-green' : 'btn-purple'}" style="padding: 6px 10px; font-size: 11px; margin-left: 2px;" onclick="toggleBanUser('${u.telegram_id}')">
+                ${isBanned ? 'Unban' : 'Ban'}
+              </button>
+              <button class="btn-red" style="padding: 6px 10px; font-size: 11px; margin-left: 2px;" onclick="deleteUser('${u.telegram_id}')">🗑️ Del</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
+      const filtered = cachedUsersList.filter(u => 
+        (u.telegram_id && u.telegram_id.toLowerCase().includes(q)) ||
+        (u.username && u.username.toLowerCase().includes(q)) ||
+        (u.first_name && u.first_name.toLowerCase().includes(q))
+      );
+      renderUsersTable(filtered);
+    }
+
+    // Modal Handlers
+    function openAddUserModal() {
+      document.getElementById('newUserId').value = '';
+      document.getElementById('newUserName').value = '';
+      document.getElementById('newUserUsername').value = '';
+      document.getElementById('newUserBalance').value = '0.00';
+      document.getElementById('addUserModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    async function submitNewUser() {
+      const tid = document.getElementById('newUserId').value.trim();
+      const name = document.getElementById('newUserName').value.trim();
+      const username = document.getElementById('newUserUsername').value.trim();
+      const balance = document.getElementById('newUserBalance').value.trim();
+
+      if (!tid) return alert('Telegram ID is required!');
+
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
+        body: JSON.stringify({
+          action: 'add_user',
+          telegram_id: tid,
+          first_name: name,
+          username: username,
+          balance: Number(balance) || 0
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ User created successfully!');
+        closeModal('addUserModal');
+        loadUsers();
+      } else {
+        alert('❌ Error: ' + (data.error || 'Failed to add user'));
+      }
+    }
+
+    async function deleteUser(telegramId) {
+      if (!confirm(`Are you sure you want to PERMANENTLY delete user ${telegramId}? This cannot be undone.`)) {
+        return;
+      }
+
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
+        body: JSON.stringify({ action: 'delete_user', telegram_id: telegramId })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('🗑️ User deleted successfully!');
+        loadUsers();
+      } else {
+        alert('❌ Error: ' + (data.error || 'Failed to delete user'));
+      }
+    }
+
+    async function editUserBalance(telegramId, currentBal) {
+      const newBal = prompt(`Enter new balance (PTS) for user ${telegramId}:`, currentBal);
+      if (newBal === null || newBal.trim() === '' || isNaN(newBal)) return;
+
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
+        body: JSON.stringify({ action: 'edit_balance', telegram_id: telegramId, new_balance: Number(newBal) })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Balance updated!');
+        loadUsers();
+      } else {
+        alert('❌ Error: ' + (data.error || 'Failed to update balance'));
+      }
+    }
+
+    async function toggleBanUser(telegramId) {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
+        body: JSON.stringify({ action: 'toggle_ban', telegram_id: telegramId })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        loadUsers();
+      } else {
+        alert('❌ Error: ' + (data.error || 'Failed to toggle ban'));
+      }
+    }
+
+    // ============================================================
+    // WITHDRAWALS
+    // ============================================================
+    async function loadWithdrawals() {
+      const res = await fetch('/api/admin', {
+        headers: { 'x-admin-token': authToken }
+      });
+      const data = await res.json();
+
+      const tbody = document.getElementById('withdrawalListBody');
+      if (!data.withdrawals?.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding: 20px;">No withdrawal requests found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.withdrawals.map(w => `
+        <tr>
+          <td><code>${w.telegram_id}</code></td>
+          <td>${w.email}</td>
+          <td><b>${Number(w.points).toFixed(2)} PTS</b></td>
+          <td class="${w.status}">${w.status.toUpperCase()}</td>
+          <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at).toLocaleString()}</td>
+          <td>
+            ${w.status === 'pending' ? `
+              <button class="btn-green" style="padding: 6px 10px; font-size: 12px;" onclick="updateWithdrawalStatus('${w.id}', 'approve')">Approve</button>
+              <button class="btn-red" style="padding: 6px 10px; font-size: 12px; margin-left: 4px;" onclick="updateWithdrawalStatus('${w.id}', 'reject')">Reject</button>
+            ` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function updateWithdrawalStatus(id, action) {
+      if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+
+      await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
+        body: JSON.stringify({ id, action })
+      });
+      loadWithdrawals();
+    }
+
+    // ============================================================
+    // SETTINGS & WEBHOOK
+    // ============================================================
     async function saveSettings() {
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const channel_id = document.getElementById('settingChannelId').value.trim();
@@ -293,46 +577,6 @@
       } catch (e) {
         alert('Network error connecting to webhook service.');
       }
-    }
-
-    async function loadWithdrawals() {
-      const res = await fetch('/api/admin', {
-        headers: { 'x-admin-token': authToken }
-      });
-      const data = await res.json();
-
-      const tbody = document.getElementById('listBody');
-      if (!data.withdrawals?.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding: 20px;">No withdrawal requests found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = data.withdrawals.map(w => `
-        <tr>
-          <td><code>${w.telegram_id}</code></td>
-          <td>${w.email}</td>
-          <td><b>${Number(w.points).toFixed(2)} PTS</b></td>
-          <td class="${w.status}">${w.status.toUpperCase()}</td>
-          <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at).toLocaleString()}</td>
-          <td>
-            ${w.status === 'pending' ? `
-              <button class="btn-green" style="padding: 6px 10px; font-size: 12px;" onclick="updateStatus('${w.id}', 'approve')">Approve</button>
-              <button class="btn-red" style="padding: 6px 10px; font-size: 12px; margin-left: 4px;" onclick="updateStatus('${w.id}', 'reject')">Reject</button>
-            ` : '—'}
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function updateStatus(id, action) {
-      if (!confirm(`Are you sure you want to ${action} this request?`)) return;
-
-      await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({ id, action })
-      });
-      loadWithdrawals();
     }
   </script>
 </body>
