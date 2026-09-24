@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const tid = String(telegram_id);
   const userRef = db.collection('users').doc(tid);
 
-  // 1. Credit the user +10.00 PTS
+  // 1. Credit the watcher +10.00 PTS
   await userRef.set({
     telegram_id: tid,
     first_name: first_name || '',
@@ -22,8 +22,8 @@ export default async function handler(req, res) {
   const data = updatedDoc.data();
   const newBalance = Number(data.balance);
 
-  // 2. 10% REFERRAL COMMISSION: Credit +1.00 PTS to the person who invited them
-  if (data.referred_by) {
+  // 2. Pay 10% Commission ONLY if referral is verified (opened app + joined channel)
+  if (data.referred_by && data.referral_verified === true) {
     const commission = 1.00; // 10% of 10.00 PTS
 
     await db.collection('users').doc(data.referred_by).update({
@@ -31,10 +31,9 @@ export default async function handler(req, res) {
       referral_earnings: FieldValue.increment(commission)
     });
 
-    // Notify the referrer of their passive earnings
     await sendTelegramMessage(
       data.referred_by,
-      `🎁 <b>Referral Commission!</b> You earned <b>+1.00 PTS</b> (10%) because your invited friend watched an ad!`
+      `🎁 <b>Referral Commission!</b> You earned <b>+1.00 PTS</b> (10%) because your verified referral watched an ad!`
     );
   }
 
