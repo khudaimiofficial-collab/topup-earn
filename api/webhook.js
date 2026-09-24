@@ -1,115 +1,129 @@
-import { db, getBotConfig } from '../lib/firebase.js';
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+  });
+}
+const db = admin.firestore();
 
 export default async function handler(req, res) {
-  // Always return 200 OK fast so Telegram doesn't queue duplicate calls
   if (req.method !== 'POST') {
-    return res.status(200).send('OK');
+    return res.status(200).send('Webhook is active');
   }
 
   const update = req.body;
-  const message = update?.message;
-
-  if (!message || !message.text) {
-    return res.status(200).send('OK');
+  if (!update || !update.message) {
+    return res.status(200).send('No message');
   }
 
-  const chatId = message.chat?.id;
-  const text = message.text.trim();
-  const user = message.from;
+  const { chat, from, text } = update.message;
+  const chatId = chat.id;
 
-  // Triggers whenever user sends /start or /start <referrer_id>
-  if (text.startsWith('/start')) {
-    const { botToken, channelId, minWithdraw } = await getBotConfig();
+  // Only handle /start commands
+  if (text && text.startsWith('/start')) {
+    try {
+      // 1. Fetch current settings from Firestore
+      const settingsDoc = await db.collection('app_settings').doc('general').get();
+      const settings = settingsDoc.exists ? settingsDoc.data() : {};
 
-    if (!botToken) {
-      return res.status(200).send('OK');
-    }
+      const botToken = settings.bot_token || process.env.TELEGRAM_BOT_TOKEN;
+      const websiteUrl = settings.website_url || 'https://automaticgametopup.iceiy.com';
+      const bannerUrl = settings.banner_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
+      
+      // Determine the Mini App URL (Your Vercel deployment URL or production domain)
+      const miniAppUrl = process.env.APP_URL || `https://${req.headers.host}`;
 
-    // 1. EXTRACT REFERRER ID (e.g. from "/start 8960497898")
-    const parts = text.split(' ');
-    const referrerId = (parts.length > 1 && parts[1].trim()) ? parts[1].trim() : null;
+      // Extract referral if present (e.g. /start 123456789)
+      const parts = text.split(' ');
+      const startParam = parts.length > 1 ? parts[1].trim() : null;
 
-    // 2. REGISTER USER (Keep unverified until app launch + channel join)
-    if (chatId) {
-      const tid = String(chatId);
-      const userRef = db.collection('users').doc(tid);
-      const doc = await userRef.get();
-
-      if (!doc.exists) {
-        let validReferrer = null;
-
-        // Verify referrer exists and is not self-referral
-        if (referrerId && referrerId !== tid) {
-          const refDoc = await db.collection('users').doc(referrerId).get();
-          if (refDoc.exists) {
-            validReferrer = referrerId;
-          }
+      // 2. Fetch Bot Info to get the actual Bot Name ({title})
+      let botTitle = "Free Top-Up Bot";
+      try {
+        const getMeRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+        const getMeData = await getMeRes.json();
+        if (getMeData.ok && getMeData.result?.first_name) {
+          botTitle = getMeData.result.first_name;
         }
-
-        await userRef.set({
-          telegram_id: tid,
-          first_name: user?.first_name || '',
-          username: user?.username || '',
-          balance: 0.00,
-          ads_watched: 0,
-          invited_count: 0,
-          referral_earnings: 0.00,
-          referred_by: validReferrer,
-          referral_verified: false, // Must open app & join channel to activate!
-          welcome_sent: true,
-          created_at: new Date().toISOString()
-        });
+      } catch (err) {
+        console.warn("Could not fetch bot name, using default:", err);
       }
-    }
 
-    // 3. SEND WELCOME BANNER & LAUNCH BUTTONS
-    const protocol = req.headers['x-forwarded-proto'] || 'https';
-    const host = req.headers.host;
-    const webAppUrl = `${protocol}://${host}`;
-    const websiteStoreUrl = 'https://automaticgametopup.iceiy.com';
-    const bannerUrl = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
+      // Append referral code to WebApp URL if invited by a friend
+      const webAppUrlWithParam = startParam 
+        ? `${miniAppUrl}/index.html?startapp=${startParam}` 
+        : `${miniAppUrl}/index.html`;
 
-    const caption = `👋 <b>Welcome to Free Top-Up & Game Credits!</b>\n\n` +
-      `⛏️ <b>Earn Free Game Credits & Top-Up:</b>\n` +
-      `⚡ Watch video ads to earn <b>+10.00 PTS</b> each.\n` +
-      `👥 Invite friends to earn <b>10% lifetime commission</b>!\n` +
-      `🎯 Minimum withdrawal: <b>${minWithdraw.toFixed(2)} PTS</b>.\n` +
-      `📢 <i>Make sure to join ${channelId} to activate your account!</i>\n\n` +
-      `Click below to launch the Mini App or visit our website:`;
+      // 3. Caption text with dynamic {title}
+      const captionText = 
+`👋 Welcome to *${botTitle}*!
 
-    const payload = {
-      chat_id: chatId,
-      photo: bannerUrl,
-      caption: caption,
-      parse_mode: 'HTML',
-      reply_markup: {
+🎮 Earn free points by watching ads and invite friends to earn top-up credits.
+
+⚡ Fast, verified, and automated credits for your favorite games!`;
+
+      // 4. Inline Keyboard with "Launch Mini App" (web_app)
+      const replyMarkup = {
         inline_keyboard: [
           [
             {
-              text: '🚀 Launch Top-Up App',
-              web_app: { url: webAppUrl }
+              text: "🚀 Launch Mini App",
+              web_app: { url: webAppUrlWithParam }
             }
           ],
           [
             {
-              text: '🌐 Visit Top-Up Website',
-              url: websiteStoreUrl
+              text: "🛒 Visit Top-Up Store",
+              url: websiteUrl
             }
           ]
         ]
-      }
-    };
+      };
 
-    try {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (err) {
-      console.error('Error sending start message:', err);
+      // 5. Send with Banner (sendPhoto). Fallback to sendMessage if image fails
+      let sentSuccessfully = false;
+
+      if (bannerUrl && bannerUrl.startsWith('http')) {
+        const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            photo: bannerUrl,
+            caption: captionText,
+            parse_mode: 'Markdown',
+            reply_markup: replyMarkup
+          })
+        });
+
+        const photoData = await photoRes.json();
+        if (photoData.ok) {
+          sentSuccessfully = true;
+        } else {
+          console.warn("sendPhoto error from Telegram:", photoData);
+        }
+      }
+
+      // Fallback: If banner image URL is invalid or blocked by Telegram, send regular text
+      if (!sentSuccessfully) {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: captionText,
+            parse_mode: 'Markdown',
+            reply_markup: replyMarkup
+          })
+        });
+      }
+
+    } catch (error) {
+      console.error("Error processing /start:", error);
     }
   }
 
-  return res.status(200).send('OK');
-}
+  return res.status(200).json({ ok: true });
+          }
