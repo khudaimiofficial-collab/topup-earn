@@ -17,6 +17,7 @@
       --card: #0f172a;
       --card-border: rgba(56, 189, 248, 0.12);
       --accent: #38bdf8;
+      --btn-bg: #22c55e;
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
@@ -115,6 +116,7 @@
       align-items: center;
       gap: 8px;
       transition: transform 0.1s ease;
+      text-decoration: none;
     }
 
     .btn:active {
@@ -166,7 +168,7 @@
       color: var(--accent);
     }
 
-    /* Fallback Ad Modal */
+    /* Modals */
     .overlay {
       display: none;
       position: fixed;
@@ -200,7 +202,7 @@
 <body>
 
   <div class="container">
-    <!-- Header component dynamically loaded from header.html -->
+    <!-- Header dynamically loaded from header.html -->
     <div id="header-container"></div>
 
     <!-- Balance Card -->
@@ -235,7 +237,7 @@
       <div class="store-arrow">➔</div>
     </div>
 
-    <!-- Footer component dynamically loaded from footer.html -->
+    <!-- Footer dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
@@ -246,6 +248,25 @@
       <p style="font-size: 12px; color: var(--text-dim); margin-top: 5px;">Sponsored Promotion</p>
       <div class="countdown" id="adTimer">5</div>
       <p style="font-size: 12px; color: var(--text-dim);">Please wait to claim your reward...</p>
+    </div>
+  </div>
+
+  <!-- MANDATORY CHANNEL JOIN MODAL -->
+  <div class="overlay" id="channelModal" style="z-index: 2000;">
+    <div class="modal-box">
+      <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
+      <h3 style="color:#38bdf8;">Join Channel to Unlock</h3>
+      <p style="font-size: 13px; color: var(--text-dim); margin: 8px 0 16px 0; line-height: 1.5;">
+        To activate your account, earn points, and verify your referral, you must join our official channel:
+      </p>
+
+      <a id="btnJoinChannel" href="https://t.me/KhudaimiOfficialStore" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
+        👉 Join @KhudaimiOfficialStore
+      </a>
+
+      <button class="btn btn-watch" id="btnVerifyChannel" onclick="checkVerificationAgain()">
+        ✅ I Have Joined (Verify)
+      </button>
     </div>
   </div>
 
@@ -280,6 +301,7 @@
 
     const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "" };
     let currentBalance = 0.00;
+    let isChannelJoined = false;
 
     // ============================================================
     // LOAD SHARED HEADER & FOOTER
@@ -305,10 +327,9 @@
     });
 
     // ============================================================
-    // LOAD USER DATA & TRACK REFERRAL
+    // LOAD USER DATA & CHECK MEMBERSHIP
     // ============================================================
     function loadUserData() {
-      // Extracts referral ID from startapp or query parameters
       const urlParams = new URLSearchParams(window.location.search);
       const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || urlParams.get('startapp') || null;
 
@@ -329,17 +350,64 @@
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
 
-          // Live bot title synchronization
+          // Bot title synchronization
           if (data.bot_name) {
             sessionStorage.setItem('bot_name', data.bot_name);
             const titleEl = document.getElementById('botTitle');
             if (titleEl) titleEl.innerText = data.bot_name;
           }
+
+          // Check if channel is joined
+          isChannelJoined = Boolean(data.channel_joined);
+
+          if (!isChannelJoined) {
+            const chName = data.channel_id ? data.channel_id.replace('@', '') : 'KhudaimiOfficialStore';
+            document.getElementById('btnJoinChannel').href = `https://t.me/${chName}`;
+            document.getElementById('btnJoinChannel').innerText = `👉 Join @${chName}`;
+            document.getElementById('channelModal').style.display = 'flex';
+          } else {
+            document.getElementById('channelModal').style.display = 'none';
+          }
         }
       })
-      .catch(err => console.error("Error loading user profile:", err));
+      .catch(err => console.error("Error loading profile:", err));
     }
     loadUserData();
+
+    // ============================================================
+    // VERIFY MEMBERSHIP ON CLICK
+    // ============================================================
+    function checkVerificationAgain() {
+      const btn = document.getElementById('btnVerifyChannel');
+      btn.disabled = true;
+      btn.innerText = "Checking Telegram...";
+
+      fetch('/api/check-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.joined === true) {
+          isChannelJoined = true;
+          alert("🎉 Verified! Thank you for joining our channel. You can now earn points!");
+          document.getElementById('channelModal').style.display = 'none';
+          loadUserData();
+        } else {
+          isChannelJoined = false;
+          alert(`❌ You haven't joined ${data.channel_id || '@KhudaimiOfficialStore'} yet!\n\nPlease tap "Join Channel" first, then tap verify.`);
+        }
+      })
+      .catch(() => alert("Failed to check membership. Please try again."))
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "✅ I Have Joined (Verify)";
+      });
+    }
 
     // ============================================================
     // REWARD & AD LOGIC
@@ -382,11 +450,16 @@
     }
 
     function triggerAd() {
+      // Must be channel member to watch ads
+      if (!isChannelJoined) {
+        document.getElementById('channelModal').style.display = 'flex';
+        return alert("⚠️ Please join our Telegram channel first to unlock ads!");
+      }
+
       const btn = document.getElementById('adBtn');
       btn.innerText = "Loading ad...";
       btn.disabled = true;
 
-      // Check Monetag SDK
       if (typeof window.show_11862560 === 'function') {
         window.show_11862560()
           .then(() => giveReward())
