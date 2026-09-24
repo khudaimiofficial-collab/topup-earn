@@ -24,7 +24,22 @@
     .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; }
+    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35); }
+    
+    /* History Styles */
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .history-item { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .history-info { display: flex; flex-direction: column; gap: 3px; }
+    .history-pts { font-size: 16px; font-weight: 800; color: #fff; }
+    .history-email { font-size: 12px; color: var(--text-dim); max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-date { font-size: 10px; color: #64748b; }
+    
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-pending { background: rgba(250, 204, 21, 0.12); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); }
+    .status-approved { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .empty-state { text-align: center; padding: 25px 10px; color: var(--text-dim); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -32,6 +47,7 @@
   <div class="container">
     <div id="header-container"></div>
 
+    <!-- BALANCE CARD -->
     <div class="card" style="text-align: center;">
       <span style="font-size: 12px; color: var(--text-dim); font-weight: 700;">CURRENT BALANCE</span>
       <h2 style="font-size: 38px; font-weight: 900; margin: 4px 0 6px 0; color: #fff;">
@@ -42,6 +58,7 @@
       </p>
     </div>
 
+    <!-- WITHDRAWAL FORM -->
     <div class="card">
       <h3 style="color: var(--accent); margin-bottom: 6px;">Withdraw to Account</h3>
       <p style="font-size: 12px; color: var(--text-dim);">
@@ -53,6 +70,20 @@
       <button class="btn btn-withdraw" id="withdrawSubmitBtn" onclick="processWithdrawal()">
         Submit Withdrawal Request
       </button>
+    </div>
+
+    <!-- WITHDRAWAL HISTORY -->
+    <div class="card">
+      <div class="history-header">
+        <h3 style="color: #fff; font-size: 15px;">📜 Withdrawal History</h3>
+        <button onclick="loadWithdrawalHistory()" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
+          🔄 Refresh
+        </button>
+      </div>
+
+      <div id="historyList">
+        <div class="empty-state">Loading history...</div>
+      </div>
     </div>
 
     <div id="footer-container"></div>
@@ -87,23 +118,66 @@
       document.body.appendChild(s);
     });
 
-    fetch('/api/get-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === 'success') {
-        currentBalance = parseFloat(data.balance);
-        document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
-        if (data.min_withdraw) {
-          minPoints = parseFloat(data.min_withdraw);
-          document.getElementById('minNotice').innerHTML = `Minimum required: <b>${minPoints.toFixed(2)} PTS</b>`;
+    // 1. Fetch user points & minimum required
+    function loadUserData() {
+      fetch('/api/get-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          currentBalance = parseFloat(data.balance);
+          document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+          if (data.min_withdraw) {
+            minPoints = parseFloat(data.min_withdraw);
+            document.getElementById('minNotice').innerHTML = `Minimum required: <b>${minPoints.toFixed(2)} PTS</b>`;
+          }
         }
-      }
-    });
+      });
+    }
+    loadUserData();
 
+    // 2. Fetch withdrawal history
+    function loadWithdrawalHistory() {
+      fetch(`/api/withdraw?telegram_id=${user.id}`)
+        .then(r => r.json())
+        .then(data => {
+          const container = document.getElementById('historyList');
+          if (!data.history || data.history.length === 0) {
+            container.innerHTML = `<div class="empty-state">No withdrawal requests found yet.</div>`;
+            return;
+          }
+
+          container.innerHTML = data.history.map(item => {
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, {
+              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : 'Recent';
+
+            const statusClass = `status-${item.status || 'pending'}`;
+
+            return `
+              <div class="history-item">
+                <div class="history-info">
+                  <span class="history-pts">${Number(item.points).toFixed(2)} PTS</span>
+                  <span class="history-email">${item.email}</span>
+                  <span class="history-date">${dateStr}</span>
+                </div>
+                <span class="status-badge ${statusClass}">
+                  ${(item.status || 'PENDING').toUpperCase()}
+                </span>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(() => {
+          document.getElementById('historyList').innerHTML = `<div class="empty-state">Could not load history.</div>`;
+        });
+    }
+    loadWithdrawalHistory();
+
+    // 3. Process new withdrawal
     function processWithdrawal() {
       const email = document.getElementById('accountEmail').value.trim();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,7 +202,11 @@
       .then(data => {
         if (data.status === 'success') {
           alert(`✅ Withdrawal submitted for ${data.points} PTS!`);
-          location.href = '/profile.html';
+          document.getElementById('accountEmail').value = '';
+          currentBalance = 0.00;
+          document.getElementById('withdrawBalDisplay').innerText = "0.00";
+          // Immediately reload history
+          loadWithdrawalHistory();
         } else {
           alert(data.message || "Failed to submit withdrawal.");
         }
