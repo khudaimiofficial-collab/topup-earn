@@ -1,4 +1,4 @@
-import { db, FieldValue, getBotConfig, sendTelegramMessage } from '../lib/firebase.js';
+import { db, FieldValue, getBotConfig, sendTelegramMessage, checkChannelMember } from '../lib/firebase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -10,9 +10,9 @@ export default async function handler(req, res) {
   const userRef = db.collection('users').doc(tid);
   const doc = await userRef.get();
 
-  const { botToken, minWithdraw } = await getBotConfig();
+  const { botToken, channelId, minWithdraw } = await getBotConfig();
 
-  // Always fetch live bot title from Telegram
+  // 1. Fetch live bot title from Telegram
   let botName = 'AdBoost Earning';
   if (botToken) {
     try {
@@ -21,52 +21,21 @@ export default async function handler(req, res) {
       if (meData.ok && meData.result?.first_name) {
         botName = meData.result.first_name;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('getMe error:', e);
+    }
   }
 
   let userData = doc.exists ? doc.data() : null;
 
-  // Handle new or un-referred user joining through a referral link
-  if ((!doc.exists || !userData.referred_by) && referrer_id && String(referrer_id) !== tid) {
-    const refDoc = await db.collection('users').doc(String(referrer_id)).get();
-    if (refDoc.exists) {
-      const validRef = String(referrer_id);
-
-      if (!doc.exists) {
-        userData = {
-          telegram_id: tid,
-          first_name: first_name || '',
-          username: username || '',
-          balance: 0.00,
-          ads_watched: 0,
-          invited_count: 0,
-          referral_earnings: 0.00,
-          referred_by: validRef,
-          welcome_sent: false,
-          created_at: new Date().toISOString()
-        };
-        await userRef.set(userData);
-      } else {
-        await userRef.update({ referred_by: validRef });
-        userData.referred_by = validRef;
-      }
-
-      // Increment referrer count
-      await db.collection('users').doc(validRef).update({
-        invited_count: FieldValue.increment(1)
-      });
-
-      // Notify referrer
-      await sendTelegramMessage(
-        validRef,
-        `🎉 <b>New Referral!</b> <b>${first_name || 'A friend'}</b> joined using your invite link!\n\n` +
-        `💰 You will earn <b>10% commission (+1.00 PTS)</b> every time they watch an ad!`
-      );
+  // 2. Set up user if first time
+  if (!userData) {
+    let validReferrer = null;
+    if (referrer_id && String(referrer_id) !== tid) {
+      const refDoc = await db.collection('users').doc(String(referrer_id)).get();
+      if (refDoc.exists) validReferrer = String(referrer_id);
     }
-  }
 
-  // Create standard user if doesn't exist
-  if (!doc.exists && !userData) {
     userData = {
       telegram_id: tid,
       first_name: first_name || '',
@@ -75,11 +44,40 @@ export default async function handler(req, res) {
       ads_watched: 0,
       invited_count: 0,
       referral_earnings: 0.00,
-      referred_by: null,
+      referred_by: validReferrer,
+      referral_verified: false,
       welcome_sent: false,
       created_at: new Date().toISOString()
     };
     await userRef.set(userData);
+  } else if (!userData.referred_by && referrer_id && String(referrer_id) !== tid) {
+    // Attach referrer if user entered directly through Mini App referral link
+    const refDoc = await db.collection('users').doc(String(referrer_id)).get();
+    if (refDoc.exists) {
+      userData.referred_by = String(referrer_id);
+      await userRef.update({ referred_by: userData.referred_by });
+    }
+  }
+
+  // 3. CHECK CHANNEL MEMBERSHIP
+  const isChannelJoined = await checkChannelMember(tid);
+
+  // 4. VERIFY REFERRAL (User launched app + User joined the channel)
+  if (isChannelJoined && userData.referred_by && !userData.referral_verified) {
+    userData.referral_verified = true;
+    await userRef.update({ referral_verified: true });
+
+    // Increment referrer's verified invite counter
+    await db.collection('users').doc(userData.referred_by).update({
+      invited_count: FieldValue.increment(1)
+    });
+
+    // Notify the referrer of the successful verification
+    await sendTelegramMessage(
+      userData.referred_by,
+      `🎉 <b>Referral Verified!</b> <b>${first_name || 'A friend'}</b> joined the channel and opened the app!\n\n` +
+      `💰 You will now earn <b>10% commission (+1.00 PTS)</b> on every ad they watch!`
+    );
   }
 
   return res.status(200).json({
@@ -88,6 +86,8 @@ export default async function handler(req, res) {
     ads_watched: Number(userData.ads_watched || 0),
     invited_count: Number(userData.invited_count || 0),
     referral_earnings: Number(userData.referral_earnings || 0),
+    channel_joined: isChannelJoined,
+    channel_id: channelId,
     min_withdraw: minWithdraw,
     bot_name: botName
   });
