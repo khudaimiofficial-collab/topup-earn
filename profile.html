@@ -3,32 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>User Profile - Free Top-Up</title>
+  <title>Profile - Free Top-Up</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #090d16;
-      --card: #131b2e;
-      --card-border: rgba(255, 255, 255, 0.08);
+      --bg: #070a12;
+      --card: #0f172a;
+      --card-border: rgba(56, 189, 248, 0.12);
       --accent: #38bdf8;
-      --btn-bg: #22c55e;
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 95px 14px; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 90px 14px; }
     .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
-    .card { background: var(--card); padding: 22px 18px; border-radius: 18px; border: 1px solid var(--card-border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
-    .profile-header { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .avatar-circle { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: #fff; }
-    .profile-meta h2 { font-size: 16px; font-weight: 800; color: #fff; }
-    .profile-meta span { font-size: 12px; color: var(--text-dim); }
-    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-    .stat-box { background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-    .stat-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
-    .stat-val { font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px; }
+    .card { background: var(--card); padding: 22px 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
+    .avatar-circle { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: #fff; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
     .detail-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
-    .btn-action { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+    .btn-withdraw { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.08); color: #fff; font-weight: 800; cursor: pointer; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -37,47 +29,35 @@
     <div id="header-container"></div>
 
     <div class="card">
-      <div class="profile-header">
-        <div class="avatar-circle" id="avatarLetter">G</div>
-        <div class="profile-meta">
-          <h2 id="profName">Gamer</h2>
-          <span id="profUser">@username</span>
+      <div style="display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div class="avatar-circle" id="profAvatarLetter">G</div>
+        <div>
+          <h2 id="profName" style="font-size: 16px; font-weight: 800;">Gamer</h2>
+          <span id="profUsername" style="font-size: 12px; color: var(--text-dim);">@username</span>
         </div>
       </div>
-
-      <div class="stat-row">
-        <div class="stat-box">
-          <div class="stat-label">Balance</div>
-          <div class="stat-val" style="color: var(--accent);" id="profBalance">0.00 PTS</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Ads Watched</div>
-          <div class="stat-val" style="color: #22c55e;" id="profAds">0</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h4 style="color: var(--accent); margin-bottom: 8px;">Account Details</h4>
 
       <div class="detail-item">
         <span style="color: var(--text-dim);">Telegram ID</span>
-        <code id="profId" style="color: #38bdf8;">-</code>
+        <code id="profId" style="color: var(--accent); font-size: 14px;">-</code>
       </div>
 
       <div class="detail-item">
-        <span style="color: var(--text-dim);">Account Status</span>
-        <span style="color: #22c55e; font-weight: 700;">● Active</span>
+        <span style="color: var(--text-dim);">Total Points</span>
+        <b id="profBalanceDisplay" style="color: #22c55e;">0.00 PTS</b>
+      </div>
+
+      <div class="detail-item">
+        <span style="color: var(--text-dim);">Ads Watched</span>
+        <b id="profAdsDisplay">0</b>
       </div>
 
       <div class="detail-item" style="border-bottom: none;">
-        <span style="color: var(--text-dim);">Store Website</span>
-        <span style="font-size: 12px; color: var(--accent); cursor: pointer;" onclick="tg.openLink('https://automaticgametopup.iceiy.com')">
-          automaticgametopup.iceiy.com ➔
-        </span>
+        <span style="color: var(--text-dim);">Store Portal</span>
+        <span style="font-size: 12px; color: var(--accent); cursor: pointer;" onclick="tg.openLink('https://automaticgametopup.iceiy.com')">automaticgametopup ➔</span>
       </div>
 
-      <button class="btn-action" style="background: rgba(255,255,255,0.08); color: #fff;" onclick="location.href='/withdraw.html'">
+      <button class="btn-withdraw" onclick="location.href='/withdraw.html'">
         💳 Go to Withdrawals
       </button>
     </div>
@@ -95,14 +75,13 @@
     tg.BackButton.show();
     tg.BackButton.onClick(() => { location.href = '/index.html'; });
 
-    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "none" };
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "" };
 
-    document.getElementById('avatarLetter').innerText = (user.first_name || 'G')[0].toUpperCase();
     document.getElementById('profName').innerText = user.first_name || 'Gamer';
-    document.getElementById('profUser').innerText = user.username ? `@${user.username}` : '@no_username';
-    document.getElementById('profId').innerText = user.id || '-';
+    document.getElementById('profAvatarLetter').innerText = (user.first_name || 'G')[0].toUpperCase();
+    document.getElementById('profUsername').innerText = user.username ? `@${user.username}` : '@none';
+    document.getElementById('profId').innerText = user.id;
 
-    // Load Header & Footer
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
       if (user?.first_name) {
@@ -112,9 +91,11 @@
     });
     fetch('/footer.html').then(r => r.text()).then(html => {
       document.getElementById('footer-container').innerHTML = html;
+      const s = document.createElement('script');
+      s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
+      document.body.appendChild(s);
     });
 
-    // Fetch live user stats
     fetch('/api/get-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,8 +104,8 @@
     .then(r => r.json())
     .then(data => {
       if (data.status === 'success') {
-        document.getElementById('profBalance').innerText = `${Number(data.balance).toFixed(2)} PTS`;
-        document.getElementById('profAds').innerText = data.ads_watched;
+        document.getElementById('profBalanceDisplay').innerText = `${Number(data.balance).toFixed(2)} PTS`;
+        document.getElementById('profAdsDisplay').innerText = data.ads_watched;
       }
     });
   </script>
