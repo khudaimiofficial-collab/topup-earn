@@ -10,13 +10,11 @@ export default async function handler(req, res) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes validity
 
-    // Save OTP in Firestore
     await db.collection('settings').doc('admin_auth').set({
       otp,
       expires_at: expiresAt
     }, { merge: true });
 
-    // Send OTP to your Telegram account
     const message = `🔐 <b>Admin Login OTP</b>\n\n` +
                     `Your one-time login code is: <code>${otp}</code>\n\n` +
                     `⏳ Valid for 5 minutes. Do not share this code with anyone.`;
@@ -49,10 +47,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
     }
 
-    // Generate a secure, persistent session token
     const sessionToken = crypto.randomBytes(32).toString('hex');
 
-    // Save session token in Firestore & clear the OTP
     await db.collection('settings').doc('admin_auth').set({
       session_token: sessionToken,
       otp: null,
@@ -71,7 +67,6 @@ export default async function handler(req, res) {
 
   let isAuthorized = false;
 
-  // Verify persistent token from database
   if (clientToken) {
     const authDoc = await db.collection('settings').doc('admin_auth').get();
     if (authDoc.exists && authDoc.data().session_token === clientToken) {
@@ -79,7 +74,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // Fallback to legacy secret if token is not used
   if (!isAuthorized && clientSecret && clientSecret === process.env.ADMIN_PASSWORD) {
     isAuthorized = true;
   }
@@ -170,12 +164,38 @@ export default async function handler(req, res) {
 
     await db.collection('withdrawals').doc(id).update({ status });
 
+    // Fetch active channel ID from settings
+    const configDoc = await db.collection('settings').doc('config').get();
+    const channelId = (configDoc.exists && configDoc.data().channel_id)
+      ? configDoc.data().channel_id
+      : (process.env.CHANNEL_ID || '@KhudaimiOfficialStore');
+
     if (action === 'approve') {
+      // 📩 1. Direct Message to the User
       const approveText = `✅ <b>WITHDRAWAL APPROVED!</b> ✅\n\n` +
         `🎉 Your withdrawal of <b>${Number(requestData.points).toFixed(2)} PTS</b> for <code>${requestData.email}</code> has been approved!\n\n` +
         `🌐 Credits have been added on <b>automaticgametopup.iceiy.com</b>.`;
       await sendTelegramMessage(requestData.telegram_id, approveText);
+
+      // 📢 2. Public Proof Announcement to Log Channel
+      // Mask email for user privacy (e.g. jo***@gmail.com)
+      const emailParts = requestData.email.split('@');
+      const maskedEmail = emailParts[0].length > 2 
+        ? `${emailParts[0].slice(0, 2)}***@${emailParts[1]}` 
+        : requestData.email;
+
+      const channelProofText = `🎉 <b>WITHDRAWAL PAID & APPROVED!</b> 🎉\n\n` +
+        `👤 <b>User ID:</b> <code>${requestData.telegram_id}</code>\n` +
+        `💰 <b>Amount:</b> <b>${Number(requestData.points).toFixed(2)} PTS</b>\n` +
+        `📧 <b>Account:</b> <code>${maskedEmail}</code>\n` +
+        `🌐 <b>Store:</b> automaticgametopup.iceiy.com\n` +
+        `⚡ <b>Status:</b> 🟢 Successfully Credited\n\n` +
+        `🚀 Play and earn free top-ups on @AdBoostEarningBot!`;
+
+      await sendTelegramMessage(channelId, channelProofText);
+
     } else if (action === 'reject') {
+      // Refund points to user balance
       await db.collection('users').doc(requestData.telegram_id).update({
         balance: FieldValue.increment(Number(requestData.points))
       });
