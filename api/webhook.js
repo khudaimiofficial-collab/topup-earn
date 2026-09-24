@@ -23,13 +23,25 @@ export default async function handler(req, res) {
     const botToken = config.botToken || config.bot_token;
     const channelId = config.channelId || config.channel_id || '@KhudaimiOfficialStore';
     const minWithdraw = Number(config.minWithdraw || config.min_withdraw || 50);
-    
-    // 1. DYNAMIC BANNER FROM ADMIN SETTINGS
-    const bannerUrl = (config.bannerUrl || config.banner_url || '').trim() || 
-      'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80';
 
     if (!botToken) {
       return res.status(200).send('OK');
+    }
+
+    // 1. EXTRACT BANNER DIRECTLY FROM ADMIN CONFIG (NO HARDCODED URL)
+    let bannerUrl = (config.banner_url || config.bannerUrl || '').trim();
+
+    // If getBotConfig() only returned specific keys, read directly from the settings doc
+    if (!bannerUrl) {
+      try {
+        const settingsDoc = await db.collection('settings').doc('config').get();
+        if (settingsDoc.exists) {
+          const sData = settingsDoc.data();
+          bannerUrl = (sData?.banner_url || sData?.bannerUrl || '').trim();
+        }
+      } catch (err) {
+        console.warn('Could not read settings doc for banner:', err);
+      }
     }
 
     // 2. EXTRACT REFERRER ID (e.g. from "/start 8960497898")
@@ -69,8 +81,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. GET LIVE BOT NAME FOR {title}
-    let botTitle = "Free Top-Up & Game Credits";
+    // 4. FETCH LIVE BOT NAME FOR {title}
+    let botTitle = 'Pheizu Top-Up';
     try {
       const getMeRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
       const getMe = await getMeRes.json();
@@ -78,7 +90,7 @@ export default async function handler(req, res) {
         botTitle = getMe.result.first_name;
       }
     } catch (e) {
-      console.warn("Could not fetch bot name:", e);
+      console.warn('Could not fetch bot name:', e);
     }
 
     // 5. MINI APP URL (WITH REFERRAL CODE IF PRESENT)
@@ -96,7 +108,7 @@ export default async function handler(req, res) {
       `📢 <i>Make sure to join ${channelId} to activate your account!</i>\n\n` +
       `Click below to launch the Mini App:`;
 
-    // 7. BUTTON REPLACED: ONLY "Launch Mini App"
+    // 7. BUTTON: ONLY "Launch Mini App"
     const replyMarkup = {
       inline_keyboard: [
         [
@@ -108,38 +120,46 @@ export default async function handler(req, res) {
       ]
     };
 
-    const payload = {
-      chat_id: chatId,
-      photo: bannerUrl,
-      caption: caption,
-      parse_mode: 'HTML',
-      reply_markup: replyMarkup
-    };
+    // 8. SEND MESSAGE (SEND PHOTO ONLY IF A VALID BANNER WAS ENTERED IN ADMIN)
+    let photoSent = false;
 
-    try {
-      const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const photoData = await photoRes.json();
-
-      // Fallback: If banner photo URL fails or is rejected by Telegram, send message without failing
-      if (!photoData.ok) {
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    if (bannerUrl && (bannerUrl.startsWith('http://') || bannerUrl.startsWith('https://'))) {
+      try {
+        const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
-            text: caption,
+            photo: bannerUrl,
+            caption: caption,
             parse_mode: 'HTML',
             reply_markup: replyMarkup
           })
         });
+
+        const photoData = await photoRes.json();
+        if (photoData.ok) {
+          photoSent = true;
+        } else {
+          console.warn('Telegram sendPhoto rejected URL:', photoData.description);
+        }
+      } catch (err) {
+        console.error('sendPhoto error:', err);
       }
-    } catch (err) {
-      console.error('Error sending start message:', err);
+    }
+
+    // Fallback: If no banner was configured in Admin panel or Telegram rejected the URL, send as clean text
+    if (!photoSent) {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: caption,
+          parse_mode: 'HTML',
+          reply_markup: replyMarkup
+        })
+      });
     }
   }
 
