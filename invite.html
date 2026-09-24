@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Invite - Free Top-Up</title>
+  <title>Invite Friends - Free Top-Up</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -11,6 +11,7 @@
       --card: #0f172a;
       --card-border: rgba(56, 189, 248, 0.12);
       --accent: #38bdf8;
+      --btn-bg: #22c55e;
       --text: #ffffff;
       --text-dim: #94a3b8;
     }
@@ -18,11 +19,87 @@
     body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 90px 14px; }
     .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
     .card { background: var(--card); padding: 22px 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); text-align: center; }
-    .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #38bdf8; font-size: 13px; font-weight: 700; text-align: center; margin: 12px 0 16px 0; outline: none; }
-    .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px; }
+    
+    .commission-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(56, 189, 248, 0.15));
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #22c55e;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 900;
+      color: #fff;
+      margin-top: 4px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.45);
+      color: #38bdf8;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      margin: 10px 0 14px 0;
+      outline: none;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
     .btn:active { transform: scale(0.97); }
     .btn-blue { background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); }
     .btn-copy { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--card-border); }
+
+    .rule-box {
+      text-align: left;
+      font-size: 12.5px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
   </style>
 </head>
 <body>
@@ -31,13 +108,26 @@
     <div id="header-container"></div>
 
     <div class="card">
-      <div style="font-size: 46px; margin-bottom: 8px;">🎁</div>
-      <h2 style="font-size: 20px; color: #fff;">Invite Friends & Earn</h2>
-      <p style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
-        Share your referral link with gamers to earn free credits together!
+      <span class="commission-badge">🔥 10% Lifetime Earning</span>
+      <h2 style="font-size: 22px; color: #fff;">Invite Friends & Earn</h2>
+      <p style="font-size: 12.5px; color: var(--text-dim); margin-top: 4px;">
+        Earn <b>10% commission (+1.00 PTS)</b> every time your invited friend watches an ad!
       </p>
 
-      <input type="text" id="inviteLinkInput" class="input-field" readonly />
+      <!-- LIVE REFERRAL STATS -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Friends Invited</div>
+          <div class="stat-val" style="color: var(--accent);" id="invitedCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">10% Earnings</div>
+          <div class="stat-val" style="color: #22c55e;" id="referralEarnings">0.00 PTS</div>
+        </div>
+      </div>
+
+      <!-- REFERRAL LINK -->
+      <input type="text" id="inviteLinkInput" class="input-field" readonly value="Loading referral link..." />
 
       <button class="btn btn-blue" onclick="shareInvite()">
         🚀 Share to Telegram Friends
@@ -46,6 +136,11 @@
       <button class="btn btn-copy" onclick="copyInviteLink()">
         📋 Copy Referral Link
       </button>
+
+      <div class="rule-box">
+        <p>• Whenever your friend earns <b>+10.00 PTS</b> from ads, you automatically receive <b>+1.00 PTS</b> credited straight to your balance.</p>
+        <p style="margin-top: 6px;">• No limit! Invite as many friends as you want to maximize passive earnings.</p>
+      </div>
     </div>
 
     <div id="footer-container"></div>
@@ -71,7 +166,13 @@
         const el = document.getElementById('userName');
         if (el) el.innerText = user.first_name;
       }
+      const savedName = sessionStorage.getItem('bot_name');
+      if (savedName) {
+        const titleEl = document.getElementById('botTitle');
+        if (titleEl) titleEl.innerText = savedName;
+      }
     });
+
     fetch('/footer.html').then(r => r.text()).then(html => {
       document.getElementById('footer-container').innerHTML = html;
       const s = document.createElement('script');
@@ -79,15 +180,35 @@
       document.body.appendChild(s);
     });
 
+    // Load Live Invited Stats
+    fetch('/api/get-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        document.getElementById('invitedCount').innerText = data.invited_count || 0;
+        document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
+
+        if (data.bot_name) {
+          sessionStorage.setItem('bot_name', data.bot_name);
+          const titleEl = document.getElementById('botTitle');
+          if (titleEl) titleEl.innerText = data.bot_name;
+        }
+      }
+    });
+
     function copyInviteLink() {
       const input = document.getElementById('inviteLinkInput');
       input.select();
       navigator.clipboard.writeText(input.value);
-      alert("✅ Referral link copied!");
+      alert("✅ Referral link copied to clipboard!");
     }
 
     function shareInvite() {
-      const text = encodeURIComponent("🎮 Earn free top-up & game credits with me on @AdBoostEarningBot!");
+      const text = encodeURIComponent("🎮 Earn free game top-up credits with me! Watch ads and redeem instantly:");
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
       if (tg.openTelegramLink) {
         tg.openTelegramLink(shareUrl);
