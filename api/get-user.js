@@ -10,8 +10,28 @@ export default async function handler(req, res) {
   const userRef = db.collection('users').doc(tid);
   const doc = await userRef.get();
 
-  // Fetch current minimum withdrawal from admin settings
-  const { minWithdraw } = await getBotConfig();
+  // Fetch bot config
+  const { botToken, minWithdraw } = await getBotConfig();
+
+  // Automatically fetch & cache Bot Name from Telegram getMe
+  let botName = 'AdBoost Earning';
+  const configDoc = await db.collection('settings').doc('config').get();
+  const config = configDoc.exists ? configDoc.data() : {};
+
+  if (config.bot_name) {
+    botName = config.bot_name;
+  } else if (botToken) {
+    try {
+      const meRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+      const meData = await meRes.json();
+      if (meData.ok && meData.result?.first_name) {
+        botName = meData.result.first_name;
+        await db.collection('settings').doc('config').set({ bot_name: botName }, { merge: true });
+      }
+    } catch (e) {
+      console.error('Failed to fetch bot title:', e);
+    }
+  }
 
   let userData = {};
 
@@ -32,7 +52,7 @@ export default async function handler(req, res) {
 
   // 📩 Send Welcome / Start message if never sent before
   if (!userData.welcome_sent) {
-    const welcomeHtml = `👋 <b>Welcome to Free Top-Up & Game Credits, ${first_name || 'Gamer'}!</b>\n\n` +
+    const welcomeHtml = `👋 <b>Welcome to ${botName}, ${first_name || 'Gamer'}!</b>\n\n` +
       `🎮 You have successfully launched the app!\n\n` +
       `💎 <b>How to Earn:</b>\n` +
       `• Watch sponsored ads to receive <b>+10.00 PTS</b> per ad.\n` +
@@ -50,6 +70,7 @@ export default async function handler(req, res) {
     status: 'success',
     balance: Number(userData.balance || 0),
     ads_watched: Number(userData.ads_watched || 0),
-    min_withdraw: minWithdraw
+    min_withdraw: minWithdraw,
+    bot_name: botName
   });
 }
