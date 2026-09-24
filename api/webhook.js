@@ -1,6 +1,7 @@
-import { db, FieldValue, getBotConfig, sendTelegramMessage } from '../lib/firebase.js';
+import { db, getBotConfig } from '../lib/firebase.js';
 
 export default async function handler(req, res) {
+  // Always return 200 OK fast so Telegram doesn't queue duplicate calls
   if (req.method !== 'POST') {
     return res.status(200).send('OK');
   }
@@ -16,9 +17,9 @@ export default async function handler(req, res) {
   const text = message.text.trim();
   const user = message.from;
 
-  // Handle /start and /start <referrer_id>
+  // Triggers whenever user sends /start or /start <referrer_id>
   if (text.startsWith('/start')) {
-    const { botToken, minWithdraw } = await getBotConfig();
+    const { botToken, channelId, minWithdraw } = await getBotConfig();
 
     if (!botToken) {
       return res.status(200).send('OK');
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
     const parts = text.split(' ');
     const referrerId = (parts.length > 1 && parts[1].trim()) ? parts[1].trim() : null;
 
-    // 2. REGISTER USER & ATTACH REFERRAL
+    // 2. REGISTER USER (Keep unverified until app launch + channel join)
     if (chatId) {
       const tid = String(chatId);
       const userRef = db.collection('users').doc(tid);
@@ -37,23 +38,11 @@ export default async function handler(req, res) {
       if (!doc.exists) {
         let validReferrer = null;
 
-        // Check if referrer exists and is not self-referral
+        // Verify referrer exists and is not self-referral
         if (referrerId && referrerId !== tid) {
           const refDoc = await db.collection('users').doc(referrerId).get();
           if (refDoc.exists) {
             validReferrer = referrerId;
-
-            // Increment referrer's invited count
-            await db.collection('users').doc(referrerId).update({
-              invited_count: FieldValue.increment(1)
-            });
-
-            // Send instant celebration message to the referrer
-            await sendTelegramMessage(
-              referrerId,
-              `🎉 <b>New Referral!</b> <b>${user?.first_name || 'A friend'}</b> joined using your invite link!\n\n` +
-              `💰 You will earn <b>10% commission (+1.00 PTS)</b> every time they watch an ad!`
-            );
           }
         }
 
@@ -66,13 +55,14 @@ export default async function handler(req, res) {
           invited_count: 0,
           referral_earnings: 0.00,
           referred_by: validReferrer,
+          referral_verified: false, // Must open app & join channel to activate!
           welcome_sent: true,
           created_at: new Date().toISOString()
         });
       }
     }
 
-    // 3. SEND WELCOME BANNER & LAUNCH BUTTON
+    // 3. SEND WELCOME BANNER & LAUNCH BUTTONS
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers.host;
     const webAppUrl = `${protocol}://${host}`;
@@ -84,7 +74,7 @@ export default async function handler(req, res) {
       `⚡ Watch video ads to earn <b>+10.00 PTS</b> each.\n` +
       `👥 Invite friends to earn <b>10% lifetime commission</b>!\n` +
       `🎯 Minimum withdrawal: <b>${minWithdraw.toFixed(2)} PTS</b>.\n` +
-      `🌐 Direct account balance top-up to <b>automaticgametopup.iceiy.com</b>!\n\n` +
+      `📢 <i>Make sure to join ${channelId} to activate your account!</i>\n\n` +
       `Click below to launch the Mini App or visit our website:`;
 
     const payload = {
