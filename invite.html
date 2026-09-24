@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Invite Friends - Free Top-Up</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131b2e;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #38bdf8;
+      --btn-bg: #22c55e;
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 95px 14px; }
+    .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--card); padding: 22px 18px; border-radius: 18px; border: 1px solid var(--card-border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); text-align: center; }
+    .gift-icon { font-size: 48px; margin-bottom: 8px; }
+    .link-box { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.4); color: #38bdf8; font-size: 13px; font-weight: 600; text-align: center; margin: 14px 0; outline: none; }
+    .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-share { background: #2563eb; color: #fff; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+    .btn-copy { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--card-border); }
+    .step-card { display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="header-container"></div>
+
+    <div class="card">
+      <div class="gift-icon">🎁</div>
+      <h2 style="font-size: 22px; color: #fff; margin-bottom: 6px;">Invite Friends & Earn</h2>
+      <p style="font-size: 13px; color: var(--text-dim); line-height: 1.5;">
+        Share your unique referral link to bring your friends to @AdBoostEarningBot!
+      </p>
+
+      <input type="text" id="referralLink" class="link-box" readonly value="Loading invite link..." />
+
+      <button class="btn btn-share" onclick="shareToTelegram()">
+        🚀 Share in Telegram
+      </button>
+
+      <button class="btn btn-copy" onclick="copyLink()">
+        📋 Copy Link
+      </button>
+    </div>
+
+    <div class="card" style="text-align: left;">
+      <h4 style="color: var(--accent); margin-bottom: 8px;">How It Works</h4>
+
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div><b>Send your link:</b> Share your link directly to friends or Telegram groups.</div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div><b>Friends launch the bot:</b> They launch @AdBoostEarningBot with your start link.</div>
+      </div>
+
+      <div class="step-card" style="border-bottom: none;">
+        <div class="step-num">3</div>
+        <div><b>Play & Redeem:</b> Earn free game credits together on automaticgametopup!</div>
+      </div>
+    </div>
+
+    <div id="footer-container"></div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.initData || tg.initData.length === 0) {
+      location.href = '/index.html';
+    }
+    tg.ready();
+    tg.expand();
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => { location.href = '/index.html'; });
+
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
+    const inviteUrl = `https://t.me/AdBoostEarningBot?start=${user.id}`;
+
+    document.getElementById('referralLink').value = inviteUrl;
+
+    // Load Header & Footer
+    fetch('/header.html').then(r => r.text()).then(html => {
+      document.getElementById('header-container').innerHTML = html;
+      if (user?.first_name) {
+        const el = document.getElementById('userName');
+        if (el) el.innerText = user.first_name;
+      }
+    });
+    fetch('/footer.html').then(r => r.text()).then(html => {
+      document.getElementById('footer-container').innerHTML = html;
+    });
+
+    function copyLink() {
+      const input = document.getElementById('referralLink');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert("✅ Link copied to clipboard!");
+    }
+
+    function shareToTelegram() {
+      const text = encodeURIComponent("🎮 Join me to earn free game top-up credits and game passes!");
+      const url = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${text}`;
+      if (tg.openTelegramLink) {
+        tg.openTelegramLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+  </script>
+</body>
+</html>
