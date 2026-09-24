@@ -1,4 +1,4 @@
-import { db, FieldValue, sendTelegramMessage } from '../lib/firebase.js';
+import { db, FieldValue, getBotConfig, sendTelegramMessage } from '../lib/firebase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -9,7 +9,6 @@ export default async function handler(req, res) {
   const tid = String(telegram_id);
   const userRef = db.collection('users').doc(tid);
 
-  // Increment points and ad count atomically
   await userRef.set({
     telegram_id: tid,
     first_name: first_name || '',
@@ -22,17 +21,20 @@ export default async function handler(req, res) {
   const data = updatedDoc.data();
   const newBalance = Number(data.balance);
 
-  // 📩 Send Point Earned Message directly to User
-  const earnText = `⚡ *Reward Credited!* ⚡\n\n` +
-    `🎉 You watched an ad and received *+10.00 PTS*!\n` +
-    `💰 *Current Balance:* \`${newBalance.toFixed(2)} PTS\`\n` +
-    `🎯 Reach 50 PTS to withdraw to *automaticgametopup.iceiy.com*!`;
+  const { minWithdraw } = await getBotConfig();
 
-  await sendTelegramMessage(tid, earnText);
+  // 📩 Send points alert
+  const earnHtml = `⚡ <b>Reward Credited!</b> ⚡\n\n` +
+    `🎉 You earned <b>+10.00 PTS</b>!\n` +
+    `💰 <b>Total Balance:</b> <code>${newBalance.toFixed(2)} PTS</code>\n` +
+    `🎯 Reach ${minWithdraw.toFixed(2)} PTS to withdraw on <b>automaticgametopup.iceiy.com</b>!`;
+
+  await sendTelegramMessage(tid, earnHtml);
 
   return res.status(200).json({
     status: 'success',
     balance: newBalance,
-    ads_watched: Number(data.ads_watched)
+    ads_watched: Number(data.ads_watched),
+    min_withdraw: minWithdraw
   });
 }
