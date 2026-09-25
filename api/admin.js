@@ -19,17 +19,40 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const MASTER_ADMIN_ID = '8960497898';
 
-// ==========================================
+// ============================================================
 // HELPER FUNCTIONS
-// ==========================================
+// ============================================================
 
-// Get App Settings / Bot Token from Firestore
+// Fetch App Settings / Bot Token from Firestore
 async function getAppSettings() {
-  const doc = await db.collection('settings').doc('config').get();
-  return doc.exists ? doc.data() : {};
+  try {
+    const doc = await db.collection('settings').doc('config').get();
+    return doc.exists ? doc.data() : {};
+  } catch (err) {
+    console.error('Error fetching settings:', err);
+    return {};
+  }
 }
 
-// Verify Session Token from request headers
+// Send Telegram Message Helper
+async function sendTelegram(botToken, chatId, text) {
+  if (!botToken || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (err) {
+    console.error('Telegram dispatch error:', err);
+  }
+}
+
+// Verify Admin Session Token
 async function verifyAdminSession(token) {
   if (!token) return false;
   try {
@@ -43,11 +66,11 @@ async function verifyAdminSession(token) {
   }
 }
 
-// ==========================================
-// MAIN API HANDLER
-// ==========================================
+// ============================================================
+// MAIN HANDLER
+// ============================================================
 export default async function handler(req, res) {
-  // Set CORS headers
+  // CORS configuration
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -56,9 +79,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ==========================================
-  // 1. PUBLIC ADMIN AUTHENTICATION (OTP)
-  // ==========================================
+  // ============================================================
+  // 1. PUBLIC AUTHENTICATION (OTP LOGIN)
+  // ============================================================
   if (req.method === 'POST') {
     const { action } = req.body;
 
@@ -72,31 +95,15 @@ export default async function handler(req, res) {
           return res.status(400).json({ success: false, error: 'Telegram Bot Token not configured in settings.' });
         }
 
-        // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Save OTP to Firestore with 5-minute expiry
         await db.collection('admin_auth').doc('latest_otp').set({
           otp: otp,
           expires_at: Date.now() + 5 * 60 * 1000
         });
 
-        // Send OTP to Telegram Master Admin
-        const text = `🔐 *Admin Control Panel Verification*\n\nYour 6-Digit OTP is:\n👉 \`${otp}\`\n\nValid for 5 minutes. Do not share this code.`;
-        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: MASTER_ADMIN_ID,
-            text: text,
-            parse_mode: 'Markdown'
-          })
-        });
-
-        const tgData = await tgRes.json();
-        if (!tgData.ok) {
-          return res.status(400).json({ success: false, error: 'Telegram Error: ' + tgData.description });
-        }
+        const text = `🔐 <b>Admin Control Panel Verification</b>\n\nYour 6-Digit OTP is:\n👉 <code>${otp}</code>\n\nValid for 5 minutes. Do not share this code.`;
+        await sendTelegram(botToken, MASTER_ADMIN_ID, text);
 
         return res.status(200).json({ success: true, message: 'OTP sent to your Telegram account!' });
       } catch (err) {
@@ -104,7 +111,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // B. VERIFY OTP & CREATE SESSION
+    // B. VERIFY OTP & CREATE SESSION TOKEN
     if (action === 'verify_otp') {
       const { otp } = req.body;
       try {
@@ -115,14 +122,13 @@ export default async function handler(req, res) {
 
         const data = otpDoc.data();
         if (Date.now() > data.expires_at) {
-          return res.status(400).json({ success: false, error: 'OTP has expired. Request a new one.' });
+          return res.status(400).json({ success: false, error: 'OTP has expired. Please request a new one.' });
         }
 
         if (String(data.otp).trim() !== String(otp).trim()) {
           return res.status(400).json({ success: false, error: 'Invalid OTP code.' });
         }
 
-        // Delete used OTP
         await db.collection('admin_auth').doc('latest_otp').delete();
 
         // Generate 7-day session token
@@ -139,9 +145,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // ==========================================
-  // 2. PROTECTED ADMIN AUTH CHECK
-  // ==========================================
+  // ============================================================
+  // 2. PROTECTED AUTH CHECK
+  // ============================================================
   const token = req.headers['x-admin-token'];
   const isValidAdmin = await verifyAdminSession(token);
 
@@ -149,20 +155,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or expired admin session' });
   }
 
-  // ==========================================
+  // ============================================================
   // 3. GET REQUESTS (DATA RETRIEVAL)
-  // ==========================================
+  // ============================================================
   if (req.method === 'GET') {
     const { type } = req.query;
 
     try {
-      // 1. App Settings
+      // A. Settings
       if (type === 'settings') {
         const settings = await getAppSettings();
         return res.status(200).json(settings);
       }
 
-      // 2. User Management List
+      // B. User List
       if (type === 'users') {
         const snap = await db.collection('users').limit(300).get();
         const users = snap.docs.map(doc => ({
@@ -172,23 +178,26 @@ export default async function handler(req, res) {
         return res.status(200).json({ users });
       }
 
-      // 3. Top-Up Products & Orders List
+      // C. Products & Top-Up Orders
       if (type === 'products') {
-        const prodSnap = await db.collection('products').orderBy('price', 'asc').get();
-        const products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const prodSnap = await db.collection('products').get();
+        const products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
 
-        const orderSnap = await db.collection('product_orders').orderBy('created_at', 'desc').limit(150).get();
-        const orders = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const orderSnap = await db.collection('product_orders').get();
+        const orders = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
         return res.status(200).json({ products, orders });
       }
 
-      // 4. Default: Withdrawals List
-      const snap = await db.collection('withdrawals').orderBy('created_at', 'desc').limit(200).get();
+      // D. Default: Withdrawal Requests
+      const snap = await db.collection('withdrawals').get();
       const withdrawals = snap.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
       return res.status(200).json({ withdrawals });
 
     } catch (err) {
@@ -196,16 +205,16 @@ export default async function handler(req, res) {
     }
   }
 
-  // ==========================================
+  // ============================================================
   // 4. POST REQUESTS (MANAGEMENT ACTIONS)
-  // ==========================================
+  // ============================================================
   if (req.method === 'POST') {
     const { action } = req.body;
 
     try {
-      // ------------------------------------------
-      // PRODUCTS & ORDERS ACTIONS
-      // ------------------------------------------
+      // ----------------------------------------------------
+      // A. TOP-UP PRODUCTS ACTIONS
+      // ----------------------------------------------------
       if (action === 'add_product') {
         const { title, category, price, input_label, icon } = req.body;
         await db.collection('products').add({
@@ -224,6 +233,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
+      // ----------------------------------------------------
+      // B. ORDER STATUS UPDATE & TELEGRAM NOTIFICATIONS
+      // ----------------------------------------------------
       if (action === 'update_order_status') {
         const { order_id, order_action } = req.body;
         const orderRef = db.collection('product_orders').doc(order_id);
@@ -232,9 +244,36 @@ export default async function handler(req, res) {
         if (!orderDoc.exists) return res.status(404).json({ error: 'Order not found' });
         const orderData = orderDoc.data();
 
+        const settings = await getAppSettings();
+        const botToken = settings.bot_token || process.env.BOT_TOKEN;
+        const channelId = settings.channel_id;
+
+        // Deliver / Approve Order
         if (order_action === 'complete') {
           await orderRef.update({ status: 'completed' });
-        } else if (order_action === 'reject') {
+
+          if (botToken) {
+            // Notification to User
+            const userMsg = `🎉 <b>Order Approved & Delivered!</b>\n\n` +
+              `Your order for <b>${orderData.product_title}</b> has been completed.\n` +
+              `🎮 <b>Account:</b> <code>${orderData.player_info}</code>\n\n` +
+              `Thank you for using our app! Enjoy your top-up. 🚀`;
+            sendTelegram(botToken, orderData.telegram_id, userMsg);
+
+            // Notification to Log Channel
+            if (channelId) {
+              const chMsg = `✅ <b>ORDER APPROVED & DELIVERED</b>\n\n` +
+                `👤 <b>User:</b> <code>${orderData.telegram_id}</code>\n` +
+                `🛍️ <b>Package:</b> ${orderData.product_title}\n` +
+                `🎮 <b>Player UID:</b> <code>${orderData.player_info}</code>\n` +
+                `💰 <b>Points:</b> ${orderData.price_paid} PTS\n` +
+                `⏰ <b>Date:</b> ${new Date().toLocaleString()}`;
+              sendTelegram(botToken, channelId, chMsg);
+            }
+          }
+        } 
+        // Reject & Refund Order
+        else if (order_action === 'reject') {
           // Refund points back to user
           const userRef = db.collection('users').doc(String(orderData.telegram_id));
           const userDoc = await userRef.get();
@@ -242,14 +281,35 @@ export default async function handler(req, res) {
             const currentBal = Number(userDoc.data().balance || 0);
             await userRef.update({ balance: currentBal + Number(orderData.price_paid || 0) });
           }
+
           await orderRef.update({ status: 'rejected' });
+
+          if (botToken) {
+            // Notification to User
+            const userMsg = `❌ <b>Order Update: Rejected & Refunded</b>\n\n` +
+              `Your order for <b>${orderData.product_title}</b> could not be completed.\n` +
+              `💰 <b>${orderData.price_paid} PTS</b> have been refunded back to your balance.`;
+            sendTelegram(botToken, orderData.telegram_id, userMsg);
+
+            // Notification to Log Channel
+            if (channelId) {
+              const chMsg = `❌ <b>ORDER REJECTED & REFUNDED</b>\n\n` +
+                `👤 <b>User:</b> <code>${orderData.telegram_id}</code>\n` +
+                `🛍️ <b>Package:</b> ${orderData.product_title}\n` +
+                `🎮 <b>Player UID:</b> <code>${orderData.player_info}</code>\n` +
+                `💰 <b>Refunded:</b> ${orderData.price_paid} PTS\n` +
+                `⏰ <b>Date:</b> ${new Date().toLocaleString()}`;
+              sendTelegram(botToken, channelId, chMsg);
+            }
+          }
         }
+
         return res.status(200).json({ success: true });
       }
 
-      // ------------------------------------------
-      // WITHDRAWAL ACTIONS
-      // ------------------------------------------
+      // ----------------------------------------------------
+      // C. WITHDRAWAL APPROVAL & REJECTION
+      // ----------------------------------------------------
       if (req.body.id && (req.body.action === 'approve' || req.body.action === 'reject')) {
         const { id, action } = req.body;
         const withdrawRef = db.collection('withdrawals').doc(id);
@@ -258,24 +318,57 @@ export default async function handler(req, res) {
         if (!withdrawDoc.exists) return res.status(404).json({ error: 'Request not found' });
         const withdrawData = withdrawDoc.data();
 
+        const settings = await getAppSettings();
+        const botToken = settings.bot_token || process.env.BOT_TOKEN;
+        const channelId = settings.channel_id;
+
         if (action === 'approve') {
           await withdrawRef.update({ status: 'approved' });
+
+          if (botToken) {
+            const userMsg = `✅ <b>Withdrawal Approved!</b>\n\n` +
+              `Your withdrawal request of <b>${withdrawData.points} PTS</b> has been approved and credited to: <code>${withdrawData.email}</code>.`;
+            sendTelegram(botToken, withdrawData.telegram_id, userMsg);
+
+            if (channelId) {
+              const chMsg = `💳 <b>WITHDRAWAL APPROVED</b>\n\n` +
+                `👤 <b>User:</b> <code>${withdrawData.telegram_id}</code>\n` +
+                `📧 <b>Email:</b> <code>${withdrawData.email}</code>\n` +
+                `💰 <b>Points:</b> ${withdrawData.points} PTS`;
+              sendTelegram(botToken, channelId, chMsg);
+            }
+          }
         } else if (action === 'reject') {
-          // Refund points to user balance
+          // Refund points back to user balance
           const userRef = db.collection('users').doc(String(withdrawData.telegram_id));
           const userDoc = await userRef.get();
           if (userDoc.exists) {
             const currentBal = Number(userDoc.data().balance || 0);
             await userRef.update({ balance: currentBal + Number(withdrawData.points || 0) });
           }
+
           await withdrawRef.update({ status: 'rejected' });
+
+          if (botToken) {
+            const userMsg = `❌ <b>Withdrawal Rejected & Refunded</b>\n\n` +
+              `Your withdrawal request of <b>${withdrawData.points} PTS</b> was rejected. The points have been refunded to your balance.`;
+            sendTelegram(botToken, withdrawData.telegram_id, userMsg);
+
+            if (channelId) {
+              const chMsg = `❌ <b>WITHDRAWAL REJECTED</b>\n\n` +
+                `👤 <b>User:</b> <code>${withdrawData.telegram_id}</code>\n` +
+                `💰 <b>Refunded:</b> ${withdrawData.points} PTS`;
+              sendTelegram(botToken, channelId, chMsg);
+            }
+          }
         }
+
         return res.status(200).json({ success: true });
       }
 
-      // ------------------------------------------
-      // USER MANAGEMENT ACTIONS
-      // ------------------------------------------
+      // ----------------------------------------------------
+      // D. USER MANAGEMENT ACTIONS
+      // ----------------------------------------------------
       if (action === 'add_user') {
         const { telegram_id, first_name, username, balance } = req.body;
         await db.collection('users').doc(String(telegram_id)).set({
@@ -312,9 +405,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // ------------------------------------------
-      // SETTINGS & WEBHOOK ACTIONS
-      // ------------------------------------------
+      // ----------------------------------------------------
+      // E. SETTINGS & WEBHOOK ACTIONS
+      // ----------------------------------------------------
       if (action === 'save_settings') {
         const { bot_token, channel_id, min_withdraw, website_url, banner_url } = req.body;
         await db.collection('settings').doc('config').set({
