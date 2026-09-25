@@ -64,9 +64,9 @@
     .modal-box { background: var(--card); width: 100%; max-width: 360px; padding: 22px; border-radius: 20px; border: 1px solid var(--accent); }
     .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 14px; margin: 12px 0 16px 0; outline: none; }
     .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-    .status-pending { background: rgba(250, 204, 21, 0.12); color: #facc15; }
-    .status-completed { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-    .status-rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .status-pending { background: rgba(250, 204, 21, 0.12); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); }
+    .status-completed { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
   </style>
 </head>
 <body>
@@ -99,7 +99,10 @@
 
     <!-- User Orders List -->
     <div id="viewOrders" class="card" style="display: none;">
-      <h3 style="font-size: 15px; margin-bottom: 12px; color: #fff;">My Order History</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3 style="font-size: 15px; color: #fff;">My Order History</h3>
+        <button onclick="loadMyOrders()" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">🔄 Refresh</button>
+      </div>
       <div id="myOrdersContainer">Loading orders...</div>
     </div>
 
@@ -130,14 +133,24 @@
     tg.BackButton.show();
     tg.BackButton.onClick(() => { location.href = '/index.html'; });
 
-    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "" };
     let currentBalance = 0.00;
     let selectedProduct = null;
 
+    // Synchronize Header
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
-      if (user?.first_name) document.getElementById('userName').innerText = user.first_name;
+      if (user?.first_name) {
+        const uEl = document.getElementById('userName');
+        if (uEl) uEl.innerText = user.first_name;
+      }
+      const savedName = sessionStorage.getItem('bot_name');
+      if (savedName) {
+        const titleEl = document.getElementById('botTitle');
+        if (titleEl) titleEl.innerText = savedName;
+      }
     });
+
     fetch('/footer.html').then(r => r.text()).then(html => {
       document.getElementById('footer-container').innerHTML = html;
       const s = document.createElement('script');
@@ -149,13 +162,18 @@
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id })
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
       })
       .then(r => r.json())
       .then(d => {
         if (d.status === 'success') {
           currentBalance = parseFloat(d.balance || 0);
           document.getElementById('userBal').innerText = currentBalance.toFixed(2);
+          if (d.bot_name) {
+            sessionStorage.setItem('bot_name', d.bot_name);
+            const titleEl = document.getElementById('botTitle');
+            if (titleEl) titleEl.innerText = d.bot_name;
+          }
         }
       });
     }
@@ -226,14 +244,14 @@
           body: JSON.stringify({
             action: 'buy_product',
             product_id: selectedProduct.id,
-            telegram_id: user.id,
+            telegram_id: String(user.id),
             player_info: playerInfo
           })
         });
 
         const data = await res.json();
         if (data.success) {
-          alert("🎉 Order placed successfully! The admin will fulfill your top-up shortly.");
+          alert("🎉 Order placed successfully! Check your bot messages for updates.");
           closeModal('orderModal');
           tg.HapticFeedback?.notificationOccurred('success');
           loadUser();
@@ -251,13 +269,13 @@
 
     async function loadMyOrders() {
       const container = document.getElementById('myOrdersContainer');
-      container.innerHTML = 'Loading orders...';
+      container.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:15px;">Loading orders...</div>';
 
       try {
         const res = await fetch(`/api/shop?action=my_orders&telegram_id=${user.id}`);
         const data = await res.json();
 
-        if (!data.orders?.length) {
+        if (!data.orders || data.orders.length === 0) {
           container.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px;">You haven't placed any orders yet.</div>`;
           return;
         }
@@ -268,12 +286,15 @@
               <b style="font-size:13px; color:#fff;">${o.product_title}</b>
               <span class="status-badge status-${o.status}">${o.status.toUpperCase()}</span>
             </div>
-            <div style="font-size:12px; color:var(--text-dim);">Player Info: <b style="color:#38bdf8;">${o.player_info}</b></div>
-            <div style="font-size:10px; color:#64748b; margin-top:4px;">${new Date(o.created_at).toLocaleString()}</div>
+            <div style="font-size:12px; color:var(--text-dim); margin: 3px 0;">Account: <b style="color:#38bdf8;">${o.player_info}</b></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-top:4px;">
+              <span>Price: <b style="color:#22c55e;">${Number(o.price_paid || 0).toFixed(2)} PTS</b></span>
+              <span>${new Date(o.created_at).toLocaleDateString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+            </div>
           </div>
         `).join('');
       } catch (e) {
-        container.innerHTML = 'Failed to load orders.';
+        container.innerHTML = '<div style="text-align:center; color:#ef4444; padding:15px;">Failed to load orders.</div>';
       }
     }
 
