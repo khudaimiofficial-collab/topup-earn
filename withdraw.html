@@ -16,25 +16,57 @@
       --text-dim: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 90px 14px; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 95px 14px; }
     .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
     .card { background: var(--card); padding: 22px 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
-    .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 14px; margin: 12px 0 16px 0; outline: none; }
+
+    .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
+    .form-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+    .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 14px; outline: none; }
     .input-field:focus { border-color: var(--accent); }
+
+    /* Quick Chips */
+    .chip-row { display: flex; gap: 8px; margin-top: 6px; }
+    .chip-btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--accent);
+      padding: 8px 4px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chip-btn:active { background: rgba(56, 189, 248, 0.2); }
+
     .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.1s ease; }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35); }
+    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35); margin-top: 8px; }
+
+    /* History & Pagination */
     .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .history-item { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .history-pts { font-size: 16px; font-weight: 800; color: #fff; }
-    .history-email { font-size: 12px; color: var(--text-dim); max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .history-pts { font-size: 15px; font-weight: 800; color: #fff; }
+    .history-email { font-size: 12px; color: var(--text-dim); max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
     .history-date { font-size: 10px; color: #64748b; }
-    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    
+    .status-badge { padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
     .status-pending { background: rgba(250, 204, 21, 0.12); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3); }
     .status-approved { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
     .status-rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
     .empty-state { text-align: center; padding: 25px 10px; color: var(--text-dim); font-size: 13px; }
+
+    /* Pagination controls */
+    .pagination-box { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .page-btn { background: rgba(255, 255, 255, 0.07); border: 1px solid var(--card-border); color: #fff; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -42,6 +74,7 @@
   <div class="container">
     <div id="header-container"></div>
 
+    <!-- Balance Banner -->
     <div class="card" style="text-align: center;">
       <span style="font-size: 12px; color: var(--text-dim); font-weight: 700;">CURRENT BALANCE</span>
       <h2 style="font-size: 38px; font-weight: 900; margin: 4px 0 6px 0; color: #fff;">
@@ -52,19 +85,37 @@
       </p>
     </div>
 
+    <!-- Withdrawal Form -->
     <div class="card">
-      <h3 style="color: var(--accent); margin-bottom: 6px;">Withdraw to Account</h3>
-      <p style="font-size: 12px; color: var(--text-dim);">
-        Enter your registered email on <b>automaticgametopup.iceiy.com</b>:
+      <h3 style="color: var(--accent); margin-bottom: 4px;">Withdraw to Account</h3>
+      <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 14px;">
+        Payout directly to your registered <b>automaticgametopup.iceiy.com</b> account:
       </p>
 
-      <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
+      <div class="form-group">
+        <label class="form-label">Registered Account Email:</label>
+        <input type="email" id="accountEmail" class="input-field" placeholder="your-email@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" id="amountLabel">Amount (PTS):</label>
+        <input type="number" id="withdrawAmount" class="input-field" placeholder="Enter amount" min="50" step="1" />
+        
+        <!-- Dynamic Quick Chips (Starts at Min Point and Above) -->
+        <div class="chip-row">
+          <button type="button" class="chip-btn" id="chipMin" onclick="setQuickAmount('min')">MIN</button>
+          <button type="button" class="chip-btn" id="chipMid1" onclick="setQuickAmount('mid1')">--</button>
+          <button type="button" class="chip-btn" id="chipMid2" onclick="setQuickAmount('mid2')">--</button>
+          <button type="button" class="chip-btn" id="chipMax" onclick="setQuickAmount('max')">MAX</button>
+        </div>
+      </div>
 
       <button class="btn btn-withdraw" id="withdrawSubmitBtn" onclick="processWithdrawal()">
         Submit Withdrawal Request
       </button>
     </div>
 
+    <!-- Withdrawal History with 10 Items Pagination -->
     <div class="card">
       <div class="history-header">
         <h3 style="color: #fff; font-size: 15px;">📜 Withdrawal History</h3>
@@ -75,6 +126,13 @@
 
       <div id="historyList">
         <div class="empty-state">Loading history...</div>
+      </div>
+
+      <!-- Pagination Box (10 Per Page) -->
+      <div class="pagination-box" id="paginationBox" style="display: none;">
+        <button id="prevBtn" class="page-btn" onclick="changePage(-1)">← Prev</button>
+        <span id="pageIndicator" style="font-size: 12px; color: var(--text-dim); font-weight: 700;">Page 1 of 1</span>
+        <button id="nextBtn" class="page-btn" onclick="changePage(1)">Next →</button>
       </div>
     </div>
 
@@ -95,6 +153,12 @@
     let currentBalance = 0.00;
     let minPoints = 50.00;
 
+    // Pagination State (10 per page)
+    let allHistory = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    // Load Header & Footer
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
       if (user?.first_name) {
@@ -115,6 +179,23 @@
       document.body.appendChild(s);
     });
 
+    function updateMinPointsUI() {
+      document.getElementById('minNotice').innerHTML = `Minimum required: <b>${minPoints.toFixed(2)} PTS</b>`;
+      const input = document.getElementById('withdrawAmount');
+      input.min = minPoints;
+      input.placeholder = `Min: ${minPoints.toFixed(0)} PTS or above`;
+
+      // Calculate dynamic tiers starting from minimum point and scaling upward
+      const tier1 = minPoints;
+      const tier2 = Math.round(minPoints * 1.5) > minPoints ? Math.round(minPoints * 1.5) : minPoints + 25;
+      const tier3 = Math.round(minPoints * 2) > tier2 ? Math.round(minPoints * 2) : minPoints + 50;
+
+      document.getElementById('chipMin').innerText = `MIN (${tier1.toFixed(0)})`;
+      document.getElementById('chipMid1').innerText = `${tier2}`;
+      document.getElementById('chipMid2').innerText = `${tier3}`;
+      document.getElementById('chipMax').innerText = 'MAX';
+    }
+
     function loadUserData() {
       fetch('/api/get-user', {
         method: 'POST',
@@ -124,12 +205,13 @@
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          currentBalance = parseFloat(data.balance);
+          currentBalance = parseFloat(data.balance || 0);
           document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
           if (data.min_withdraw) {
             minPoints = parseFloat(data.min_withdraw);
-            document.getElementById('minNotice').innerHTML = `Minimum required: <b>${minPoints.toFixed(2)} PTS</b>`;
           }
+          updateMinPointsUI();
+
           if (data.bot_name) {
             sessionStorage.setItem('bot_name', data.bot_name);
             const titleEl = document.getElementById('botTitle');
@@ -140,52 +222,112 @@
     }
     loadUserData();
 
+    // Quick Amount Selector dynamically based on minPoints
+    function setQuickAmount(type) {
+      const input = document.getElementById('withdrawAmount');
+      const tier2 = Math.round(minPoints * 1.5) > minPoints ? Math.round(minPoints * 1.5) : minPoints + 25;
+      const tier3 = Math.round(minPoints * 2) > tier2 ? Math.round(minPoints * 2) : minPoints + 50;
+
+      if (type === 'min') {
+        input.value = minPoints;
+      } else if (type === 'mid1') {
+        input.value = tier2;
+      } else if (type === 'mid2') {
+        input.value = tier3;
+      } else if (type === 'max') {
+        input.value = Math.floor(currentBalance);
+      }
+    }
+
+    // Load History
     function loadWithdrawalHistory() {
       fetch(`/api/withdraw?telegram_id=${user.id}`)
         .then(r => r.json())
         .then(data => {
-          const container = document.getElementById('historyList');
-          if (!data.history || data.history.length === 0) {
-            container.innerHTML = `<div class="empty-state">No withdrawal requests found yet.</div>`;
-            return;
-          }
-
-          container.innerHTML = data.history.map(item => {
-            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, {
-              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            }) : 'Recent';
-
-            const statusClass = `status-${item.status || 'pending'}`;
-
-            return `
-              <div class="history-item">
-                <div>
-                  <div class="history-pts">${Number(item.points).toFixed(2)} PTS</div>
-                  <div class="history-email">${item.email}</div>
-                  <div class="history-date">${dateStr}</div>
-                </div>
-                <span class="status-badge ${statusClass}">
-                  ${(item.status || 'PENDING').toUpperCase()}
-                </span>
-              </div>
-            `;
-          }).join('');
+          allHistory = data.history || [];
+          currentPage = 1;
+          renderHistory();
         })
         .catch(() => {
           document.getElementById('historyList').innerHTML = `<div class="empty-state">Could not load history.</div>`;
+          document.getElementById('paginationBox').style.display = 'none';
         });
     }
     loadWithdrawalHistory();
 
+    // Render 10 Items per Page
+    function renderHistory() {
+      const container = document.getElementById('historyList');
+      const pageBox = document.getElementById('paginationBox');
+
+      if (!allHistory.length) {
+        container.innerHTML = `<div class="empty-state">No withdrawal requests found yet.</div>`;
+        pageBox.style.display = 'none';
+        return;
+      }
+
+      const totalPages = Math.ceil(allHistory.length / itemsPerPage);
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const visibleItems = allHistory.slice(startIndex, startIndex + itemsPerPage);
+
+      container.innerHTML = visibleItems.map(item => {
+        const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : 'Recent';
+
+        const statusClass = `status-${item.status || 'pending'}`;
+
+        return `
+          <div class="history-item">
+            <div>
+              <div class="history-pts">${Number(item.points).toFixed(2)} PTS</div>
+              <div class="history-email">${item.email}</div>
+              <div class="history-date">${dateStr}</div>
+            </div>
+            <span class="status-badge ${statusClass}">
+              ${(item.status || 'PENDING').toUpperCase()}
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      // Update Pagination Controls
+      if (totalPages > 1) {
+        pageBox.style.display = 'flex';
+        document.getElementById('pageIndicator').innerText = `Page ${currentPage} of ${totalPages} (${allHistory.length} total)`;
+        document.getElementById('prevBtn').disabled = (currentPage === 1);
+        document.getElementById('nextBtn').disabled = (currentPage === totalPages);
+      } else {
+        pageBox.style.display = 'none';
+      }
+    }
+
+    function changePage(direction) {
+      currentPage += direction;
+      renderHistory();
+    }
+
+    // Process Withdrawal
     function processWithdrawal() {
       const email = document.getElementById('accountEmail').value.trim();
+      const amountInput = document.getElementById('withdrawAmount').value.trim();
+      const amount = parseFloat(amountInput);
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      if (currentBalance < minPoints) {
-        return alert(`You need at least ${minPoints.toFixed(2)} PTS to withdraw.`);
-      }
       if (!email || !emailRegex.test(email)) {
         return alert("Please enter a valid registered email address.");
+      }
+      if (isNaN(amount) || amount <= 0) {
+        return alert(`Please enter points amount starting from minimum (${minPoints.toFixed(2)} PTS) and above.`);
+      }
+      if (amount < minPoints) {
+        return alert(`Minimum required withdrawal is ${minPoints.toFixed(2)} PTS. Please enter ${minPoints.toFixed(2)} or above.`);
+      }
+      if (amount > currentBalance) {
+        return alert(`Insufficient points balance! You only have ${currentBalance.toFixed(2)} PTS.`);
       }
 
       const btn = document.getElementById('withdrawSubmitBtn');
@@ -195,20 +337,26 @@
       fetch('/api/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, email: email })
+        body: JSON.stringify({
+          telegram_id: String(user.id),
+          email: email,
+          amount: amount
+        })
       })
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          alert(`✅ Withdrawal submitted for ${data.points} PTS!`);
-          document.getElementById('accountEmail').value = '';
-          currentBalance = 0.00;
-          document.getElementById('withdrawBalDisplay').innerText = "0.00";
+          alert(`✅ Withdrawal submitted for ${amount.toFixed(2)} PTS!`);
+          document.getElementById('withdrawAmount').value = '';
+          currentBalance -= amount;
+          document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+          tg.HapticFeedback?.notificationOccurred('success');
           loadWithdrawalHistory();
         } else {
           alert(data.message || "Failed to submit withdrawal.");
         }
       })
+      .catch(() => alert("Failed to connect to server."))
       .finally(() => {
         btn.disabled = false;
         btn.innerText = "Submit Withdrawal Request";
