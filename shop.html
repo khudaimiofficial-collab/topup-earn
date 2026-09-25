@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Top-Up Store</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #070a12;
+      --card: #0f172a;
+      --card-border: rgba(56, 189, 248, 0.12);
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --text: #ffffff;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 95px 14px; }
+    .container { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+    .card { background: var(--card); padding: 18px; border-radius: 20px; border: 1px solid var(--card-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
+
+    .store-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; }
+    .tab-btn { flex: 1; padding: 10px; font-weight: 700; font-size: 13px; text-align: center; border-radius: 8px; cursor: pointer; color: var(--text-dim); border: none; background: transparent; }
+    .tab-btn.active { background: var(--accent); color: #042f2e; }
+
+    .prod-item {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .prod-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .prod-details h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
+    .prod-price { font-size: 13px; color: var(--accent); font-weight: 800; }
+    .btn-buy {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #052e16;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+    .modal-box { background: var(--card); width: 100%; max-width: 360px; padding: 22px; border-radius: 20px; border: 1px solid var(--accent); }
+    .input-field { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.45); color: #fff; font-size: 14px; margin: 12px 0 16px 0; outline: none; }
+    .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .status-pending { background: rgba(250, 204, 21, 0.12); color: #facc15; }
+    .status-completed { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+    .status-rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="header-container"></div>
+
+    <!-- Balance Banner -->
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Available Balance</div>
+        <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 2px;">
+          <span id="userBal">0.00</span> <span style="font-size: 14px; color: var(--accent);">PTS</span>
+        </div>
+      </div>
+      <button onclick="location.href='/index.html'" style="background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 10px; font-weight: 700; font-size: 12px;">+ Earn PTS</button>
+    </div>
+
+    <!-- Store Switcher -->
+    <div class="store-tabs">
+      <button class="tab-btn active" id="tabStore" onclick="switchStoreView('store')">💎 Top-Up Items</button>
+      <button class="tab-btn" id="tabOrders" onclick="switchStoreView('orders')">📜 My Orders</button>
+    </div>
+
+    <!-- Product List -->
+    <div id="viewStore" class="card">
+      <h3 style="font-size: 15px; margin-bottom: 12px; color: #fff;">Available Packages</h3>
+      <div id="productsContainer">Loading products...</div>
+    </div>
+
+    <!-- User Orders List -->
+    <div id="viewOrders" class="card" style="display: none;">
+      <h3 style="font-size: 15px; margin-bottom: 12px; color: #fff;">My Order History</h3>
+      <div id="myOrdersContainer">Loading orders...</div>
+    </div>
+
+    <div id="footer-container"></div>
+  </div>
+
+  <!-- PURCHASE INPUT MODAL -->
+  <div class="overlay" id="orderModal">
+    <div class="modal-box">
+      <h3 style="color: #fff;" id="orderModalTitle">Product Name</h3>
+      <p style="font-size: 12px; color: var(--text-dim); margin-top: 4px;" id="orderModalPrice">Cost: 50.00 PTS</p>
+      
+      <label id="orderInputLabel" style="display:block; font-size: 11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; margin-top:14px;">Enter Player ID:</label>
+      <input type="text" id="orderPlayerInput" class="input-field" placeholder="e.g. 12345678 (1234)">
+
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-buy" style="flex: 2; padding: 14px;" id="btnConfirmOrder" onclick="submitProductOrder()">Confirm & Order</button>
+        <button style="flex: 1; background: rgba(255,255,255,0.08); border: none; color: #fff; border-radius: 10px; font-weight: 700; cursor: pointer;" onclick="closeModal('orderModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.initData || tg.initData.length === 0) location.href = '/index.html';
+    tg.ready();
+    tg.expand();
+    tg.BackButton.show();
+    tg.BackButton.onClick(() => { location.href = '/index.html'; });
+
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer" };
+    let currentBalance = 0.00;
+    let selectedProduct = null;
+
+    fetch('/header.html').then(r => r.text()).then(html => {
+      document.getElementById('header-container').innerHTML = html;
+      if (user?.first_name) document.getElementById('userName').innerText = user.first_name;
+    });
+    fetch('/footer.html').then(r => r.text()).then(html => {
+      document.getElementById('footer-container').innerHTML = html;
+      const s = document.createElement('script');
+      s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
+      document.body.appendChild(s);
+    });
+
+    function loadUser() {
+      fetch('/api/get-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: user.id })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.status === 'success') {
+          currentBalance = parseFloat(d.balance || 0);
+          document.getElementById('userBal').innerText = currentBalance.toFixed(2);
+        }
+      });
+    }
+    loadUser();
+
+    function switchStoreView(view) {
+      document.getElementById('tabStore').classList.toggle('active', view === 'store');
+      document.getElementById('tabOrders').classList.toggle('active', view === 'orders');
+      document.getElementById('viewStore').style.display = view === 'store' ? 'block' : 'none';
+      document.getElementById('viewOrders').style.display = view === 'orders' ? 'block' : 'none';
+      if (view === 'orders') loadMyOrders();
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/shop?action=get_products');
+        const data = await res.json();
+        const container = document.getElementById('productsContainer');
+        if (!data.products?.length) {
+          container.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px;">No top-up packages available yet.</div>`;
+          return;
+        }
+
+        container.innerHTML = data.products.map(p => `
+          <div class="prod-item">
+            <div class="prod-icon">${p.icon || '💎'}</div>
+            <div class="prod-details">
+              <h4>${p.title}</h4>
+              <div class="prod-price">${Number(p.price).toFixed(2)} PTS</div>
+              <span style="font-size:11px; color:#94a3b8;">${p.category}</span>
+            </div>
+            <button class="btn-buy" onclick='openOrderModal(${JSON.stringify(p)})'>
+              Order
+            </button>
+          </div>
+        `).join('');
+      } catch (e) {
+        document.getElementById('productsContainer').innerHTML = 'Failed to load products.';
+      }
+    }
+    loadProducts();
+
+    function openOrderModal(prod) {
+      if (currentBalance < Number(prod.price)) {
+        return alert(`❌ Insufficient balance! You need ${prod.price} PTS for this item.`);
+      }
+      selectedProduct = prod;
+      document.getElementById('orderModalTitle').innerText = prod.title;
+      document.getElementById('orderModalPrice').innerText = `Cost: ${Number(prod.price).toFixed(2)} PTS`;
+      document.getElementById('orderInputLabel').innerText = `Enter ${prod.input_label || 'Player ID'}:`;
+      document.getElementById('orderPlayerInput').value = '';
+      document.getElementById('orderPlayerInput').placeholder = `Your ${prod.input_label || 'Player ID'}`;
+      document.getElementById('orderModal').style.display = 'flex';
+    }
+
+    async function submitProductOrder() {
+      const playerInfo = document.getElementById('orderPlayerInput').value.trim();
+      if (!playerInfo) return alert("Please enter your Player ID / info!");
+
+      const btn = document.getElementById('btnConfirmOrder');
+      btn.disabled = true;
+      btn.innerText = "Ordering...";
+
+      try {
+        const res = await fetch('/api/shop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'buy_product',
+            product_id: selectedProduct.id,
+            telegram_id: user.id,
+            player_info: playerInfo
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert("🎉 Order placed successfully! The admin will fulfill your top-up shortly.");
+          closeModal('orderModal');
+          tg.HapticFeedback?.notificationOccurred('success');
+          loadUser();
+          switchStoreView('orders');
+        } else {
+          alert('❌ ' + (data.error || 'Failed to place order'));
+        }
+      } catch (err) {
+        alert('Server error processing order.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Confirm & Order";
+      }
+    }
+
+    async function loadMyOrders() {
+      const container = document.getElementById('myOrdersContainer');
+      container.innerHTML = 'Loading orders...';
+
+      try {
+        const res = await fetch(`/api/shop?action=my_orders&telegram_id=${user.id}`);
+        const data = await res.json();
+
+        if (!data.orders?.length) {
+          container.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px;">You haven't placed any orders yet.</div>`;
+          return;
+        }
+
+        container.innerHTML = data.orders.map(o => `
+          <div style="background:rgba(0,0,0,0.35); padding:12px; border-radius:14px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <b style="font-size:13px; color:#fff;">${o.product_title}</b>
+              <span class="status-badge status-${o.status}">${o.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-dim);">Player Info: <b style="color:#38bdf8;">${o.player_info}</b></div>
+            <div style="font-size:10px; color:#64748b; margin-top:4px;">${new Date(o.created_at).toLocaleString()}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = 'Failed to load orders.';
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+  </script>
+</body>
+</html>
