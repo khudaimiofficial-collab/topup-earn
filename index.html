@@ -134,6 +134,12 @@
       box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35);
     }
 
+    .btn-store {
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
+    }
+
     .btn-withdraw {
       background: rgba(255, 255, 255, 0.08);
       color: var(--text);
@@ -224,11 +230,15 @@
       ▶ Watch Ad (+10.00 PTS)
     </button>
 
+    <button class="btn btn-store" onclick="location.href='/shop.html'">
+      🛍️ Buy Top-Up Packages
+    </button>
+
     <button class="btn btn-withdraw" onclick="location.href='/withdraw.html'">
       💳 Request Top-Up Withdrawal
     </button>
 
-    <!-- Top-Up Store Link -->
+    <!-- Top-Up Website Partner Banner -->
     <div class="store-card" onclick="openWebsite()">
       <div class="store-info">
         <h4>🛒 Automated Top-Up Store</h4>
@@ -450,7 +460,6 @@
     }
 
     function triggerAd() {
-      // Must be channel member to watch ads
       if (!isChannelJoined) {
         document.getElementById('channelModal').style.display = 'flex';
         return alert("⚠️ Please join our Telegram channel first to unlock ads!");
