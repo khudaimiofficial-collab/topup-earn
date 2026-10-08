@@ -24,14 +24,21 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.2));
+    overflow: hidden;
     border: 1.5px solid #38bdf8;
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 19px;
+    background: #1e293b;
     flex-shrink: 0;
+  }
+
+  .brand-avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .brand-text h1 {
@@ -49,7 +56,7 @@
   }
 
   .brand-text span {
-    font-size: 10.5px;
+    font-size: 10px;
     color: #94a3b8;
     display: block;
   }
@@ -67,14 +74,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  .header-user:active {
-    transform: scale(0.95);
-  }
+  .header-user:active { transform: scale(0.95); }
 
   .user-avatar-wrap {
     position: relative;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -133,26 +138,34 @@
   }
 
   .user-sub-text {
-    font-size: 9.5px;
+    font-size: 9px;
     color: #22c55e;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
   }
 </style>
 
 <header class="app-header">
+  <!-- Bot Info Left -->
   <div class="header-brand">
-    <div class="brand-avatar-box">⚡</div>
+    <div class="brand-avatar-box">
+      <!-- Direct Telegram Bot Avatar -->
+      <img id="botHeaderPhoto" 
+           src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg" 
+           alt="Bot" 
+           onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\'font-size:20px;\'>💎</span>';" />
+    </div>
     <div class="brand-text">
-      <h1 id="botTitle">Gram Rewards</h1>
+      <h1 id="botTitle">AdBoost Bot</h1>
       <span>Instant Auto Payout</span>
     </div>
   </div>
 
+  <!-- User Profile Right -->
   <div class="header-user" onclick="navigateToProfile(event)">
     <div class="user-avatar-wrap">
-      <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="Profile" style="display: none;" onerror="showPhotoFallback()" />
-      <div id="userHeaderFallback" class="user-avatar-fallback">U</div>
+      <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" style="display: none;" />
+      <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
       <span class="status-dot-badge"></span>
     </div>
 
@@ -164,12 +177,54 @@
 </header>
 
 <script>
-  function showPhotoFallback() {
+  (function initHeader() {
+    const tg = window.Telegram?.WebApp;
+    const tgUser = tg?.initDataUnsafe?.user;
+
+    const nameEl = document.getElementById('userName');
     const photoEl = document.getElementById('userHeaderPhoto');
     const fallbackEl = document.getElementById('userHeaderFallback');
-    if (photoEl) photoEl.style.display = 'none';
-    if (fallbackEl) fallbackEl.style.display = 'flex';
-  }
+    const botTitleEl = document.getElementById('botTitle');
+    const botPhotoEl = document.getElementById('botHeaderPhoto');
+
+    // 1. Set User Name & Photo
+    if (tgUser) {
+      if (tgUser.first_name) {
+        nameEl.innerText = tgUser.first_name;
+        if (fallbackEl) fallbackEl.innerText = tgUser.first_name.charAt(0).toUpperCase();
+      }
+
+      // Check for user photo url in initData
+      if (tgUser.photo_url) {
+        photoEl.src = tgUser.photo_url;
+        photoEl.style.display = 'block';
+        if (fallbackEl) fallbackEl.style.display = 'none';
+      } else if (tgUser.username) {
+        // Fallback to public Telegram user picture
+        photoEl.src = `https://t.me/i/userpic/320/${tgUser.username}.jpg`;
+        photoEl.onload = function() {
+          photoEl.style.display = 'block';
+          if (fallbackEl) fallbackEl.style.display = 'none';
+        };
+        photoEl.onerror = function() {
+          photoEl.style.display = 'none';
+          if (fallbackEl) fallbackEl.style.display = 'flex';
+        };
+      }
+    }
+
+    // 2. Set Bot Name
+    const savedBotName = sessionStorage.getItem('bot_name');
+    if (savedBotName && botTitleEl) {
+      botTitleEl.innerText = savedBotName;
+    }
+
+    // 3. Keep bot picture aligned with current bot username
+    const botUsername = sessionStorage.getItem('bot_username') || 'AdBoostEarningBot';
+    if (botPhotoEl) {
+      botPhotoEl.src = `https://t.me/i/userpic/320/${botUsername}.jpg`;
+    }
+  })();
 
   function navigateToProfile(e) {
     e.preventDefault();
