@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Gram Earn & Instant Withdrawal</title>
+  <title>Gram Rewards - Instant Payout</title>
 
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- AJAX Seamless Router -->
+  <script src="/router.js"></script>
 
   <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
@@ -49,7 +52,7 @@
       gap: 14px;
     }
 
-    /* Welcome Hero Banner */
+    /* Welcome Card */
     .welcome-card {
       background: linear-gradient(135deg, #0f1e36 0%, #1e1b4b 100%);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -58,18 +61,6 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1);
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    .welcome-card::after {
-      content: "";
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 110px;
-      height: 110px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
-      pointer-events: none;
     }
 
     .welcome-top {
@@ -138,10 +129,10 @@
 
     .welcome-perk b { color: var(--accent); }
 
-    /* Balance Card */
+    /* Available Balance Card */
     .card {
       background: var(--card);
-      padding: 22px 18px;
+      padding: 20px 18px;
       border-radius: 20px;
       border: 1px solid var(--card-border);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
@@ -174,21 +165,35 @@
       text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
     }
 
-    .badge-row {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 4px;
+    /* 4-Item Grid for Full Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
     }
 
-    .badge {
-      background: rgba(255, 255, 255, 0.05);
-      padding: 6px 12px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      font-weight: 600;
+    .stat-pill {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-pill-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-pill-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-top: 2px;
     }
 
     /* Buttons */
@@ -263,16 +268,12 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.85); }
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <!-- Header dynamically loaded from header.html -->
     <div id="header-container"></div>
 
     <!-- Welcome Hero Banner -->
@@ -287,7 +288,7 @@
         </div>
       </div>
       <p class="welcome-sub">
-        Watch quick sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
+        Watch short sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
       </p>
 
       <div class="welcome-perk-row">
@@ -297,7 +298,7 @@
       </div>
     </div>
 
-    <!-- Balance Card -->
+    <!-- Balance & Comprehensive Stats Card -->
     <div class="card">
       <div class="balance-label">Available Points</div>
       <div class="balance-value">
@@ -305,25 +306,44 @@
         <span class="balance-pts">PTS</span>
       </div>
 
-      <div class="badge-row">
-        <span class="badge">Reward: +10.00 PTS</span>
-        <span class="badge" id="adsWatchedCount">0 Ads Watched</span>
+      <!-- Live Comprehensive Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-pill">
+          <div class="stat-pill-label">📅 Today's Ads</div>
+          <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">0</div>
+        </div>
+
+        <div class="stat-pill">
+          <div class="stat-pill-label">📺 Total Ads</div>
+          <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">0</div>
+        </div>
+
+        <div class="stat-pill">
+          <div class="stat-pill-label">👥 Friends Invited</div>
+          <div class="stat-pill-value" id="invitedCount" style="color: #facc15;">0</div>
+        </div>
+
+        <div class="stat-pill">
+          <div class="stat-pill-label">🎁 10% Earnings</div>
+          <div class="stat-pill-value" id="referralEarnings">0.00</div>
+        </div>
       </div>
     </div>
 
-    <!-- Main Buttons -->
+    <!-- Main Action Buttons -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10.00 PTS)
     </button>
 
-    <button class="btn btn-withdraw" onclick="location.href='/withdraw.html'">
+    <button class="btn btn-withdraw" onclick="navigateSpa('/withdraw.html')">
       ⚡ Instant Gram Token Withdrawal
     </button>
 
-    <button class="btn btn-invite" onclick="location.href='/invite.html'">
+    <button class="btn btn-invite" onclick="navigateSpa('/invite.html')">
       👥 Invite Friends (Earn 10%)
     </button>
 
+    <!-- Footer dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
@@ -343,11 +363,11 @@
       <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
       <h3 style="color:#38bdf8;">Join Channel to Unlock</h3>
       <p style="font-size: 13px; color: var(--text-dim); margin: 8px 0 16px 0; line-height: 1.5;">
-        Join our official Telegram channel to verify your account and unlock ad rewards:
+        Join our official channel to verify your account and unlock ad rewards:
       </p>
 
       <a id="btnJoinChannel" href="https://t.me/KhudaimiOfficialStore" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
-        👉 Join Channel
+        👉 Join Official Channel
       </a>
 
       <button class="btn btn-watch" id="btnVerifyChannel" onclick="checkVerificationAgain()">
@@ -402,6 +422,7 @@
       document.body.appendChild(s);
     });
 
+    // Load User Data & Populate All Stats
     function loadUserData() {
       const urlParams = new URLSearchParams(window.location.search);
       const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
@@ -419,17 +440,40 @@
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          currentBalance = parseFloat(data.balance);
+          // 1. Balance & Stats
+          currentBalance = parseFloat(data.balance || 0);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
-          document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
+          document.getElementById('todayAdsCount').innerText = data.today_ads_watched || 0;
+          document.getElementById('totalAdsCount').innerText = data.ads_watched || 0;
+          document.getElementById('invitedCount').innerText = data.invited_count || 0;
+          document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
+          // 2. Set Bot Title
+          if (data.bot_name) {
+            sessionStorage.setItem('bot_name', data.bot_name);
+            const titleEl = document.getElementById('botTitle');
+            if (titleEl) titleEl.innerText = data.bot_name;
+          }
+
+          // 3. Set Profile Photo
+          const photoEl = document.getElementById('userHeaderPhoto');
+          const fallbackEl = document.getElementById('userHeaderFallback');
+
+          if (data.photo_url && photoEl) {
+            photoEl.src = data.photo_url;
+            photoEl.style.display = 'block';
+            if (fallbackEl) fallbackEl.style.display = 'none';
+          } else if (fallbackEl) {
+            fallbackEl.innerText = (user.first_name || 'U').charAt(0).toUpperCase();
+            fallbackEl.style.display = 'flex';
+            if (photoEl) photoEl.style.display = 'none';
+          }
+
+          // 4. Verify Channel Membership
           isChannelJoined = Boolean(data.channel_joined);
-          if (!isChannelJoined) {
-            const chName = data.channel_id ? data.channel_id.replace('@', '') : 'KhudaimiOfficialStore';
-            document.getElementById('btnJoinChannel').href = `https://t.me/${chName}`;
-            document.getElementById('channelModal').style.display = 'flex';
-          } else {
-            document.getElementById('channelModal').style.display = 'none';
+          const chModal = document.getElementById('channelModal');
+          if (chModal) {
+            chModal.style.display = isChannelJoined ? 'none' : 'flex';
           }
         }
       })
@@ -483,11 +527,9 @@
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          currentBalance = parseFloat(data.balance);
-          document.getElementById('balance').innerText = currentBalance.toFixed(2);
-          document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
           tg.HapticFeedback?.notificationOccurred('success');
           alert("🎉 +10.00 Points credited!");
+          loadUserData();
         } else {
           alert(data.message || "Failed to record reward.");
         }
