@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Earn - Free Top-Up</title>
+  <title>Gram Earn & Instant Withdrawal</title>
 
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -15,7 +15,7 @@
     :root {
       --bg: #070a12;
       --card: #0f172a;
-      --card-border: rgba(56, 189, 248, 0.12);
+      --card-border: rgba(56, 189, 248, 0.15);
       --accent: #38bdf8;
       --btn-bg: #22c55e;
       --text: #ffffff;
@@ -48,6 +48,95 @@
       flex-direction: column;
       gap: 14px;
     }
+
+    /* Welcome Hero Banner */
+    .welcome-card {
+      background: linear-gradient(135deg, #0f1e36 0%, #1e1b4b 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 20px;
+      padding: 18px 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1);
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .welcome-card::after {
+      content: "";
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .welcome-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+
+    .pulsing-dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.6s infinite ease-in-out;
+    }
+
+    .welcome-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .welcome-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    .welcome-perk-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .welcome-perk {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 6px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .welcome-perk b { color: var(--accent); }
 
     /* Balance Card */
     .card {
@@ -119,14 +208,8 @@
       text-decoration: none;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .btn-watch {
       background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -134,44 +217,16 @@
       box-shadow: 0 4px 20px rgba(34, 197, 94, 0.35);
     }
 
-    .btn-store {
+    .btn-withdraw {
       background: linear-gradient(135deg, #38bdf8, #2563eb);
       color: #ffffff;
       box-shadow: 0 4px 20px rgba(56, 189, 248, 0.35);
     }
 
-    .btn-withdraw {
+    .btn-invite {
       background: rgba(255, 255, 255, 0.08);
       color: var(--text);
       border: 1px solid var(--card-border);
-    }
-
-    /* Store Promotion Banner */
-    .store-card {
-      background: linear-gradient(135deg, #131b2e, #1e1b4b);
-      padding: 16px;
-      border-radius: 16px;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .store-info h4 {
-      font-size: 14px;
-      color: #fff;
-      margin-bottom: 2px;
-    }
-
-    .store-info p {
-      font-size: 11px;
-      color: #94a3b8;
-    }
-
-    .store-arrow {
-      font-size: 20px;
-      color: var(--accent);
     }
 
     /* Modals */
@@ -203,13 +258,44 @@
       color: #facc15;
       margin: 15px 0;
     }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <!-- Header dynamically loaded from header.html -->
     <div id="header-container"></div>
+
+    <!-- Welcome Hero Banner -->
+    <div class="welcome-card">
+      <div class="welcome-top">
+        <span class="welcome-title">
+          <span>👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">Friend</span>!</span>
+        </span>
+        <div class="status-badge">
+          <span class="pulsing-dot"></span>
+          <span>Online</span>
+        </div>
+      </div>
+      <p class="welcome-sub">
+        Watch quick sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
+      </p>
+
+      <div class="welcome-perk-row">
+        <div class="welcome-perk">⚡ <b>Instant</b> Gram Payout</div>
+        <div class="welcome-perk">💎 <b>+10 PTS</b> Per Ad</div>
+        <div class="welcome-perk">👥 <b>10%</b> Invite Bonus</div>
+      </div>
+    </div>
 
     <!-- Balance Card -->
     <div class="card">
@@ -230,24 +316,14 @@
       ▶ Watch Ad (+10.00 PTS)
     </button>
 
-    <button class="btn btn-store" onclick="location.href='/shop.html'">
-      🛍️ Buy Top-Up Packages
-    </button>
-
     <button class="btn btn-withdraw" onclick="location.href='/withdraw.html'">
-      💳 Request Top-Up Withdrawal
+      ⚡ Instant Gram Token Withdrawal
     </button>
 
-    <!-- Top-Up Website Partner Banner -->
-    <div class="store-card" onclick="openWebsite()">
-      <div class="store-info">
-        <h4>🛒 Automated Top-Up Store</h4>
-        <p>Instant Game Credits, UC, Diamonds & Passes</p>
-      </div>
-      <div class="store-arrow">➔</div>
-    </div>
+    <button class="btn btn-invite" onclick="location.href='/invite.html'">
+      👥 Invite Friends (Earn 10%)
+    </button>
 
-    <!-- Footer dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
@@ -261,17 +337,17 @@
     </div>
   </div>
 
-  <!-- MANDATORY CHANNEL JOIN MODAL -->
+  <!-- Mandatory Channel Join Modal -->
   <div class="overlay" id="channelModal" style="z-index: 2000;">
     <div class="modal-box">
       <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
       <h3 style="color:#38bdf8;">Join Channel to Unlock</h3>
       <p style="font-size: 13px; color: var(--text-dim); margin: 8px 0 16px 0; line-height: 1.5;">
-        To activate your account, earn points, and verify your referral, you must join our official channel:
+        Join our official Telegram channel to verify your account and unlock ad rewards:
       </p>
 
       <a id="btnJoinChannel" href="https://t.me/KhudaimiOfficialStore" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
-        👉 Join @KhudaimiOfficialStore
+        👉 Join Channel
       </a>
 
       <button class="btn btn-watch" id="btnVerifyChannel" onclick="checkVerificationAgain()">
@@ -281,24 +357,19 @@
   </div>
 
   <script>
-    // ============================================================
-    // 🛡️ TELEGRAM GATEKEEPER (Blocks External Browsers)
-    // ============================================================
     const tg = window.Telegram?.WebApp;
     const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
 
     if (!isTelegram) {
       document.body.innerHTML = `
-        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;font-family:-apple-system,sans-serif;">
-          <div style="background:rgba(56,189,248,0.1);width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;border:1px solid rgba(56,189,248,0.3);box-shadow:0 0 25px rgba(56,189,248,0.2);">
-            ✈️
-          </div>
+        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;">
+          <div style="font-size:40px;margin-bottom:16px;">✈️</div>
           <h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#38bdf8;">Telegram Access Only</h2>
-          <p style="color:#94a3b8;font-size:14px;max-width:320px;line-height:1.6;margin-bottom:26px;">
-            This application is exclusively available inside Telegram. Please launch the official bot to earn credits.
+          <p style="color:#94a3b8;font-size:14px;max-width:320px;line-height:1.6;margin-bottom:24px;">
+            This application is exclusively available inside Telegram. Please launch the official bot.
           </p>
-          <a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:15px 30px;border-radius:14px;font-weight:800;font-size:15px;box-shadow:0 4px 20px rgba(37,99,235,0.4);">
-            🚀 Open @AdBoostEarningBot
+          <a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 28px;border-radius:14px;font-weight:800;">
+            🚀 Open Bot
           </a>
         </div>
       `;
@@ -309,24 +380,19 @@
     tg.expand();
     tg.BackButton.hide();
 
-    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Gamer", username: "" };
+    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
     let currentBalance = 0.00;
     let isChannelJoined = false;
 
-    // ============================================================
-    // LOAD SHARED HEADER & FOOTER
-    // ============================================================
+    if (user.first_name) {
+      document.getElementById('welcomeUserName').innerText = user.first_name;
+    }
+
+    // Load Header & Footer
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
-      if (user?.first_name) {
-        const el = document.getElementById('userName');
-        if (el) el.innerText = user.first_name;
-      }
-      const savedName = sessionStorage.getItem('bot_name');
-      if (savedName) {
-        const titleEl = document.getElementById('botTitle');
-        if (titleEl) titleEl.innerText = savedName;
-      }
+      const el = document.getElementById('userName');
+      if (el && user.first_name) el.innerText = user.first_name;
     });
 
     fetch('/footer.html').then(r => r.text()).then(html => {
@@ -336,12 +402,9 @@
       document.body.appendChild(s);
     });
 
-    // ============================================================
-    // LOAD USER DATA & CHECK MEMBERSHIP
-    // ============================================================
     function loadUserData() {
       const urlParams = new URLSearchParams(window.location.search);
-      const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || urlParams.get('startapp') || null;
+      const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
 
       fetch('/api/get-user', {
         method: 'POST',
@@ -360,72 +423,53 @@
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
 
-          // Bot title synchronization
-          if (data.bot_name) {
-            sessionStorage.setItem('bot_name', data.bot_name);
-            const titleEl = document.getElementById('botTitle');
-            if (titleEl) titleEl.innerText = data.bot_name;
-          }
-
-          // Check if channel is joined
           isChannelJoined = Boolean(data.channel_joined);
-
           if (!isChannelJoined) {
             const chName = data.channel_id ? data.channel_id.replace('@', '') : 'KhudaimiOfficialStore';
             document.getElementById('btnJoinChannel').href = `https://t.me/${chName}`;
-            document.getElementById('btnJoinChannel').innerText = `👉 Join @${chName}`;
             document.getElementById('channelModal').style.display = 'flex';
           } else {
             document.getElementById('channelModal').style.display = 'none';
           }
         }
       })
-      .catch(err => console.error("Error loading profile:", err));
+      .catch(err => console.error("Error loading user:", err));
     }
     loadUserData();
 
-    // ============================================================
-    // VERIFY MEMBERSHIP ON CLICK
-    // ============================================================
     function checkVerificationAgain() {
       const btn = document.getElementById('btnVerifyChannel');
       btn.disabled = true;
-      btn.innerText = "Checking Telegram...";
+      btn.innerText = "Checking...";
 
       fetch('/api/check-channel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name
-        })
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name })
       })
       .then(res => res.json())
       .then(data => {
         if (data.joined === true) {
           isChannelJoined = true;
-          alert("🎉 Verified! Thank you for joining our channel. You can now earn points!");
+          alert("🎉 Verified! You can now start earning.");
           document.getElementById('channelModal').style.display = 'none';
           loadUserData();
         } else {
           isChannelJoined = false;
-          alert(`❌ You haven't joined ${data.channel_id || '@KhudaimiOfficialStore'} yet!\n\nPlease tap "Join Channel" first, then tap verify.`);
+          alert("❌ Please join the channel first, then tap verify.");
         }
       })
-      .catch(() => alert("Failed to check membership. Please try again."))
+      .catch(() => alert("Failed to verify membership."))
       .finally(() => {
         btn.disabled = false;
         btn.innerText = "✅ I Have Joined (Verify)";
       });
     }
 
-    // ============================================================
-    // REWARD & AD LOGIC
-    // ============================================================
     function giveReward() {
       const btn = document.getElementById('adBtn');
       btn.disabled = true;
-      btn.innerText = "Syncing reward...";
+      btn.innerText = "Crediting reward...";
 
       fetch('/api/reward', {
         method: 'POST',
@@ -442,17 +486,13 @@
           currentBalance = parseFloat(data.balance);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('adsWatchedCount').innerText = `${data.ads_watched} Ads Watched`;
-
           tg.HapticFeedback?.notificationOccurred('success');
-          alert("🎉 +10.00 Points credited to your account!");
+          alert("🎉 +10.00 Points credited!");
         } else {
           alert(data.message || "Failed to record reward.");
         }
       })
-      .catch(err => {
-        console.error(err);
-        alert("Failed to connect to reward server.");
-      })
+      .catch(() => alert("Reward connection failed."))
       .finally(() => {
         btn.disabled = false;
         btn.innerText = "▶ Watch Ad (+10.00 PTS)";
@@ -462,7 +502,7 @@
     function triggerAd() {
       if (!isChannelJoined) {
         document.getElementById('channelModal').style.display = 'flex';
-        return alert("⚠️ Please join our Telegram channel first to unlock ads!");
+        return alert("⚠️ Please join the official channel first to unlock ads.");
       }
 
       const btn = document.getElementById('adBtn');
@@ -495,14 +535,6 @@
           giveReward();
         }
       }, 1000);
-    }
-
-    function openWebsite() {
-      if (tg?.openLink) {
-        tg.openLink("https://automaticgametopup.iceiy.com");
-      } else {
-        window.open("https://automaticgametopup.iceiy.com", "_blank");
-      }
     }
   </script>
 </body>
