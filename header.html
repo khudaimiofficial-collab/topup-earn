@@ -42,6 +42,10 @@
     margin: 0;
     text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
     line-height: 1.2;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .brand-text span {
@@ -50,7 +54,6 @@
     display: block;
   }
 
-  /* User Profile Right Side Pill */
   .header-user {
     display: flex;
     align-items: center;
@@ -60,19 +63,18 @@
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
-    transition: transform 0.15s ease, background 0.15s ease;
+    transition: transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .header-user:active {
     transform: scale(0.95);
-    background: rgba(56, 189, 248, 0.12);
   }
 
   .user-avatar-wrap {
     position: relative;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -135,23 +137,18 @@
     color: #22c55e;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
   }
 </style>
 
 <header class="app-header">
-  <!-- Brand / Bot Info -->
   <div class="header-brand">
-    <div class="brand-avatar-box">
-      ⚡
-    </div>
+    <div class="brand-avatar-box">⚡</div>
     <div class="brand-text">
       <h1 id="botTitle">Gram Rewards</h1>
       <span>Instant Auto Payout</span>
     </div>
   </div>
 
-  <!-- User Profile Quick Button (Shows Photo) -->
   <div class="header-user" onclick="navigateToProfile(event)">
     <div class="user-avatar-wrap">
       <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="Profile" style="display: none;" onerror="showPhotoFallback()" />
@@ -161,47 +158,12 @@
 
     <div class="user-info-text">
       <span class="user-name-text" id="userName">User</span>
-      <span class="user-sub-text">Active</span>
+      <span class="user-sub-text">ACTIVE</span>
     </div>
   </div>
 </header>
 
 <script>
-  (function () {
-    const tg = window.Telegram?.WebApp;
-    const tgUser = tg?.initDataUnsafe?.user;
-
-    const nameEl = document.getElementById('userName');
-    const photoEl = document.getElementById('userHeaderPhoto');
-    const fallbackEl = document.getElementById('userHeaderFallback');
-
-    if (tgUser) {
-      // 1. Set First Name
-      if (tgUser.first_name) {
-        nameEl.innerText = tgUser.first_name;
-        fallbackEl.innerText = tgUser.first_name.charAt(0).toUpperCase();
-      }
-
-      // 2. Set Profile Picture if available
-      if (tgUser.photo_url) {
-        photoEl.src = tgUser.photo_url;
-        photoEl.style.display = 'block';
-        fallbackEl.style.display = 'none';
-      } else {
-        showPhotoFallback();
-      }
-    } else {
-      showPhotoFallback();
-    }
-
-    // Keep dynamic bot title synchronized from session storage
-    const savedBotName = sessionStorage.getItem('bot_name');
-    if (savedBotName) {
-      const bEl = document.getElementById('botTitle');
-      if (bEl) bEl.innerText = savedBotName;
-    }
-  })();
-
   function showPhotoFallback() {
     const photoEl = document.getElementById('userHeaderPhoto');
     const fallbackEl = document.getElementById('userHeaderFallback');
@@ -212,7 +174,6 @@
   function navigateToProfile(e) {
     e.preventDefault();
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
-
     if (typeof window.navigateSpa === 'function') {
       window.navigateSpa('/profile.html');
     } else {
