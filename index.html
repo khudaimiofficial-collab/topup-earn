@@ -52,7 +52,6 @@
       gap: 14px;
     }
 
-    /* Welcome Card */
     .welcome-card {
       background: linear-gradient(135deg, #0f1e36 0%, #1e1b4b 100%);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -129,7 +128,6 @@
 
     .welcome-perk b { color: var(--accent); }
 
-    /* Available Balance Card */
     .card {
       background: var(--card);
       padding: 20px 18px;
@@ -165,7 +163,6 @@
       text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
     }
 
-    /* 4-Item Grid for Full Stats */
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -196,7 +193,6 @@
       margin-top: 2px;
     }
 
-    /* Buttons */
     .btn {
       width: 100%;
       padding: 16px;
@@ -234,7 +230,6 @@
       border: 1px solid var(--card-border);
     }
 
-    /* Modals */
     .overlay {
       display: none;
       position: fixed;
@@ -273,10 +268,8 @@
 <body>
 
   <div class="container">
-    <!-- Header dynamically loaded from header.html -->
     <div id="header-container"></div>
 
-    <!-- Welcome Hero Banner -->
     <div class="welcome-card">
       <div class="welcome-top">
         <span class="welcome-title">
@@ -298,7 +291,6 @@
       </div>
     </div>
 
-    <!-- Balance & Comprehensive Stats Card -->
     <div class="card">
       <div class="balance-label">Available Points</div>
       <div class="balance-value">
@@ -309,12 +301,12 @@
       <!-- Live Comprehensive Stats Grid -->
       <div class="stats-grid">
         <div class="stat-pill">
-          <div class="stat-pill-label">📅 Today's Ads</div>
+          <div class="stat-pill-label">📅 Today Ads Watch</div>
           <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">0</div>
         </div>
 
         <div class="stat-pill">
-          <div class="stat-pill-label">📺 Total Ads</div>
+          <div class="stat-pill-label">📺 Total Ads Watch</div>
           <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">0</div>
         </div>
 
@@ -330,7 +322,6 @@
       </div>
     </div>
 
-    <!-- Main Action Buttons -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10.00 PTS)
     </button>
@@ -343,11 +334,9 @@
       👥 Invite Friends (Earn 10%)
     </button>
 
-    <!-- Footer dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
-  <!-- Fallback Countdown Modal -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
       <h3 style="color:#fff;">Displaying Advertisement</h3>
@@ -357,7 +346,6 @@
     </div>
   </div>
 
-  <!-- Mandatory Channel Join Modal -->
   <div class="overlay" id="channelModal" style="z-index: 2000;">
     <div class="modal-box">
       <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
@@ -408,13 +396,34 @@
       document.getElementById('welcomeUserName').innerText = user.first_name;
     }
 
-    // Load Header & Footer
+    // 1. Load Header & Stream User Photo directly
     fetch('/header.html').then(r => r.text()).then(html => {
       document.getElementById('header-container').innerHTML = html;
+      
       const el = document.getElementById('userName');
       if (el && user.first_name) el.innerText = user.first_name;
+
+      const fallbackEl = document.getElementById('userHeaderFallback');
+      if (fallbackEl && user.first_name) {
+        fallbackEl.innerText = user.first_name.charAt(0).toUpperCase();
+      }
+
+      // Stream user photo via dedicated server proxy
+      if (user.id && user.id !== "0") {
+        const photoEl = document.getElementById('userHeaderPhoto');
+        photoEl.src = `/api/telegram-image?type=user&id=${user.id}`;
+        photoEl.onload = function() {
+          photoEl.style.display = 'block';
+          if (fallbackEl) fallbackEl.style.display = 'none';
+        };
+        photoEl.onerror = function() {
+          photoEl.style.display = 'none';
+          if (fallbackEl) fallbackEl.style.display = 'flex';
+        };
+      }
     });
 
+    // 2. Load Footer
     fetch('/footer.html').then(r => r.text()).then(html => {
       document.getElementById('footer-container').innerHTML = html;
       const s = document.createElement('script');
@@ -422,7 +431,7 @@
       document.body.appendChild(s);
     });
 
-    // Load User Data & Populate All Stats
+    // 3. Load User Data & Bot Details
     function loadUserData() {
       const urlParams = new URLSearchParams(window.location.search);
       const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
@@ -440,7 +449,7 @@
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          // 1. Balance & Stats
+          // Balances & Counters
           currentBalance = parseFloat(data.balance || 0);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('todayAdsCount').innerText = data.today_ads_watched || 0;
@@ -448,28 +457,13 @@
           document.getElementById('invitedCount').innerText = data.invited_count || 0;
           document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
-          // 2. Set Bot Title
+          // Bot Title from API
           if (data.bot_name) {
-            sessionStorage.setItem('bot_name', data.bot_name);
             const titleEl = document.getElementById('botTitle');
             if (titleEl) titleEl.innerText = data.bot_name;
           }
 
-          // 3. Set Profile Photo
-          const photoEl = document.getElementById('userHeaderPhoto');
-          const fallbackEl = document.getElementById('userHeaderFallback');
-
-          if (data.photo_url && photoEl) {
-            photoEl.src = data.photo_url;
-            photoEl.style.display = 'block';
-            if (fallbackEl) fallbackEl.style.display = 'none';
-          } else if (fallbackEl) {
-            fallbackEl.innerText = (user.first_name || 'U').charAt(0).toUpperCase();
-            fallbackEl.style.display = 'flex';
-            if (photoEl) photoEl.style.display = 'none';
-          }
-
-          // 4. Verify Channel Membership
+          // Channel Membership
           isChannelJoined = Boolean(data.channel_joined);
           const chModal = document.getElementById('channelModal');
           if (chModal) {
