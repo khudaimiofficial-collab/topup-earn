@@ -248,6 +248,17 @@
       <div class="btn-row">
         <button class="btn-blue" onclick="saveSettings()">💾 Save All Configurations</button>
       </div>
+
+      <!-- DANGER ZONE: FACTORY RESET -->
+      <div style="background: rgba(239, 68, 68, 0.08); padding: 18px; border-radius: 14px; border: 1px solid rgba(239, 68, 68, 0.4); margin-top: 24px;">
+        <h4 style="color: #ef4444; font-size: 14px; margin-bottom: 6px;">⚠️ Danger Zone: Factory Reset All Users</h4>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">
+          Permanently wipes all registered users, balances, ad statistics, and withdrawal logs. Every user starts fresh from 0.00 PTS.
+        </p>
+        <button class="btn-red" style="width: 100%; padding: 14px; font-size: 13px;" onclick="factoryResetDatabase()">
+          💥 Factory Reset All Users & Balances
+        </button>
+      </div>
     </div>
 
   </div>
@@ -285,7 +296,6 @@
     let otpExpiresAt = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Pre-fill bot token from settings if saved
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       if (cfg.bot_token) {
         document.getElementById('loginBotToken').value = cfg.bot_token;
@@ -308,9 +318,8 @@
       btn.disabled = true;
       btn.innerText = "Dispatching code to Telegram...";
 
-      // Generate secure 6-digit random code
       generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      otpExpiresAt = Date.now() + 5 * 60 * 1000; // 5 min expiry
+      otpExpiresAt = Date.now() + 5 * 60 * 1000;
 
       try {
         const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -329,12 +338,11 @@
           document.getElementById('stepSendOtp').style.display = 'none';
           document.getElementById('stepVerifyOtp').style.display = 'block';
 
-          // Save token for future ease
           const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
           cfg.bot_token = botToken;
           localStorage.setItem('admin_cfg', JSON.stringify(cfg));
         } else {
-          alert("❌ Failed to send OTP: " + (data.description || "Check bot token and start bot first."));
+          alert("❌ Failed to send OTP: " + (data.description || "Check bot token."));
         }
       } catch (err) {
         alert("❌ Network error connecting to Telegram Bot API.");
@@ -377,7 +385,6 @@
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
 
-      // Load Settings from LocalStorage
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       document.getElementById('settingBotToken').value = cfg.bot_token || '';
       document.getElementById('settingWebhookUrl').value = cfg.webhook_url || `${window.location.origin}/api/bot-webhook`;
@@ -611,6 +618,25 @@
       localStorage.setItem('admin_users', JSON.stringify(users));
       closeModal('addUserModal');
       loadUsers();
+    }
+
+    // ================= FACTORY RESET DATABASE =================
+    function factoryResetDatabase() {
+      const confirm1 = confirm("⚠️ FACTORY RESET WARNING:\nAre you sure you want to delete all members, balances, and reset everything?");
+      if (!confirm1) return;
+
+      const phrase = prompt("Type 'RESET_ALL' to confirm complete factory reset:");
+      if (phrase !== "RESET_ALL") {
+        return alert("❌ Reset canceled. Confirmation phrase did not match.");
+      }
+
+      // Preserve admin configuration keys while clearing user and withdrawal records
+      const savedCfg = localStorage.getItem('admin_cfg');
+      localStorage.clear();
+      if (savedCfg) localStorage.setItem('admin_cfg', savedCfg);
+
+      alert("🎉 Factory Reset Complete! All users, points, and ad stats have been reset to zero.");
+      location.reload();
     }
 
     // ================= SAVE CONFIGURATION =================
