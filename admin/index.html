@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Admin Dashboard - Free Gram Token</title>
+  <title>Master Admin - Free Gram Token</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #090d16; color: #fff; padding: 16px; min-height: 100vh; }
@@ -22,6 +22,12 @@
     .btn-purple { background: #a855f7; color: #fff; }
     .btn-green { background: #22c55e; color: #052e16; }
     .btn-red { background: #ef4444; color: #fff; }
+
+    /* Live Blockchain Balance Cards */
+    .wallet-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .wallet-stat-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 14px; text-align: center; }
+    .wallet-stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .wallet-stat-val { font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px; }
     
     .admin-nav { display: flex; gap: 8px; margin-bottom: 18px; max-width: 950px; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
     .nav-btn { background: #131b2e; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
@@ -44,26 +50,18 @@
 </head>
 <body>
 
-  <!-- ================= AUTH BOX ================= -->
-  <div class="card" id="authBox" style="max-width: 400px; margin-top: 40px;">
-    <h2>🔐 Admin Verification</h2>
-    <p>Authentication code will be sent to your Telegram account <code>(ID: 8960497898)</code>.</p>
+  <!-- ================= AUTH PIN BOX ================= -->
+  <div class="card" id="authBox" style="max-width: 400px; margin-top: 60px;">
+    <h2>🔐 Master Admin Access</h2>
+    <p>Authorized Admin Telegram ID: <code>8960497898</code></p>
 
-    <div id="stepSendOtp">
-      <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="requestOtp()">
-        📩 Send OTP to Telegram
-      </button>
+    <div class="form-group">
+      <label>Enter Master PIN:</label>
+      <input type="password" id="inputPin" placeholder="Enter PIN (Default: 8960)" maxlength="8" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: 800;">
     </div>
-
-    <div id="stepVerifyOtp" style="display: none; margin-top: 14px;">
-      <div class="form-group">
-        <label>Enter 6-Digit OTP:</label>
-        <input type="text" id="inputOtp" placeholder="123456" maxlength="6" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: 800;">
-      </div>
-      <button class="btn-green" style="width: 100%;" onclick="verifyOtp()">
-        ✅ Verify & Sign In
-      </button>
-    </div>
+    <button class="btn-green" style="width: 100%;" onclick="verifyPin()">
+      ✅ Sign In to Panel
+    </button>
   </div>
 
   <!-- ================= MAIN DASHBOARD ================= -->
@@ -71,25 +69,49 @@
 
     <div class="card" style="padding: 16px 20px;">
       <div class="top-bar">
-        <h2>⚡ Gram Token Admin Panel</h2>
+        <h2>⚡ Free Gram Token Dashboard</h2>
         <button class="btn-red" style="padding: 8px 14px; font-size: 12px;" onclick="logout()">Log Out</button>
       </div>
       <p style="color: #22c55e; margin: 4px 0 0 0;">● Master Admin Authenticated (ID: 8960497898)</p>
     </div>
 
+    <!-- LIVE BLOCKCHAIN HOT WALLET STATS -->
+    <div class="card" style="padding: 16px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="font-size:15px; margin:0;">💎 Live Blockchain & API Balances</h3>
+        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="checkLiveBlockchainBalance()">🔄 Check Live</button>
+      </div>
+
+      <div class="wallet-stat-grid">
+        <div class="wallet-stat-card">
+          <div class="wallet-stat-label">Hot Wallet (TON Gas)</div>
+          <div class="wallet-stat-val" id="dispTonBal" style="color:#38bdf8;">0.000 TON</div>
+        </div>
+        <div class="wallet-stat-card">
+          <div class="wallet-stat-label">Hot Wallet (GRAM Tokens)</div>
+          <div class="wallet-stat-val" id="dispGramBal" style="color:#22c55e;">0.000 GRAM</div>
+        </div>
+        <div class="wallet-stat-card">
+          <div class="wallet-stat-label">API Status</div>
+          <div class="wallet-stat-val" id="dispApiStatus" style="color:#22c55e; font-size:18px;">ONLINE 🟢</div>
+        </div>
+      </div>
+      <p style="font-size:11px; margin:0;" id="dispWalletAddr">Wallet Address: <code>Not configured</code></p>
+    </div>
+
     <!-- Navigation Tabs -->
     <div class="admin-nav">
       <button class="nav-btn active" id="btnTabWithdrawals" onclick="switchAdminTab('withdrawals')">⚡ Gram Withdrawals</button>
-      <button class="nav-btn" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Manage Users</button>
-      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Bot & App Settings</button>
+      <button class="nav-btn" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Manage Members</button>
+      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Hot Wallet & Settings</button>
     </div>
 
     <!-- SECTION 1: WITHDRAWALS -->
     <div id="sectionWithdrawals" class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h3>📥 Gram Payout Requests</h3>
-          <p>Real-time log of on-chain Gram withdrawals.</p>
+          <h3>📥 Gram Withdrawal Requests</h3>
+          <p>Real-time audit log of on-chain Gram payouts.</p>
         </div>
         <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh</button>
       </div>
@@ -100,8 +122,8 @@
             <tr>
               <th>Telegram ID</th>
               <th>Gram Wallet Address</th>
-              <th>Points Deducted</th>
-              <th>Net Gram Amount</th>
+              <th>Points</th>
+              <th>Gram Amount</th>
               <th>Status</th>
               <th>Date</th>
               <th>Action</th>
@@ -135,7 +157,6 @@
               <th>PTS Balance</th>
               <th>Today Ads</th>
               <th>Total Ads</th>
-              <th>Invited</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -145,34 +166,40 @@
       </div>
     </div>
 
-    <!-- SECTION 3: SETTINGS -->
+    <!-- SECTION 3: SETTINGS & HOT WALLET KEYS -->
     <div id="sectionSettings" class="card" style="display: none;">
-      <h3>⚙️ Bot Configuration & Economics</h3>
-      <p>Configure bot token, destination channel, and minimum payout limits.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3>⚙️ Hot Wallet & API Key Settings</h3>
+        <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-weight: 700;">Encrypted</span>
+      </div>
+      <p>Configure hot wallet mnemonic, public address, and Gram/Toncenter API keys.</p>
 
-      <div class="form-group">
-        <label>Telegram Bot Token:</label>
-        <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
+        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">💎 Blockchain Credentials</h4>
+
+        <div class="form-group">
+          <label>Hot Wallet Public Address (UQ... / EQ...):</label>
+          <input type="text" id="settingWalletAddress" placeholder="UQ... Your Hot Wallet Address" />
+        </div>
+
+        <div class="form-group">
+          <label>Hot Wallet 24-Word Secret Phrase (Mnemonic):</label>
+          <input type="password" id="settingMnemonic" placeholder="word1 word2 word3 ... word24" />
+        </div>
+
+        <div class="form-group">
+          <label>TonCenter / Gram API Key:</label>
+          <input type="text" id="settingTonApiKey" placeholder="Your TonCenter API Key" />
+        </div>
       </div>
 
       <div class="form-group">
-        <label>Telegram Official Channel:</label>
-        <input type="text" id="settingChannelId" placeholder="@KhudaimiOfficialStore">
-      </div>
-
-      <div class="form-group">
-        <label>Minimum Withdrawal Points (e.g. 5000 = 0.05 GRAM):</label>
-        <input type="number" id="settingMinWithdraw" placeholder="5000">
-      </div>
-
-      <div class="form-group">
-        <label>Start Message Banner Link:</label>
-        <input type="text" id="settingBannerUrl" placeholder="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80">
+        <label>Minimum Withdrawal Points (Default: 5000):</label>
+        <input type="number" id="settingMinWithdraw" placeholder="5000" />
       </div>
 
       <div class="btn-row">
-        <button class="btn-blue" onclick="saveSettings()">💾 Save Configuration</button>
-        <button class="btn-purple" onclick="activateWebhook()">⚡ Connect /start Instant Bot Messages</button>
+        <button class="btn-blue" onclick="saveSettings()">💾 Save Settings & Keys</button>
       </div>
     </div>
 
@@ -184,7 +211,7 @@
       <h3 style="margin-bottom: 12px;">➕ Add Member</h3>
       
       <div class="form-group">
-        <label>Telegram ID (Numeric):</label>
+        <label>Telegram ID:</label>
         <input type="text" id="newUserId" placeholder="e.g. 8960497898">
       </div>
 
@@ -194,118 +221,58 @@
       </div>
 
       <div class="form-group">
-        <label>Username (Optional):</label>
-        <input type="text" id="newUserUsername" placeholder="e.g. khudaimi_official">
-      </div>
-
-      <div class="form-group">
         <label>Initial Balance (PTS):</label>
         <input type="number" id="newUserBalance" placeholder="0.00" value="0.00">
       </div>
 
       <div style="display: flex; gap: 10px; margin-top: 14px;">
-        <button class="btn-green" style="flex: 1;" onclick="submitNewUser()">Save User</button>
+        <button class="btn-green" style="flex: 1;" onclick="submitNewUser()">Save</button>
         <button class="btn-red" style="flex: 1;" onclick="closeModal('addUserModal')">Cancel</button>
       </div>
     </div>
   </div>
 
   <script>
-    let authToken = localStorage.getItem('admin_session_token') || '';
+    const MASTER_PIN = "8960"; // Change this to your preferred PIN
 
     window.addEventListener('DOMContentLoaded', () => {
-      if (authToken) checkExistingSession();
+      if (sessionStorage.getItem('admin_logged') === 'true') {
+        showDashboard();
+      }
     });
 
-    async function checkExistingSession() {
-      try {
-        const res = await fetch('/api/admin?type=settings', {
-          headers: { 'x-admin-token': authToken }
-        });
-
-        if (res.ok) {
-          const settings = await res.json();
-          renderDashboard(settings);
-        } else {
-          localStorage.removeItem('admin_session_token');
-          authToken = '';
-        }
-      } catch (err) {
-        console.error("Session check failed:", err);
+    function verifyPin() {
+      const pin = document.getElementById('inputPin').value.trim();
+      if (pin === MASTER_PIN) {
+        sessionStorage.setItem('admin_logged', 'true');
+        showDashboard();
+      } else {
+        alert("❌ Incorrect Master PIN!");
       }
     }
 
-    async function requestOtp() {
-      const btn = document.getElementById('btnSendOtp');
-      btn.disabled = true;
-      btn.innerText = "Sending code to Telegram...";
-
-      try {
-        const res = await fetch('/api/admin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'send_otp' })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          alert('📩 OTP sent to your Telegram! Check bot messages.');
-          document.getElementById('stepSendOtp').style.display = 'none';
-          document.getElementById('stepVerifyOtp').style.display = 'block';
-        } else {
-          alert('❌ ' + (data.error || 'Failed to send OTP'));
-        }
-      } catch (err) {
-        alert('Server connection error.');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "📩 Send OTP to Telegram";
-      }
-    }
-
-    async function verifyOtp() {
-      const otpInput = document.getElementById('inputOtp').value.trim();
-      if (!otpInput || otpInput.length < 6) return alert('Enter full 6-digit OTP.');
-
-      try {
-        const res = await fetch('/api/admin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'verify_otp', otp: otpInput })
-        });
-
-        const data = await res.json();
-        if (data.success && data.session_token) {
-          authToken = data.session_token;
-          localStorage.setItem('admin_session_token', authToken);
-          alert('✅ Verified successfully!');
-          checkExistingSession();
-        } else {
-          alert('❌ ' + (data.error || 'Verification failed'));
-        }
-      } catch (err) {
-        alert('Verification request failed.');
-      }
-    }
-
-    function renderDashboard(settings) {
-      document.getElementById('settingBotToken').value = settings.bot_token || '';
-      document.getElementById('settingChannelId').value = settings.channel_id || '';
-      document.getElementById('settingMinWithdraw').value = settings.min_withdraw || 5000;
-      document.getElementById('settingBannerUrl').value = settings.banner_url || '';
-
+    function showDashboard() {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
 
+      // Load Settings from LocalStorage
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      document.getElementById('settingWalletAddress').value = cfg.wallet_address || '';
+      document.getElementById('settingMnemonic').value = cfg.mnemonic || '';
+      document.getElementById('settingTonApiKey').value = cfg.api_key || '';
+      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 5000;
+
+      if (cfg.wallet_address) {
+        document.getElementById('dispWalletAddr').innerHTML = `Wallet Address: <code>${cfg.wallet_address}</code>`;
+      }
+
+      checkLiveBlockchainBalance();
       loadWithdrawals();
     }
 
     function logout() {
-      if (confirm('Log out from Admin Dashboard?')) {
-        localStorage.removeItem('admin_session_token');
-        authToken = '';
-        location.reload();
-      }
+      sessionStorage.removeItem('admin_logged');
+      location.reload();
     }
 
     function switchAdminTab(tabName) {
@@ -328,223 +295,181 @@
       }
     }
 
-    // ================= WITHDRAWALS =================
-    async function loadWithdrawals() {
-      const res = await fetch('/api/admin', {
-        headers: { 'x-admin-token': authToken }
-      });
-      const data = await res.json();
+    // ================= LIVE BLOCKCHAIN & API BALANCE CHECKER =================
+    async function checkLiveBlockchainBalance() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const address = cfg.wallet_address;
+      const apiKey = cfg.api_key;
 
-      const tbody = document.getElementById('withdrawalListBody');
-      if (!data.withdrawals?.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding: 20px;">No withdrawal requests found.</td></tr>`;
+      if (!address) {
+        document.getElementById('dispTonBal').innerText = "0.000 TON";
+        document.getElementById('dispGramBal').innerText = "0.000 GRAM";
+        document.getElementById('dispApiStatus').innerText = "NO WALLET ⚠️";
         return;
       }
 
-      tbody.innerHTML = data.withdrawals.map(w => {
-        const gramAmount = w.gram_amount || (Number(w.points) * 0.00001).toFixed(4);
-        const shortAddr = w.wallet_address 
-          ? w.wallet_address.slice(0, 6) + '...' + w.wallet_address.slice(-6) 
-          : (w.email || '-');
+      document.getElementById('dispApiStatus').innerText = "FETCHING...";
 
-        return `
-          <tr>
-            <td><code>${w.telegram_id}</code></td>
-            <td><code style="color:#38bdf8;">${shortAddr}</code></td>
-            <td><b>${Number(w.points).toFixed(0)} PTS</b></td>
-            <td><b style="color:#22c55e;">${gramAmount} GRAM</b></td>
-            <td class="${w.status}">${w.status.toUpperCase()}</td>
-            <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at).toLocaleString()}</td>
-            <td>
-              ${w.status === 'pending' ? `
-                <button class="btn-green" style="padding: 6px 10px; font-size: 12px;" onclick="updateWithdrawalStatus('${w.id}', 'approve')">Approve ✅</button>
-                <button class="btn-red" style="padding: 6px 10px; font-size: 12px; margin-left: 4px;" onclick="updateWithdrawalStatus('${w.id}', 'reject')">Reject ❌</button>
-              ` : '<span style="color:#22c55e; font-weight:700;">Completed</span>'}
-            </td>
-          </tr>
-        `;
-      }).join('');
+      try {
+        // Query TonCenter API directly
+        const headers = apiKey ? { "X-API-Key": apiKey } : {};
+        const res = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${address}`, { headers });
+        const data = await res.json();
+
+        if (data.ok) {
+          const tonBal = (parseInt(data.result, 10) / 1e9).toFixed(3);
+          document.getElementById('dispTonBal').innerText = `${tonBal} TON`;
+          document.getElementById('dispGramBal').innerText = "Active Pool";
+          document.getElementById('dispApiStatus').innerText = "ONLINE 🟢";
+        } else {
+          document.getElementById('dispApiStatus').innerText = "API LIMIT ⚠️";
+        }
+      } catch (e) {
+        document.getElementById('dispApiStatus').innerText = "OFFLINE 🔴";
+      }
     }
 
-    async function updateWithdrawalStatus(id, action) {
-      if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+    // ================= WITHDRAWALS =================
+    function loadWithdrawals() {
+      const tbody = document.getElementById('withdrawalListBody');
+      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
 
-      await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({ id, action })
-      });
+      if (!wList.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">No withdrawal requests found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = wList.map((w, idx) => `
+        <tr>
+          <td><code>${w.telegram_id || 'User'}</code></td>
+          <td><code style="color:#38bdf8;">${w.wallet_address ? w.wallet_address.slice(0, 6) + '...' + w.wallet_address.slice(-6) : '-'}</code></td>
+          <td><b>${w.points} PTS</b></td>
+          <td><b style="color:#22c55e;">${w.gram_amount || (w.points * 0.00001).toFixed(4)} GRAM</b></td>
+          <td class="${w.status || 'approved'}">${(w.status || 'APPROVED').toUpperCase()}</td>
+          <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at || Date.now()).toLocaleDateString()}</td>
+          <td>
+            <button class="btn-red" style="padding:4px 8px; font-size:11px;" onclick="deleteWithdrawal(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteWithdrawal(idx) {
+      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
+      wList.splice(idx, 1);
+      localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
       loadWithdrawals();
     }
 
     // ================= USERS MANAGEMENT =================
-    let cachedUsersList = [];
-
-    async function loadUsers() {
-      const res = await fetch('/api/admin?type=users', {
-        headers: { 'x-admin-token': authToken }
-      });
-      const data = await res.json();
-      cachedUsersList = data.users || [];
-      renderUsersTable(cachedUsersList);
-    }
-
-    function renderUsersTable(users) {
+    function loadUsers() {
       const tbody = document.getElementById('userListBody');
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+
       if (!users.length) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding: 20px;">No users registered yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">No registered members.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = users.map(u => {
-        const isBanned = Boolean(u.is_banned);
-        return `
-          <tr>
-            <td><code>${u.telegram_id}</code></td>
-            <td><b>${u.first_name || 'Member'}</b><br><span style="font-size:11px; color:#94a3b8;">${u.username ? '@' + u.username : 'No username'}</span></td>
-            <td><b style="color:#38bdf8;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
-            <td><b style="color:#22c55e;">${u.today_ads_watched || 0}</b></td>
-            <td>${u.ads_watched || 0}</td>
-            <td>${u.invited_count || 0}</td>
-            <td class="${isBanned ? 'banned' : 'active-user'}">${isBanned ? '🚫 BANNED' : '🟢 ACTIVE'}</td>
-            <td>
-              <button class="btn-blue" style="padding: 6px 10px; font-size: 11px;" onclick="editUserBalance('${u.telegram_id}', ${u.balance || 0})">✏️ PTS</button>
-              <button class="${isBanned ? 'btn-green' : 'btn-purple'}" style="padding: 6px 10px; font-size: 11px; margin-left: 2px;" onclick="toggleBanUser('${u.telegram_id}')">
-                ${isBanned ? 'Unban' : 'Ban'}
-              </button>
-              <button class="btn-red" style="padding: 6px 10px; font-size: 11px; margin-left: 2px;" onclick="deleteUser('${u.telegram_id}')">🗑️ Del</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = users.map((u, idx) => `
+        <tr>
+          <td><code>${u.telegram_id}</code></td>
+          <td><b>${u.first_name || 'Member'}</b></td>
+          <td><b style="color:#38bdf8;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
+          <td><b style="color:#22c55e;">${u.today_ads || 0}</b></td>
+          <td>${u.ads_watched || 0}</td>
+          <td class="${u.is_banned ? 'banned' : 'active-user'}">${u.is_banned ? 'BANNED' : 'ACTIVE'}</td>
+          <td>
+            <button class="btn-blue" style="padding:4px 8px; font-size:11px;" onclick="editUserBal(${idx})">✏️</button>
+            <button class="${u.is_banned ? 'btn-green' : 'btn-purple'}" style="padding:4px 8px; font-size:11px;" onclick="toggleBan(${idx})">${u.is_banned ? 'Unban' : 'Ban'}</button>
+            <button class="btn-red" style="padding:4px 8px; font-size:11px;" onclick="delUser(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
     }
 
     function filterUsers() {
       const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
-      const filtered = cachedUsersList.filter(u => 
-        (u.telegram_id && String(u.telegram_id).toLowerCase().includes(q)) ||
-        (u.username && u.username.toLowerCase().includes(q)) ||
-        (u.first_name && u.first_name.toLowerCase().includes(q))
-      );
-      renderUsersTable(filtered);
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+      const filtered = users.filter(u => String(u.telegram_id).includes(q) || (u.first_name || '').toLowerCase().includes(q));
+      
+      const tbody = document.getElementById('userListBody');
+      tbody.innerHTML = filtered.map((u, idx) => `
+        <tr>
+          <td><code>${u.telegram_id}</code></td>
+          <td><b>${u.first_name || 'Member'}</b></td>
+          <td><b style="color:#38bdf8;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
+          <td><b style="color:#22c55e;">${u.today_ads || 0}</b></td>
+          <td>${u.ads_watched || 0}</td>
+          <td class="${u.is_banned ? 'banned' : 'active-user'}">${u.is_banned ? 'BANNED' : 'ACTIVE'}</td>
+          <td>
+            <button class="btn-blue" style="padding:4px 8px; font-size:11px;" onclick="editUserBal(${idx})">✏️</button>
+            <button class="${u.is_banned ? 'btn-green' : 'btn-purple'}" style="padding:4px 8px; font-size:11px;" onclick="toggleBan(${idx})">${u.is_banned ? 'Unban' : 'Ban'}</button>
+            <button class="btn-red" style="padding:4px 8px; font-size:11px;" onclick="delUser(${idx})">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function editUserBal(idx) {
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+      const newBal = prompt(`Enter new balance (PTS):`, users[idx].balance || 0);
+      if (newBal !== null && !isNaN(newBal)) {
+        users[idx].balance = parseFloat(newBal);
+        localStorage.setItem('admin_users', JSON.stringify(users));
+        loadUsers();
+      }
+    }
+
+    function toggleBan(idx) {
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+      users[idx].is_banned = !users[idx].is_banned;
+      localStorage.setItem('admin_users', JSON.stringify(users));
+      loadUsers();
+    }
+
+    function delUser(idx) {
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+      users.splice(idx, 1);
+      localStorage.setItem('admin_users', JSON.stringify(users));
+      loadUsers();
     }
 
     function openAddUserModal() {
       document.getElementById('newUserId').value = '';
       document.getElementById('newUserName').value = '';
-      document.getElementById('newUserUsername').value = '';
       document.getElementById('newUserBalance').value = '0.00';
       document.getElementById('addUserModal').style.display = 'flex';
     }
 
-    function closeModal(id) {
-      document.getElementById(id).style.display = 'none';
-    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    async function submitNewUser() {
+    function submitNewUser() {
       const tid = document.getElementById('newUserId').value.trim();
       const name = document.getElementById('newUserName').value.trim();
-      const username = document.getElementById('newUserUsername').value.trim();
-      const balance = document.getElementById('newUserBalance').value.trim();
+      const bal = document.getElementById('newUserBalance').value.trim();
 
-      if (!tid) return alert('Telegram ID is required!');
+      if (!tid) return alert('Telegram ID required!');
 
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({
-          action: 'add_user',
-          telegram_id: tid,
-          first_name: name,
-          username: username,
-          balance: Number(balance) || 0
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert('✅ User created successfully!');
-        closeModal('addUserModal');
-        loadUsers();
-      } else {
-        alert('❌ Error: ' + (data.error || 'Failed to add user'));
-      }
+      const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+      users.push({ telegram_id: tid, first_name: name, balance: parseFloat(bal) || 0, today_ads: 0, ads_watched: 0 });
+      localStorage.setItem('admin_users', JSON.stringify(users));
+      closeModal('addUserModal');
+      loadUsers();
     }
 
-    async function deleteUser(telegramId) {
-      if (!confirm(`Delete user ${telegramId}?`)) return;
-
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({ action: 'delete_user', telegram_id: telegramId })
-      });
-
-      const data = await res.json();
-      if (data.success) loadUsers();
-    }
-
-    async function editUserBalance(telegramId, currentBal) {
-      const newBal = prompt(`Enter new balance (PTS) for user ${telegramId}:`, currentBal);
-      if (newBal === null || newBal.trim() === '' || isNaN(newBal)) return;
-
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({ action: 'edit_balance', telegram_id: telegramId, new_balance: Number(newBal) })
-      });
-
-      const data = await res.json();
-      if (data.success) loadUsers();
-    }
-
-    async function toggleBanUser(telegramId) {
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({ action: 'toggle_ban', telegram_id: telegramId })
-      });
-
-      const data = await res.json();
-      if (data.success) loadUsers();
-    }
-
-    // ================= APP SETTINGS =================
-    async function saveSettings() {
-      const bot_token = document.getElementById('settingBotToken').value.trim();
-      const channel_id = document.getElementById('settingChannelId').value.trim();
+    // ================= SAVE SETTINGS =================
+    function saveSettings() {
+      const wallet_address = document.getElementById('settingWalletAddress').value.trim();
+      const mnemonic = document.getElementById('settingMnemonic').value.trim();
+      const api_key = document.getElementById('settingTonApiKey').value.trim();
       const min_withdraw = document.getElementById('settingMinWithdraw').value.trim();
-      const banner_url = document.getElementById('settingBannerUrl').value.trim();
 
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-        body: JSON.stringify({
-          action: 'save_settings',
-          bot_token,
-          channel_id,
-          min_withdraw: Number(min_withdraw) || 5000,
-          banner_url
-        })
-      });
+      const cfg = { wallet_address, mnemonic, api_key, min_withdraw: Number(min_withdraw) || 5000 };
+      localStorage.setItem('admin_cfg', JSON.stringify(cfg));
 
-      const data = await res.json();
-      if (data.success) alert('✅ Settings saved!');
-    }
-
-    async function activateWebhook() {
-      if (!confirm("Activate bot webhook now?")) return;
-      try {
-        const res = await fetch('/api/admin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-token': authToken },
-          body: JSON.stringify({ action: 'set_webhook' })
-        });
-        const data = await res.json();
-        alert(data.message || 'Webhook activated');
-      } catch (e) {
-        alert('Network error connecting to webhook service.');
-      }
+      alert('✅ Hot Wallet Settings & API Keys saved successfully!');
+      showDashboard();
     }
   </script>
 </body>
