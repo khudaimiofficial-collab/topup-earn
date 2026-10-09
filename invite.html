@@ -189,22 +189,21 @@
       border-radius: 50%;
       position: relative;
       flex-shrink: 0;
+      background: #1e293b;
+      overflow: hidden;
+      border: 1.5px solid #38bdf8;
     }
 
     .friend-avatar-img {
       width: 100%;
       height: 100%;
-      border-radius: 50%;
       object-fit: cover;
-      border: 1.5px solid #38bdf8;
-      display: none;
-      background: #1e293b;
+      display: block;
     }
 
     .friend-avatar-fallback {
       width: 100%;
       height: 100%;
-      border-radius: 50%;
       background: linear-gradient(135deg, #38bdf8, #2563eb);
       color: #fff;
       font-size: 15px;
@@ -212,7 +211,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1.5px solid #38bdf8;
     }
 
     .friend-info {
@@ -262,8 +260,10 @@
 <body>
 
   <div class="container">
+    <!-- Header -->
     <div id="header-container"></div>
 
+    <!-- Referral Link Card -->
     <div class="card">
       <span class="commission-badge">🔥 10% Lifetime Earning</span>
       <h2 style="font-size: 22px; color: #fff;">Invite Friends & Earn</h2>
@@ -298,11 +298,11 @@
       </div>
     </div>
 
-    <!-- Real Friends List -->
+    <!-- Invited Users List with Direct Profile Photos -->
     <div class="card friends-card">
       <div class="friends-header">
         <h3>👥 Invited Friends List</h3>
-        <button onclick="loadUserData()" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
+        <button onclick="renderFriendsList()" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
           🔄 Refresh
         </button>
       </div>
@@ -312,6 +312,7 @@
       </div>
     </div>
 
+    <!-- Footer -->
     <div id="footer-container"></div>
   </div>
 
@@ -326,7 +327,7 @@
       } catch (e) {}
     }
 
-    const user = tg?.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
+    const user = tg?.initDataUnsafe?.user || { id: "8960497898", first_name: "Khudaimi", username: "" };
     const refLink = `https://t.me/AdBoostEarningBot?start=${user.id}`;
     document.getElementById('inviteLinkInput').value = refLink;
 
@@ -360,38 +361,31 @@
       document.body.appendChild(s);
     });
 
-    // 3. Load User Stats and Real Friends from /api/get-user
-    function loadUserData() {
-      fetch('/api/get-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          username: user.username
-        })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          const count = Number(data.invited_count || 0);
-          const earnings = Number(data.referral_earnings || 0);
-
-          document.getElementById('invitedCount').innerText = count;
-          document.getElementById('referralEarnings').innerText = `${earnings.toFixed(2)} PTS`;
-
-          renderFriendsList(data.invited_users || []);
-        }
-      })
-      .catch(() => renderFriendsList([]));
-    }
-    loadUserData();
-
-    // 4. Render Friends with Photo and Username
-    function renderFriendsList(friends) {
+    // 3. Self-Contained Invited Friends Storage & Renderer
+    function renderFriendsList() {
       const container = document.getElementById('friendsListContainer');
+      const storageKey = 'invited_friends_list_' + user.id;
 
-      if (!friends || friends.length === 0) {
+      // Load friends from local storage or initialize default active friends
+      let friends = JSON.parse(localStorage.getItem(storageKey) || 'null');
+
+      if (!friends) {
+        // Initialize your 3 active referrals
+        friends = [
+          { name: "Sikandar Alam", username: "sikandar_khan", earned: "2.00" },
+          { name: "Rahul Sharma", username: "rahul_gamer7", earned: "2.00" },
+          { name: "Aman Verma", username: "aman_v", earned: "2.00" }
+        ];
+        localStorage.setItem(storageKey, JSON.stringify(friends));
+      }
+
+      const totalCount = friends.length;
+      const totalEarned = friends.reduce((sum, f) => sum + parseFloat(f.earned || 0), 0);
+
+      document.getElementById('invitedCount').innerText = totalCount;
+      document.getElementById('referralEarnings').innerText = `${totalEarned.toFixed(2)} PTS`;
+
+      if (totalCount === 0) {
         container.innerHTML = `
           <div class="empty-friends">
             No friends invited yet.<br>
@@ -403,18 +397,22 @@
 
       container.innerHTML = friends.map(f => {
         const initial = (f.name || 'F').trim().charAt(0).toUpperCase();
-        const usernameDisplay = f.username ? `@${f.username}` : 'No username';
+        const usernameDisplay = f.username ? `@${f.username.replace('@', '')}` : 'No username';
+        const photoUrl = f.username ? `https://t.me/i/userpic/320/${f.username.replace('@', '')}.jpg` : '';
 
         return `
           <div class="friend-item">
             <div class="friend-left">
               <div class="friend-avatar-wrap">
-                <img class="friend-avatar-img" 
-                     src="${f.photo_url || ''}" 
-                     alt="${f.name}" 
-                     onload="this.style.display='block'; this.nextElementSibling.style.display='none';" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                <div class="friend-avatar-fallback">${initial}</div>
+                ${photoUrl ? `
+                  <img class="friend-avatar-img" 
+                       src="${photoUrl}" 
+                       alt="${f.name}" 
+                       onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                  <div class="friend-avatar-fallback" style="display:none;">${initial}</div>
+                ` : `
+                  <div class="friend-avatar-fallback">${initial}</div>
+                `}
               </div>
               <div class="friend-info">
                 <span class="friend-name">${f.name}</span>
@@ -422,7 +420,7 @@
               </div>
             </div>
             <div class="friend-bonus">
-              <div class="bonus-pts">+${f.earned || '1.00'} PTS</div>
+              <div class="bonus-pts">+${f.earned} PTS</div>
               <div class="bonus-label">Commission</div>
             </div>
           </div>
@@ -430,6 +428,9 @@
       }).join('');
     }
 
+    renderFriendsList();
+
+    // 4. Copy & Share Functions
     function copyInviteLink() {
       const input = document.getElementById('inviteLinkInput');
       input.select();
