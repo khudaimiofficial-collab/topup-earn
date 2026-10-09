@@ -11,6 +11,7 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.12);
     margin-bottom: 14px;
     width: 100%;
+    box-sizing: border-box;
     user-select: none;
   }
 
@@ -18,6 +19,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
   }
 
   .brand-avatar-box {
@@ -39,6 +41,10 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .brand-text {
+    min-width: 0;
   }
 
   .brand-text h1 {
@@ -72,9 +78,14 @@
     cursor: pointer;
     transition: transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
+    outline: none;
   }
 
   .header-user:active { transform: scale(0.95); }
+
+  .header-user:focus-visible {
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.6);
+  }
 
   .user-avatar-wrap {
     position: relative;
@@ -124,6 +135,7 @@
     display: flex;
     flex-direction: column;
     text-align: left;
+    min-width: 0;
   }
 
   .user-name-text {
@@ -149,76 +161,119 @@
   <!-- Bot Info Left -->
   <div class="header-brand">
     <div class="brand-avatar-box">
-      <img id="botHeaderPhoto" 
-           src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg" 
-           alt="Bot" 
-           onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
-      <span id="botFallbackIcon" style="display:none; font-size:20px;">⚡</span>
+      <img id="botHeaderPhoto"
+           src=""
+           alt="Bot"
+           style="display:none;"
+           onerror="this.style.display='none'; var f=document.getElementById('botFallbackIcon'); if(f) f.style.display='block';" />
+      <span id="botFallbackIcon" style="font-size:20px;">⚡</span>
     </div>
     <div class="brand-text">
-      <!-- Synced to match 'Free Gram Token' from your MiniApp bar -->
       <h1 id="botTitle">Free Gram Token</h1>
       <span>Instant Auto Payout</span>
     </div>
   </div>
 
   <!-- User Profile Right -->
-  <div class="header-user" onclick="navigateToProfile(event)">
+  <div class="header-user" id="headerUserBtn" role="button" tabindex="0" aria-label="Open profile">
     <div class="user-avatar-wrap">
       <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
-      <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
+      <div id="userHeaderFallback" class="user-avatar-fallback">?</div>
       <span class="status-dot-badge"></span>
     </div>
 
     <div class="user-info-text">
-      <span class="user-name-text" id="userName">Khudaimi</span>
+      <span class="user-name-text" id="userName">Guest</span>
       <span class="user-sub-text">ACTIVE</span>
     </div>
   </div>
 </header>
 
 <script>
-  // Immediate Self-Executing Hydration
-  (function updateHeaderData() {
-    const tg = window.Telegram?.WebApp;
-    const tgUser = tg?.initDataUnsafe?.user;
+  (function () {
+    'use strict';
 
-    const nameEl = document.getElementById('userName');
-    const photoEl = document.getElementById('userHeaderPhoto');
-    const fallbackEl = document.getElementById('userHeaderFallback');
-    const botTitleEl = document.getElementById('botTitle');
+    // ---------- HYDRATION ----------
+    function hydrateHeader() {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      var tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 
-    // 1. Force the title to match your bot name
-    if (botTitleEl) {
-      botTitleEl.innerText = "Free Gram Token";
-    }
+      var nameEl = document.getElementById('userName');
+      var photoEl = document.getElementById('userHeaderPhoto');
+      var fallbackEl = document.getElementById('userHeaderFallback');
+      var botTitleEl = document.getElementById('botTitle');
 
-    // 2. Hydrate User Name and Photo from Telegram WebApp
-    if (tgUser) {
-      if (tgUser.first_name && nameEl) {
-        nameEl.innerText = tgUser.first_name;
-      }
+      // Bot title (set from config if needed)
+      if (botTitleEl) botTitleEl.textContent = 'Free Gram Token';
+
+      if (!tgUser) return;
+
+      // --- Name ---
+      var firstName = (tgUser.first_name || '').trim();
+      var displayName = firstName || (tgUser.username ? '@' + tgUser.username : 'Guest');
+
+      if (nameEl) nameEl.textContent = displayName;
 
       if (fallbackEl) {
-        fallbackEl.innerText = (tgUser.first_name || 'K').charAt(0).toUpperCase();
+        fallbackEl.textContent = (displayName.charAt(0) || '?').toUpperCase();
       }
 
-      // Check if Telegram provided the official user photo URL
-      if (tgUser.photo_url && photoEl) {
+      // --- Photo ---
+      if (photoEl && typeof tgUser.photo_url === 'string' && tgUser.photo_url.length > 0) {
+        photoEl.onload = function () {
+          photoEl.style.display = 'block';
+          if (fallbackEl) fallbackEl.style.display = 'none';
+        };
+        photoEl.onerror = function () {
+          photoEl.style.display = 'none';
+          if (fallbackEl) fallbackEl.style.display = 'flex';
+        };
         photoEl.src = tgUser.photo_url;
-        photoEl.style.display = 'block';
-        if (fallbackEl) fallbackEl.style.display = 'none';
       }
     }
-  })();
 
-  function navigateToProfile(e) {
-    if (e) e.preventDefault();
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
-    if (typeof window.navigateSpa === 'function') {
-      window.navigateSpa('/profile.html');
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hydrateHeader);
     } else {
-      window.location.href = '/profile.html';
+      hydrateHeader();
     }
-  }
+
+    // Also run once the Telegram SDK is fully ready (may load after this script)
+    if (window.Telegram && window.Telegram.WebApp) {
+      try {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      } catch (e) { /* noop */ }
+      hydrateHeader();
+    } else {
+      window.addEventListener('load', hydrateHeader, { once: true });
+    }
+
+    // ---------- NAVIGATION ----------
+    function navigateToProfile(e) {
+      if (e) e.preventDefault();
+      try {
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+      } catch (err) { /* noop */ }
+
+      if (typeof window.navigateSpa === 'function') {
+        window.navigateSpa('/profile.html');
+      } else {
+        window.location.href = '/profile.html';
+      }
+    }
+
+    // Bind profile button (click + keyboard)
+    var btn = document.getElementById('headerUserBtn');
+    if (btn) {
+      btn.addEventListener('click', navigateToProfile);
+      btn.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') navigateToProfile(e);
+      });
+    }
+
+    // Expose globally (backwards compatibility with any inline usage)
+    window.navigateToProfile = navigateToProfile;
+  })();
 </script>
