@@ -158,7 +158,7 @@
 </style>
 
 <header class="app-header">
-  <!-- Bot Info Left -->
+  <!-- Bot Info Left (no hardcoded name/photo) -->
   <div class="header-brand">
     <div class="brand-avatar-box">
       <img id="botHeaderPhoto"
@@ -169,12 +169,12 @@
       <span id="botFallbackIcon" style="font-size:20px;">⚡</span>
     </div>
     <div class="brand-text">
-      <h1 id="botTitle">Free Gram Token</h1>
-      <span>Instant Auto Payout</span>
+      <h1 id="botTitle">…</h1>
+      <span id="botSubtitle">Instant Auto Payout</span>
     </div>
   </div>
 
-  <!-- User Profile Right -->
+  <!-- User Profile Right (dynamic from Telegram) -->
   <div class="header-user" id="headerUserBtn" role="button" tabindex="0" aria-label="Open profile">
     <div class="user-avatar-wrap">
       <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
@@ -183,7 +183,7 @@
     </div>
 
     <div class="user-info-text">
-      <span class="user-name-text" id="userName">Guest</span>
+      <span class="user-name-text" id="userName">…</span>
       <span class="user-sub-text">ACTIVE</span>
     </div>
   </div>
@@ -193,64 +193,133 @@
   (function () {
     'use strict';
 
-    // ---------- HYDRATION ----------
+    /* ============================================================
+       CONFIG — set these from your backend or leave null to
+       let the code try Telegram first.
+       ============================================================ */
+    var BOT_CONFIG = {
+      // Bot display name. If null, tries Telegram → falls back to "Bot".
+      name: null,
+
+      // Bot avatar URL. If null, tries Telegram → falls back to ⚡ emoji.
+      photo: null,
+
+      // Optional tagline under the bot name.
+      subtitle: 'Instant Auto Payout'
+    };
+
+    /* ============================================================
+       HELPERS
+       ============================================================ */
+    function setImage(imgEl, fallbackEl, url) {
+      if (!imgEl || !url) return;
+      imgEl.onload = function () {
+        imgEl.style.display = 'block';
+        if (fallbackEl) fallbackEl.style.display = 'none';
+      };
+      imgEl.onerror = function () {
+        imgEl.style.display = 'none';
+        if (fallbackEl) fallbackEl.style.display = 'flex';
+      };
+      imgEl.src = url;
+    }
+
+    function firstLetter(str) {
+      return (str && str.trim().charAt(0) || '?').toUpperCase();
+    }
+
+    /* ============================================================
+       HYDRATION
+       ============================================================ */
     function hydrateHeader() {
-      var tg = window.Telegram && window.Telegram.WebApp;
-      var tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+      var tg     = window.Telegram && window.Telegram.WebApp;
+      var init   = tg && tg.initDataUnsafe;
+      var tgUser = init && init.user;
 
-      var nameEl = document.getElementById('userName');
-      var photoEl = document.getElementById('userHeaderPhoto');
-      var fallbackEl = document.getElementById('userHeaderFallback');
-      var botTitleEl = document.getElementById('botTitle');
+      var botTitleEl   = document.getElementById('botTitle');
+      var botSubEl     = document.getElementById('botSubtitle');
+      var botPhotoEl   = document.getElementById('botHeaderPhoto');
+      var botFallback  = document.getElementById('botFallbackIcon');
 
-      // Bot title (set from config if needed)
-      if (botTitleEl) botTitleEl.textContent = 'Free Gram Token';
+      var nameEl       = document.getElementById('userName');
+      var photoEl      = document.getElementById('userHeaderPhoto');
+      var fallbackEl   = document.getElementById('userHeaderFallback');
 
+      /* ---------- BOT ---------- */
+      // 1) Name priority: config → Telegram (init.bot or init.bot_username) → "Bot"
+      var botName =
+        BOT_CONFIG.name ||
+        (init && init.bot && (init.bot.first_name || init.bot.name)) ||
+        (init && init.bot_username) ||
+        'Bot';
+
+      if (botTitleEl) botTitleEl.textContent = botName;
+      if (botSubEl && BOT_CONFIG.subtitle) botSubEl.textContent = BOT_CONFIG.subtitle;
+
+      // 2) Photo priority: config → Telegram (init.bot.photo_url) → fallback emoji
+      var botPhoto =
+        BOT_CONFIG.photo ||
+        (init && init.bot && init.bot.photo_url) ||
+        null;
+
+      if (botPhoto) {
+        if (botFallback) botFallback.style.display = 'none';
+        setImage(botPhotoEl, botFallback, botPhoto);
+      } else {
+        // Keep the ⚡ emoji visible
+        if (botPhotoEl) botPhotoEl.style.display = 'none';
+        if (botFallback) botFallback.style.display = 'block';
+      }
+
+      /* ---------- USER ---------- */
       if (!tgUser) return;
 
-      // --- Name ---
+      // Name: first_name → @username → "Guest"
       var firstName = (tgUser.first_name || '').trim();
       var displayName = firstName || (tgUser.username ? '@' + tgUser.username : 'Guest');
 
       if (nameEl) nameEl.textContent = displayName;
 
-      if (fallbackEl) {
-        fallbackEl.textContent = (displayName.charAt(0) || '?').toUpperCase();
-      }
+      if (fallbackEl) fallbackEl.textContent = firstLetter(displayName);
 
-      // --- Photo ---
-      if (photoEl && typeof tgUser.photo_url === 'string' && tgUser.photo_url.length > 0) {
-        photoEl.onload = function () {
-          photoEl.style.display = 'block';
-          if (fallbackEl) fallbackEl.style.display = 'none';
-        };
-        photoEl.onerror = function () {
-          photoEl.style.display = 'none';
-          if (fallbackEl) fallbackEl.style.display = 'flex';
-        };
-        photoEl.src = tgUser.photo_url;
+      // Photo: only if a real non-empty string
+      if (typeof tgUser.photo_url === 'string' && tgUser.photo_url.length > 0) {
+        setImage(photoEl, fallbackEl, tgUser.photo_url);
       }
     }
 
-    // Run when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', hydrateHeader);
-    } else {
-      hydrateHeader();
-    }
-
-    // Also run once the Telegram SDK is fully ready (may load after this script)
-    if (window.Telegram && window.Telegram.WebApp) {
+    /* ============================================================
+       BOOTSTRAP — run at the right moments
+       ============================================================ */
+    function bootTelegram() {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      if (!tg) return false;
       try {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+        tg.ready();
+        tg.expand();
       } catch (e) { /* noop */ }
-      hydrateHeader();
-    } else {
-      window.addEventListener('load', hydrateHeader, { once: true });
+      return true;
     }
 
-    // ---------- NAVIGATION ----------
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        bootTelegram();
+        hydrateHeader();
+      });
+    } else {
+      bootTelegram();
+      hydrateHeader();
+    }
+
+    // Telegram SDK may load after this script — retry on window load
+    window.addEventListener('load', function () {
+      bootTelegram();
+      hydrateHeader();
+    }, { once: true });
+
+    /* ============================================================
+       NAVIGATION
+       ============================================================ */
     function navigateToProfile(e) {
       if (e) e.preventDefault();
       try {
@@ -264,7 +333,6 @@
       }
     }
 
-    // Bind profile button (click + keyboard)
     var btn = document.getElementById('headerUserBtn');
     if (btn) {
       btn.addEventListener('click', navigateToProfile);
@@ -273,7 +341,8 @@
       });
     }
 
-    // Expose globally (backwards compatibility with any inline usage)
+    // Expose globally for backwards compatibility
     window.navigateToProfile = navigateToProfile;
+    window.hydrateHeader = hydrateHeader;
   })();
 </script>
