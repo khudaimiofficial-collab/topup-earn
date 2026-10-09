@@ -3,26 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Free Gram Token - Earn & Instant Withdrawal</title>
+  <title>Earn & Instant Withdrawal</title>
 
-  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- AJAX Seamless Router -->
   <script src="/router.js"></script>
-
-  <!-- Monetag SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
-
-  <!-- Bot identity — read by /header.html when it loads -->
-  <script>
-    window.BOT_CONFIG = {
-      name: 'Free Gram Token',
-      // Replace with your real bot image URL:
-      photo: '',
-      subtitle: 'Instant Auto Payout'
-    };
-  </script>
 
   <style>
     :root {
@@ -307,7 +292,7 @@
           <span>Online</span>
         </div>
       </div>
-      <p class="welcome-sub">
+      <p class="welcome-sub" id="welcomeSubtitle">
         Watch short sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
       </p>
 
@@ -380,7 +365,7 @@
         Join our official channel to verify your account and unlock ad rewards:
       </p>
 
-      <a id="btnJoinChannel" href="https://t.me/KhudaimiOfficialStore" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
+      <a id="btnJoinChannel" href=https://t.me/pheizu_wallet"" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
         👉 Join Official Channel
       </a>
 
@@ -391,9 +376,6 @@
   </div>
 
   <script>
-    /* ============================================================
-       GLOBAL STATE
-       ============================================================ */
     const tg = window.Telegram && window.Telegram.WebApp;
     const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
 
@@ -405,67 +387,69 @@
           <p style="color:#94a3b8;font-size:14px;max-width:320px;line-height:1.6;margin-bottom:24px;">
             This application is exclusively available inside Telegram. Please launch the official bot.
           </p>
-          <a href="https://t.me/AdBoostEarningBot" style="background:#2563eb;color:#fff;text-decoration:none;padding:14px 28px;border-radius:14px;font-weight:800;">
-            🚀 Open Bot
-          </a>
         </div>
       `;
     }
 
     if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-        tg.BackButton.hide();
-      } catch (e) {}
+      try { tg.ready(); tg.expand(); tg.BackButton.hide(); } catch (e) {}
     }
 
     const user = tg?.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
     let currentBalance = 0.00;
     let isChannelJoined = false;
 
+    // Helper: Today's date string "YYYY-MM-DD"
+    const todayDateKey = new Date().toISOString().slice(0, 10);
+
+    // Initial Display Setup
     if (user.first_name) {
       document.getElementById('welcomeUserName').innerText = user.first_name;
     }
 
-    /* ============================================================
-       HEADER / FOOTER INJECTION
-       ============================================================ */
-    function injectScript(html) {
-      const m = html.match(/<script>([\s\S]*?)<\/script>/i);
-      if (m && m[1]) {
+    // Load Local Daily Count Immediately
+    const storedDate = localStorage.getItem('ad_date_' + user.id);
+    let todayAds = 0;
+    if (storedDate === todayDateKey) {
+      todayAds = parseInt(localStorage.getItem('today_ads_' + user.id) || '0', 10);
+    } else {
+      localStorage.setItem('ad_date_' + user.id, todayDateKey);
+      localStorage.setItem('today_ads_' + user.id, '0');
+    }
+    document.getElementById('todayAdsCount').innerText = todayAds;
+
+    // 1. Fetch & Hydrate Header
+    fetch('/header.html')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('header-container').innerHTML = html;
+        const tgUser = tg?.initDataUnsafe?.user;
+        const uEl = document.getElementById('userName');
+        const pEl = document.getElementById('userHeaderPhoto');
+        const fEl = document.getElementById('userHeaderFallback');
+
+        if (tgUser) {
+          if (tgUser.first_name && uEl) uEl.innerText = tgUser.first_name;
+          if (fEl) fEl.innerText = (tgUser.first_name || 'K').charAt(0).toUpperCase();
+          if (tgUser.photo_url && pEl) {
+            pEl.src = tgUser.photo_url;
+            pEl.style.display = 'block';
+            if (fEl) fEl.style.display = 'none';
+          }
+        }
+      });
+
+    // 2. Fetch & Hydrate Footer
+    fetch('/footer.html')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('footer-container').innerHTML = html;
         const s = document.createElement('script');
-        s.text = m[1];
+        s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
         document.body.appendChild(s);
-      }
-    }
+      });
 
-    function injectHeader() {
-      fetch('/header.html')
-        .then(r => r.text())
-        .then(html => {
-          document.getElementById('header-container').innerHTML = html;
-          injectScript(html);
-        })
-        .catch(err => console.warn("Header load failed:", err));
-    }
-
-    function injectFooter() {
-      fetch('/footer.html')
-        .then(r => r.text())
-        .then(html => {
-          document.getElementById('footer-container').innerHTML = html;
-          injectScript(html);
-        })
-        .catch(err => console.warn("Footer load failed:", err));
-    }
-
-    injectHeader();
-    injectFooter();
-
-    /* ============================================================
-       USER DATA + STATS
-       ============================================================ */
+    // 3. Load User Data (Base Counters from Server)
     function loadUserData() {
       const urlParams = new URLSearchParams(window.location.search);
       const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
@@ -482,18 +466,21 @@
       })
       .then(r => r.json())
       .then(data => {
-        console.log('[get-user response]', data); // 👈 debug
-
         if (data.status === 'success') {
           currentBalance = parseFloat(data.balance || 0);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
-          document.getElementById('todayAdsCount').innerText = data.today_ads_watched ?? 0;
           document.getElementById('totalAdsCount').innerText = data.ads_watched ?? 0;
           document.getElementById('invitedCount').innerText = data.invited_count ?? 0;
           document.getElementById('referralEarnings').innerText =
             `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
-          // Backend-provided avatar overrides Telegram's
+          // If server already tracks today's ads, sync with local max
+          if (data.today_ads_watched !== undefined) {
+            todayAds = Math.max(todayAds, Number(data.today_ads_watched));
+            localStorage.setItem('today_ads_' + user.id, String(todayAds));
+            document.getElementById('todayAdsCount').innerText = todayAds;
+          }
+
           if (data.photo_url && typeof window.setHeaderUserPhoto === 'function') {
             window.setHeaderUserPhoto(data.photo_url);
           }
@@ -505,74 +492,47 @@
       })
       .catch(err => console.error("Error loading user:", err));
     }
-
-    setTimeout(loadUserData, 200);
-
-    /* ============================================================
-       CHANNEL VERIFICATION
-       ============================================================ */
-    function checkVerificationAgain() {
-      const btn = document.getElementById('btnVerifyChannel');
-      btn.disabled = true;
-      btn.innerText = "Checking...";
-
-      fetch('/api/check-channel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.joined === true) {
-          isChannelJoined = true;
-          alert("🎉 Verified! You can now start earning.");
-          document.getElementById('channelModal').style.display = 'none';
-          loadUserData();
-        } else {
-          isChannelJoined = false;
-          alert("❌ Please join the channel first, then tap verify.");
-        }
-      })
-      .catch(() => alert("Failed to verify membership."))
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerText = "✅ I Have Joined (Verify)";
-      });
-    }
+    loadUserData();
 
     /* ============================================================
-       REWARD FLOW
+       DIRECT SELF-CONTAINED REWARD (No /api/reward needed)
        ============================================================ */
     function giveReward() {
       const btn = document.getElementById('adBtn');
       btn.disabled = true;
       btn.innerText = "Crediting reward...";
 
-      fetch('/api/reward', {
+      // 1. Instant Local State Increment
+      currentBalance += 10.00;
+      document.getElementById('balance').innerText = currentBalance.toFixed(2);
+
+      todayAds += 1;
+      localStorage.setItem('ad_date_' + user.id, todayDateKey);
+      localStorage.setItem('today_ads_' + user.id, String(todayAds));
+      document.getElementById('todayAdsCount').innerText = todayAds;
+
+      const totalEl = document.getElementById('totalAdsCount');
+      const currentTotal = parseInt(totalEl.innerText || '0', 10) + 1;
+      totalEl.innerText = currentTotal;
+
+      tg?.HapticFeedback?.notificationOccurred('success');
+      alert("🎉 +10.00 Points credited!");
+
+      // 2. Background Sync to Database via /api/get-user sync payload
+      fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           telegram_id: user.id,
           first_name: user.first_name,
-          username: user.username
+          username: user.username,
+          add_points: 10.00,
+          today_ads_watched: todayAds
         })
-      })
-      .then(r => r.json())
-      .then(data => {
-        console.log('[reward response]', data); // 👈 debug
-        if (data.status === 'success') {
-          tg?.HapticFeedback?.notificationOccurred('success');
-          alert("🎉 +10.00 Points credited!");
-          loadUserData();
-        } else {
-          alert(data.message || "Failed to record reward.");
-        }
-      })
-      .catch(() => alert("Reward connection failed."))
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerText = "▶ Watch Ad (+10.00 PTS)";
-      });
+      }).catch(err => console.warn("Background sync note:", err));
+
+      btn.disabled = false;
+      btn.innerText = "▶ Watch Ad (+10.00 PTS)";
     }
 
     function triggerAd() {
@@ -613,9 +573,35 @@
       }, 1000);
     }
 
-    /* ============================================================
-       EXPOSE GLOBALS
-       ============================================================ */
+    function checkVerificationAgain() {
+      const btn = document.getElementById('btnVerifyChannel');
+      btn.disabled = true;
+      btn.innerText = "Checking...";
+
+      fetch('/api/check-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.joined === true) {
+          isChannelJoined = true;
+          alert("🎉 Verified! You can now start earning.");
+          document.getElementById('channelModal').style.display = 'none';
+          loadUserData();
+        } else {
+          isChannelJoined = false;
+          alert("❌ Please join the channel first, then tap verify.");
+        }
+      })
+      .catch(() => alert("Failed to verify membership."))
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "✅ I Have Joined (Verify)";
+      });
+    }
+
     window.triggerAd = triggerAd;
     window.giveReward = giveReward;
     window.runFallbackAd = runFallbackAd;
