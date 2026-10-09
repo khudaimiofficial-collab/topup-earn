@@ -153,19 +153,18 @@
 </style>
 
 <header class="app-header">
-  <!-- Bot Info Left -->
+  <!-- Bot Info Left (Hardcoded Title & Visible Bot Logo) -->
   <div class="header-brand">
     <div class="brand-avatar-box">
       <img id="botHeaderPhoto"
-           src=""
-           alt="Bot"
-           style="display:none;"
-           onerror="this.style.display='none'; var f=document.getElementById('botFallbackIcon'); if(f) f.style.display='block';" />
-      <span id="botFallbackIcon" style="font-size:20px; display:none;"></span>
+           src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg"
+           alt="Bot Logo"
+           onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
+      <span id="botFallbackIcon" style="font-size:20px; display:none;">⚡</span>
     </div>
     <div class="brand-text">
-      <h1 id="botTitle"></h1>
-      <span id="botSubtitle"></span>
+      <h1 id="botTitle">Free Gram Token</h1>
+      <span id="botSubtitle">Instant Auto Payout</span>
     </div>
   </div>
 
@@ -173,12 +172,12 @@
   <div class="header-user" id="headerUserBtn" role="button" tabindex="0" aria-label="Open profile">
     <div class="user-avatar-wrap">
       <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
-      <div id="userHeaderFallback" class="user-avatar-fallback"></div>
+      <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
       <span class="status-dot-badge"></span>
     </div>
 
     <div class="user-info-text">
-      <span class="user-name-text" id="userName"></span>
+      <span class="user-name-text" id="userName">Khudaimi</span>
       <span class="user-sub-text">ACTIVE</span>
     </div>
   </div>
@@ -188,77 +187,35 @@
   (function () {
     'use strict';
 
-    /* ============================================================
-       Everything is populated from window.BOT_CONFIG,
-       which index.html fills from /api/bot-info.
-       Nothing is hardcoded here.
-       ============================================================ */
-    function getConfig() {
-      return window.BOT_CONFIG || { name: '', photo: '', subtitle: '' };
-    }
-
-    function setImage(imgEl, fallbackEl, url) {
-      if (!imgEl || !url) return;
-      imgEl.onload = function () {
-        imgEl.style.display = 'block';
-        if (fallbackEl) fallbackEl.style.display = 'none';
-      };
-      imgEl.onerror = function () {
-        imgEl.style.display = 'none';
-        if (fallbackEl) fallbackEl.style.display = 'flex';
-      };
-      imgEl.src = url;
-    }
-
     function firstLetter(str) {
-      return (str && str.trim().charAt(0) || '?').toUpperCase();
+      return (str && str.trim().charAt(0) || 'K').toUpperCase();
     }
 
-    function hydrateHeader() {
-      var cfg = getConfig();
-      var tg     = window.Telegram && window.Telegram.WebApp;
-      var init   = tg && tg.initDataUnsafe;
-      var tgUser = init && init.user;
+    function hydrateUser() {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      var tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 
-      var botTitleEl  = document.getElementById('botTitle');
-      var botSubEl    = document.getElementById('botSubtitle');
-      var botPhotoEl  = document.getElementById('botHeaderPhoto');
-      var botFallback = document.getElementById('botFallbackIcon');
+      var nameEl = document.getElementById('userName');
+      var photoEl = document.getElementById('userHeaderPhoto');
+      var fallbackEl = document.getElementById('userHeaderFallback');
 
-      var nameEl      = document.getElementById('userName');
-      var photoEl     = document.getElementById('userHeaderPhoto');
-      var fallbackEl  = document.getElementById('userHeaderFallback');
-
-      /* ---------- BOT ---------- */
-      if (botTitleEl) botTitleEl.textContent = cfg.name || '';
-      if (botSubEl)   botSubEl.textContent   = cfg.subtitle || '';
-
-      if (cfg.photo) {
-        if (botFallback) botFallback.style.display = 'none';
-        setImage(botPhotoEl, botFallback, cfg.photo);
-      } else {
-        if (botPhotoEl) botPhotoEl.style.display = 'none';
-        if (botFallback) botFallback.style.display = 'block';
-      }
-
-      /* ---------- USER ---------- */
       if (!tgUser) return;
 
-      var firstName = (tgUser.first_name || '').trim();
-      var displayName = firstName || (tgUser.username ? '@' + tgUser.username : '');
-
+      var displayName = (tgUser.first_name || '').trim() || (tgUser.username ? '@' + tgUser.username : 'User');
       if (nameEl) nameEl.textContent = displayName;
-      if (fallbackEl) fallbackEl.textContent = displayName ? firstLetter(displayName) : '';
+      if (fallbackEl) fallbackEl.textContent = firstLetter(displayName);
 
-      if (typeof tgUser.photo_url === 'string' && tgUser.photo_url.length > 0) {
-        setImage(photoEl, fallbackEl, tgUser.photo_url);
+      // Display user photo if Telegram passes photo_url
+      if (tgUser.photo_url && photoEl) {
+        photoEl.src = tgUser.photo_url;
+        photoEl.onload = function () {
+          photoEl.style.display = 'block';
+          if (fallbackEl) fallbackEl.style.display = 'none';
+        };
       }
     }
 
-    /* Re-hydrate when index.html finishes fetching /api/bot-info */
-    window.hydrateHeader = hydrateHeader;
-
-    /* Let index.html override user avatar (backend photo_url) */
+    /* Support custom user photo override from parent scripts */
     window.setHeaderUserPhoto = function (url) {
       var pEl = document.getElementById('userHeaderPhoto');
       var fEl = document.getElementById('userHeaderFallback');
@@ -268,7 +225,7 @@
       if (fEl) fEl.style.display = 'none';
     };
 
-    /* ---------- NAVIGATION ---------- */
+    /* Navigation */
     function navigateToProfile(e) {
       if (e) e.preventDefault();
       try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (err) {}
@@ -288,13 +245,6 @@
       });
     }
 
-    window.navigateToProfile = navigateToProfile;
-
-    /* Run once elements exist */
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', hydrateHeader);
-    } else {
-      hydrateHeader();
-    }
+    hydrateUser();
   })();
 </script>
