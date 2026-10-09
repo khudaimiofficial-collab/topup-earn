@@ -37,7 +37,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 12px 14px 95px 14px;
+      padding: 12px 14px calc(100px + env(safe-area-inset-bottom, 0px)) 14px;
       overflow-x: hidden;
     }
 
@@ -392,6 +392,8 @@
       text-align: center;
     }
 
+    .chip-btn:active { transform: scale(0.95); }
+
     .conversion-box {
       background: rgba(34, 197, 94, 0.08);
       border: 1px solid rgba(34, 197, 94, 0.25);
@@ -447,7 +449,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.92);
-      z-index: 1000;
+      z-index: 10000;
       justify-content: center;
       align-items: center;
       padding: 20px;
@@ -565,7 +567,7 @@
     <header class="app-header">
       <div class="header-brand">
         <div class="brand-avatar-box">
-          <img id="botHeaderPhoto" src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg" alt="Bot Logo" onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
+          <img id="botHeaderPhoto" referrerpolicy="no-referrer" src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg" alt="Bot Logo" onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
           <span id="botFallbackIcon" style="font-size:20px; display:none;">⚡</span>
         </div>
         <div class="brand-text">
@@ -576,12 +578,12 @@
 
       <div class="header-user" onclick="switchTab('profile')">
         <div class="user-avatar-wrap">
-          <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
+          <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" referrerpolicy="no-referrer" />
           <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
           <span class="status-dot-badge"></span>
         </div>
         <div class="user-info-text">
-          <span class="user-name-text" id="userName">Khudaimi</span>
+          <span class="user-name-text" id="userName">User</span>
           <span class="user-sub-text">ACTIVE</span>
         </div>
       </div>
@@ -591,7 +593,7 @@
     <div id="view-earn" class="tab-view active">
       <div class="welcome-card">
         <div class="welcome-top">
-          <span class="welcome-title">👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">Khudaimi</span>!</span>
+          <span class="welcome-title">👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">User</span>!</span>
           <span class="status-badge">● Online</span>
         </div>
         <p class="welcome-sub">
@@ -680,7 +682,7 @@
             </div>
             <div class="conversion-line">
               <span style="color: var(--text-dim);">Network Fee:</span>
-              <span style="color: #facc15; font-weight: 700;">0.002 GRAM</span>
+              <span style="color: #facc15; font-weight: 700;" id="dispNetworkFee">0.002 GRAM</span>
             </div>
             <div class="conversion-line" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08);">
               <span style="color: #cbd5e1; font-weight: 700;">Net You Receive:</span>
@@ -741,12 +743,12 @@
       <div class="card">
         <div style="display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;">
           <div class="user-avatar-wrap" style="width:60px; height:60px;">
-            <img id="profPhoto" class="user-avatar-img" src="" alt="User" style="width:100%; height:100%;" />
-            <div id="profFallback" class="user-avatar-fallback" style="width:100%; height:100%; font-size:24px;">K</div>
+            <img id="profPhoto" class="user-avatar-img" src="" alt="User" style="width:100%; height:100%;" referrerpolicy="no-referrer" />
+            <div id="profFallback" class="user-avatar-fallback" style="width:100%; height:100%; font-size:24px;">U</div>
             <span class="status-dot-badge" style="width:12px; height:12px;"></span>
           </div>
           <div>
-            <h2 id="profName" style="font-size:17px; font-weight:800; color:#fff;">Khudaimi</h2>
+            <h2 id="profName" style="font-size:17px; font-weight:800; color:#fff;">User</h2>
             <span id="profUsername" style="font-size:12px; color:var(--accent);">@username</span>
           </div>
         </div>
@@ -827,44 +829,63 @@
   <script>
     const tg = window.Telegram?.WebApp;
     if (tg) {
-      try { tg.ready(); tg.expand(); tg.BackButton.hide(); } catch (e) {}
+      try {
+        tg.ready();
+        tg.expand();
+        tg.enableClosingConfirmation?.();
+        tg.BackButton?.hide();
+      } catch (e) {}
     }
 
-    const user = tg?.initDataUnsafe?.user || { id: "8960497898", first_name: "Khudaimi", username: "" };
+    const defaultUser = { id: "8960497898", first_name: "Khudaimi", username: "" };
+    const user = tg?.initDataUnsafe?.user || defaultUser;
+    const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('start');
     const todayDateKey = new Date().toISOString().slice(0, 10);
 
     let currentBalance = 0.00;
     let todayAds = 0;
     let totalAds = 0;
+    let adInterval = null;
     const PTS_TO_GRAM_RATE = 0.00001; // 10 PTS = 0.0001 GRAM
     const MIN_POINTS = 5000;
     const NETWORK_FEE = 0.002;
 
-    // 1. Initialize UI Elements
-    document.getElementById('userName').innerText = user.first_name || 'Khudaimi';
-    document.getElementById('welcomeUserName').innerText = user.first_name || 'Khudaimi';
-    document.getElementById('profName').innerText = user.first_name || 'Khudaimi';
+    // 1. Initial UI Setup
+    const displayName = user.first_name || 'User';
+    document.getElementById('userName').innerText = displayName;
+    document.getElementById('welcomeUserName').innerText = displayName;
+    document.getElementById('profName').innerText = displayName;
     document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@none';
     document.getElementById('profId').innerText = user.id;
 
-    const initial = (user.first_name || 'K').charAt(0).toUpperCase();
-    document.getElementById('userHeaderFallback').innerText = initial;
-    document.getElementById('profFallback').innerText = initial;
+    const initialLetter = displayName.charAt(0).toUpperCase();
+    document.getElementById('userHeaderFallback').innerText = initialLetter;
+    document.getElementById('profFallback').innerText = initialLetter;
 
-    if (user.photo_url) {
+    function applyAvatar(url) {
+      if (!url) return;
       ['userHeaderPhoto', 'profPhoto'].forEach(id => {
-        const el = document.getElementById(id);
-        el.src = user.photo_url;
-        el.onload = () => {
-          el.style.display = 'block';
-          if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
+        const img = document.getElementById(id);
+        if (!img) return;
+        img.src = url;
+        img.onload = () => {
+          img.style.display = 'block';
+          if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
+        };
+        img.onerror = () => {
+          img.style.display = 'none';
+          if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
         };
       });
     }
 
+    if (user.photo_url) {
+      applyAvatar(user.photo_url);
+    }
+
     document.getElementById('inviteLinkInput').value = `https://t.me/AdBoostEarningBot?start=${user.id}`;
 
-    // 2. Load Local Storage Stats
+    // 2. Local Ad Counters
     const storedDate = localStorage.getItem('ad_date_' + user.id);
     if (storedDate === todayDateKey) {
       todayAds = parseInt(localStorage.getItem('today_ads_' + user.id) || '0', 10);
@@ -875,7 +896,27 @@
     document.getElementById('todayAdsCount').innerText = todayAds;
     document.getElementById('profTodayAds').innerText = todayAds;
 
-    // 3. Tab Switcher
+    // Synchronize to Admin Users
+    function syncToAdminUsers(bal, tAds, totAds) {
+      try {
+        const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
+        const idx = users.findIndex(u => String(u.telegram_id) === String(user.id));
+        const uData = {
+          telegram_id: user.id,
+          first_name: user.first_name || 'Member',
+          username: user.username || '',
+          balance: Number(bal),
+          today_ads: Number(tAds),
+          ads_watched: Number(totAds),
+          is_banned: false
+        };
+        if (idx >= 0) users[idx] = { ...users[idx], ...uData };
+        else users.push(uData);
+        localStorage.setItem('admin_users', JSON.stringify(users));
+      } catch (e) {}
+    }
+
+    // 3. Tab Switching
     function switchTab(tab) {
       try { tg?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
 
@@ -895,7 +936,7 @@
       }
     }
 
-    // 4. Load Backend Profile & Real Friends
+    // 4. Fetch User Data from Backend
     function loadUserData() {
       fetch('/api/get-user', {
         method: 'POST',
@@ -903,7 +944,8 @@
         body: JSON.stringify({
           telegram_id: user.id,
           first_name: user.first_name,
-          username: user.username
+          username: user.username,
+          referred_by: startParam || null
         })
       })
       .then(r => r.json())
@@ -927,23 +969,22 @@
           }
 
           if (data.photo_url) {
-            ['userHeaderPhoto', 'profPhoto'].forEach(id => {
-              const el = document.getElementById(id);
-              el.src = data.photo_url;
-              el.style.display = 'block';
-              if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
-            });
+            applyAvatar(data.photo_url);
           }
 
           window.CURRENT_FRIENDS = data.invited_users || [];
           renderFriends();
+          syncToAdminUsers(currentBalance, todayAds, totalAds);
         }
       })
-      .catch(() => renderFriends());
+      .catch(() => {
+        renderFriends();
+        syncToAdminUsers(currentBalance, todayAds, totalAds);
+      });
     }
     loadUserData();
 
-    // 5. Ad Reward Flow
+    // 5. Ad Reward Logic
     function giveReward() {
       currentBalance += 10.00;
       todayAds += 1;
@@ -958,11 +999,11 @@
 
       localStorage.setItem('ad_date_' + user.id, todayDateKey);
       localStorage.setItem('today_ads_' + user.id, String(todayAds));
+      syncToAdminUsers(currentBalance, todayAds, totalAds);
 
       try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
       alert("🎉 +10.00 Points credited!");
 
-      // Sync in background to database
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -984,14 +1025,25 @@
       btn.innerText = "Loading ad...";
       btn.disabled = true;
 
-      if (typeof window.show_11862560 === 'function') {
-        window.show_11862560().then(() => giveReward()).catch(() => runFallbackAd());
-      } else {
+      try {
+        if (typeof window.show_11862560 === 'function') {
+          const res = window.show_11862560();
+          if (res && typeof res.then === 'function') {
+            res.then(() => giveReward()).catch(() => runFallbackAd());
+          } else {
+            runFallbackAd();
+          }
+        } else {
+          runFallbackAd();
+        }
+      } catch (err) {
         runFallbackAd();
       }
     }
 
     function runFallbackAd() {
+      if (adInterval) clearInterval(adInterval);
+
       const modal = document.getElementById('adModal');
       const timerDisplay = document.getElementById('adTimer');
       let count = 5;
@@ -999,18 +1051,18 @@
       modal.style.display = 'flex';
       timerDisplay.innerText = count;
 
-      const interval = setInterval(() => {
+      adInterval = setInterval(() => {
         count--;
         timerDisplay.innerText = count;
         if (count <= 0) {
-          clearInterval(interval);
+          clearInterval(adInterval);
           modal.style.display = 'none';
           giveReward();
         }
       }, 1000);
     }
 
-    // 6. Withdrawal Logic
+    // 6. Withdrawal System
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
       const rawGram = pts * PTS_TO_GRAM_RATE;
@@ -1020,7 +1072,7 @@
 
     function setQuickAmount(val) {
       const input = document.getElementById('withdrawAmount');
-      input.value = (val === 'max') ? Math.floor(currentBalance) : val;
+      input.value = (val === 'max') ? Math.max(0, Math.floor(currentBalance)) : val;
       updateGramPreview();
     }
 
@@ -1029,7 +1081,7 @@
       const amount = parseFloat(document.getElementById('withdrawAmount').value.trim());
 
       if (!wallet || wallet.length < 48 || (!wallet.startsWith('UQ') && !wallet.startsWith('EQ'))) {
-        return alert("❌ Invalid Gram wallet address. Must start with UQ or EQ.");
+        return alert("❌ Invalid Gram wallet address. Must be a valid TON address starting with UQ or EQ.");
       }
       if (isNaN(amount) || amount < MIN_POINTS) {
         return alert(`❌ Minimum withdrawal is ${MIN_POINTS.toLocaleString()} PTS (0.05 GRAM).`);
@@ -1046,19 +1098,35 @@
 
       const netGrams = Math.max(0.0001, (amount * PTS_TO_GRAM_RATE) - NETWORK_FEE);
 
-      // Save to local withdrawal log
+      // Local user log
       const histKey = 'withdraw_history_' + user.id;
       const hist = JSON.parse(localStorage.getItem(histKey) || '[]');
-      hist.unshift({
+      const newEntry = {
         points: amount,
         gram_amount: netGrams.toFixed(4),
         wallet_address: wallet,
-        status: 'approved',
+        status: 'pending',
         created_at: new Date().toISOString()
-      });
+      };
+      hist.unshift(newEntry);
       localStorage.setItem(histKey, JSON.stringify(hist));
 
-      // Sync deducted points
+      // Admin shared log
+      try {
+        const adminList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
+        adminList.unshift({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          wallet_address: wallet,
+          points: amount,
+          gram_amount: netGrams.toFixed(4),
+          status: 'pending',
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('admin_withdrawals', JSON.stringify(adminList));
+      } catch (e) {}
+
+      // Server dispatch
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1070,8 +1138,22 @@
         })
       }).catch(() => {});
 
+      fetch('/api/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          wallet_address: wallet,
+          points: amount,
+          gram_amount: netGrams.toFixed(4)
+        })
+      }).catch(() => {});
+
+      syncToAdminUsers(currentBalance, todayAds, totalAds);
+
       try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
-      alert(`🎉 Success! Transferred ${netGrams.toFixed(4)} GRAM to your wallet.`);
+      alert(`🎉 Withdrawal request received! ${netGrams.toFixed(4)} GRAM will be processed.`);
       renderWithdrawHistory();
     }
 
@@ -1090,7 +1172,7 @@
             <div style="font-size:13px; font-weight:800; color:#fff;">${item.points} PTS (${item.gram_amount} GRAM)</div>
             <div style="font-size:11px; color:var(--accent); font-family:monospace;">${item.wallet_address.slice(0,6)}...${item.wallet_address.slice(-6)}</div>
           </div>
-          <span class="status-badge">${item.status.toUpperCase()}</span>
+          <span class="status-badge">${(item.status || 'PENDING').toUpperCase()}</span>
         </div>
       `).join('');
     }
@@ -1111,7 +1193,7 @@
           <div class="list-row">
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="user-avatar-wrap" style="width:36px; height:36px;">
-                ${f.photo_url ? `<img class="user-avatar-img" src="${f.photo_url}" style="display:block;" />` : `<div class="user-avatar-fallback">${uInitial}</div>`}
+                ${f.photo_url ? `<img class="user-avatar-img" src="${f.photo_url}" style="display:block;" referrerpolicy="no-referrer" />` : `<div class="user-avatar-fallback">${uInitial}</div>`}
               </div>
               <div>
                 <div style="font-size:13px; font-weight:700; color:#fff;">${f.name}</div>
