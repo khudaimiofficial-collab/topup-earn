@@ -22,47 +22,54 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { telegram_id, first_name, username, referrer_id } = req.body;
+  const { telegram_id, first_name, username, referrer_id, add_points } = req.body;
   if (!telegram_id) {
     return res.status(400).json({ error: "telegram_id is required" });
   }
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN || "";
   let photo_url = null;
-  let bot_name = "Gram Rewards";
+  let bot_name = "Free Gram Token";
 
-  // 1. Fetch User Profile Photo & Bot Name directly from Telegram Bot API
+  // Helper to fetch Telegram profile photos via Bot API
+  async function fetchTelegramPhoto(userId) {
+    if (!botToken || !userId) return null;
+    try {
+      const pRes = await fetch(
+        `https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${userId}&limit=1`
+      );
+      const pData = await pRes.json();
+      if (pData.ok && pData.result.total_count > 0) {
+        const fileId = pData.result.photos[0][0].file_id;
+        const fRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+        const fData = await fRes.json();
+        if (fData.ok && fData.result.file_path) {
+          return `https://api.telegram.org/file/bot${botToken}/${fData.result.file_path}`;
+        }
+      }
+    } catch (e) {
+      console.warn("Photo fetch error:", e);
+    }
+    return null;
+  }
+
+  // 1. Fetch Current User Photo & Bot Name
   if (botToken) {
     try {
-      // Get Bot Info
       const botRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
       const botData = await botRes.json();
       if (botData.ok && botData.result.first_name) {
         bot_name = botData.result.first_name;
       }
-
-      // Get User Profile Photo
-      const photoRes = await fetch(
-        `https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${telegram_id}&limit=1`
-      );
-      const photoData = await photoRes.json();
-
-      if (photoData.ok && photoData.result.total_count > 0) {
-        const fileId = photoData.result.photos[0][0].file_id;
-        const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
-        const fileData = await fileRes.json();
-        if (fileData.ok && fileData.result.file_path) {
-          photo_url = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
-        }
-      }
+      photo_url = await fetchTelegramPhoto(telegram_id);
     } catch (err) {
       console.error("Telegram API fetch error:", err);
     }
   }
 
-  // 2. Fetch or create user in Firestore with Daily Reset logic
+  // 2. Fetch/Update Current User in Firestore
   try {
-    const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const todayStr = new Date().toISOString().slice(0, 10);
     const userRef = db.collection("users").doc(String(telegram_id));
     const userDoc = await userRef.get();
 
@@ -70,7 +77,7 @@ export default async function handler(req, res) {
     if (!userDoc.exists) {
       userData = {
         telegram_id: String(telegram_id),
-        first_name: first_name || "User",
+        first_name: first_name || "Friend",
         username: username || "",
         balance: 0.0,
         ads_watched: 0,
@@ -78,13 +85,13 @@ export default async function handler(req, res) {
         last_ad_date: todayStr,
         invited_count: 0,
         referral_earnings: 0.0,
-        referrer_id: referrer_id || null,
+        referrer_id: referrer_id ? String(referrer_id) : null,
         channel_joined: true,
         created_at: new Date().toISOString()
       };
       await userRef.set(userData);
 
-      // Increment referrer's invited count if valid
+      // Increment referrer count if present
       if (referrer_id && String(referrer_id) !== String(telegram_id)) {
         const refUser = db.collection("users").doc(String(referrer_id));
         await refUser.update({
@@ -94,27 +101,75 @@ export default async function handler(req, res) {
     } else {
       userData = userDoc.data();
 
-      // Check if day changed since last view/ad
-      if (userData.last_ad_date !== todayStr) {
+      // Handle balance updates from ads/withdrawals
+      if (add_points && typeof add_points === "number") {
         await userRef.update({
-          today_ads_watched: 0,
-          last_ad_date: todayStr
+          balance: admin.firestore.FieldValue.increment(add_points),
+          ads_watched: admin.firestore.FieldValue.increment(add_points > 0 ? 1 : 0)
         });
+        userData.balance = (userData.balance || 0) + add_points;
+      }
+
+      if (userData.last_ad_date !== todayStr) {
+        await userRef.update({ today_ads_watched: 0, last_ad_date: todayStr });
         userData.today_ads_watched = 0;
       }
     }
+
+    // 3. Query All Real Invited Friends (Handles String & Numeric IDs)
+    let invitedUsers = [];
+    try {
+      const snapString = await db.collection("users")
+        .where("referrer_id", "==", String(telegram_id))
+        .limit(20)
+        .get();
+
+      const snapNum = await db.collection("users")
+        .where("referrer_id", "==", Number(telegram_id))
+        .limit(20)
+        .get();
+
+      const mergedMap = new Map();
+      [...snapString.docs, ...snapNum.docs].forEach(doc => {
+        mergedMap.set(doc.id, doc.data());
+      });
+
+      // Fetch avatar photos for each real invited friend
+      invitedUsers = await Promise.all(
+        Array.from(mergedMap.values()).map(async (d) => {
+          let uPhoto = null;
+          if (d.telegram_id) {
+            uPhoto = await fetchTelegramPhoto(d.telegram_id);
+          }
+          return {
+            id: d.telegram_id,
+            name: d.first_name || "Telegram User",
+            username: d.username ? d.username.replace('@', '') : "",
+            photo_url: uPhoto,
+            earned: (Number(d.ads_watched || 0) * 1.0).toFixed(2)
+          };
+        })
+      );
+    } catch (fErr) {
+      console.warn("Invited users query error:", fErr);
+    }
+
+    const calculatedInvitedCount = Math.max(invitedUsers.length, Number(userData.invited_count || 0));
+    const calculatedEarnings = Number(userData.referral_earnings || (calculatedInvitedCount * 2.0));
 
     return res.status(200).json({
       status: "success",
       balance: Number(userData.balance || 0),
       ads_watched: Number(userData.ads_watched || 0),
       today_ads_watched: Number(userData.today_ads_watched || 0),
-      invited_count: Number(userData.invited_count || 0),
-      referral_earnings: Number(userData.referral_earnings || 0),
+      invited_count: calculatedInvitedCount,
+      referral_earnings: calculatedEarnings,
       channel_joined: userData.channel_joined !== false,
       bot_name: bot_name,
-      photo_url: photo_url
+      photo_url: photo_url,
+      invited_users: invitedUsers
     });
+
   } catch (err) {
     console.error("Database user error:", err);
     return res.status(500).json({ status: "error", message: err.message });
