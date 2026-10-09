@@ -153,7 +153,7 @@
 </style>
 
 <header class="app-header">
-  <!-- Bot Info Left (fully dynamic) -->
+  <!-- Bot Info Left -->
   <div class="header-brand">
     <div class="brand-avatar-box">
       <img id="botHeaderPhoto"
@@ -161,24 +161,24 @@
            alt="Bot"
            style="display:none;"
            onerror="this.style.display='none'; var f=document.getElementById('botFallbackIcon'); if(f) f.style.display='block';" />
-      <span id="botFallbackIcon" style="font-size:20px;">⚡</span>
+      <span id="botFallbackIcon" style="font-size:20px; display:none;"></span>
     </div>
     <div class="brand-text">
-      <h1 id="botTitle">…</h1>
-      <span id="botSubtitle">Instant Auto Payout</span>
+      <h1 id="botTitle"></h1>
+      <span id="botSubtitle"></span>
     </div>
   </div>
 
-  <!-- User Profile Right (fully dynamic) -->
+  <!-- User Profile Right -->
   <div class="header-user" id="headerUserBtn" role="button" tabindex="0" aria-label="Open profile">
     <div class="user-avatar-wrap">
       <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
-      <div id="userHeaderFallback" class="user-avatar-fallback">?</div>
+      <div id="userHeaderFallback" class="user-avatar-fallback"></div>
       <span class="status-dot-badge"></span>
     </div>
 
     <div class="user-info-text">
-      <span class="user-name-text" id="userName">…</span>
+      <span class="user-name-text" id="userName"></span>
       <span class="user-sub-text">ACTIVE</span>
     </div>
   </div>
@@ -189,20 +189,14 @@
     'use strict';
 
     /* ============================================================
-       BOT CONFIG — set from index.html via window.BOT_CONFIG
-       before this header loads, or fall back to defaults.
-       Telegram does NOT expose bot name/photo via initDataUnsafe,
-       so we rely on this config for the bot's identity.
+       Everything is populated from window.BOT_CONFIG,
+       which index.html fills from /api/bot-info.
+       Nothing is hardcoded here.
        ============================================================ */
-    var BOT_CONFIG = window.BOT_CONFIG || {
-      name: 'Free Gram Token',
-      photo: '',
-      subtitle: 'Instant Auto Payout'
-    };
+    function getConfig() {
+      return window.BOT_CONFIG || { name: '', photo: '', subtitle: '' };
+    }
 
-    /* ============================================================
-       HELPERS
-       ============================================================ */
     function setImage(imgEl, fallbackEl, url) {
       if (!imgEl || !url) return;
       imgEl.onload = function () {
@@ -220,10 +214,8 @@
       return (str && str.trim().charAt(0) || '?').toUpperCase();
     }
 
-    /* ============================================================
-       HYDRATION
-       ============================================================ */
     function hydrateHeader() {
+      var cfg = getConfig();
       var tg     = window.Telegram && window.Telegram.WebApp;
       var init   = tg && tg.initDataUnsafe;
       var tgUser = init && init.user;
@@ -238,13 +230,12 @@
       var fallbackEl  = document.getElementById('userHeaderFallback');
 
       /* ---------- BOT ---------- */
-      var botName = BOT_CONFIG.name || 'Bot';
-      if (botTitleEl) botTitleEl.textContent = botName;
-      if (botSubEl && BOT_CONFIG.subtitle) botSubEl.textContent = BOT_CONFIG.subtitle;
+      if (botTitleEl) botTitleEl.textContent = cfg.name || '';
+      if (botSubEl)   botSubEl.textContent   = cfg.subtitle || '';
 
-      if (BOT_CONFIG.photo) {
+      if (cfg.photo) {
         if (botFallback) botFallback.style.display = 'none';
-        setImage(botPhotoEl, botFallback, BOT_CONFIG.photo);
+        setImage(botPhotoEl, botFallback, cfg.photo);
       } else {
         if (botPhotoEl) botPhotoEl.style.display = 'none';
         if (botFallback) botFallback.style.display = 'block';
@@ -254,38 +245,30 @@
       if (!tgUser) return;
 
       var firstName = (tgUser.first_name || '').trim();
-      var displayName = firstName || (tgUser.username ? '@' + tgUser.username : 'Guest');
+      var displayName = firstName || (tgUser.username ? '@' + tgUser.username : '');
 
       if (nameEl) nameEl.textContent = displayName;
-      if (fallbackEl) fallbackEl.textContent = firstLetter(displayName);
+      if (fallbackEl) fallbackEl.textContent = displayName ? firstLetter(displayName) : '';
 
       if (typeof tgUser.photo_url === 'string' && tgUser.photo_url.length > 0) {
         setImage(photoEl, fallbackEl, tgUser.photo_url);
       }
     }
 
-    /* ============================================================
-       BOOTSTRAP
-       ============================================================ */
-    function boot() {
-      var tg = window.Telegram && window.Telegram.WebApp;
-      if (tg) {
-        try { tg.ready(); tg.expand(); } catch (e) {}
-      }
-      hydrateHeader();
-    }
+    /* Re-hydrate when index.html finishes fetching /api/bot-info */
+    window.hydrateHeader = hydrateHeader;
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', boot);
-    } else {
-      boot();
-    }
+    /* Let index.html override user avatar (backend photo_url) */
+    window.setHeaderUserPhoto = function (url) {
+      var pEl = document.getElementById('userHeaderPhoto');
+      var fEl = document.getElementById('userHeaderFallback');
+      if (!pEl || !url) return;
+      pEl.src = url;
+      pEl.style.display = 'block';
+      if (fEl) fEl.style.display = 'none';
+    };
 
-    window.addEventListener('load', boot, { once: true });
-
-    /* ============================================================
-       NAVIGATION
-       ============================================================ */
+    /* ---------- NAVIGATION ---------- */
     function navigateToProfile(e) {
       if (e) e.preventDefault();
       try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (err) {}
@@ -305,21 +288,13 @@
       });
     }
 
-    /* ============================================================
-       EXPOSE FOR RE-HYDRATION AFTER BACKEND DATA LOADS
-       ============================================================ */
-    window.hydrateHeader = hydrateHeader;
-
-    // Allow index.html to override the user photo once backend responds
-    window.setHeaderUserPhoto = function (url) {
-      var pEl = document.getElementById('userHeaderPhoto');
-      var fEl = document.getElementById('userHeaderFallback');
-      if (!pEl || !url) return;
-      pEl.src = url;
-      pEl.style.display = 'block';
-      if (fEl) fEl.style.display = 'none';
-    };
-
     window.navigateToProfile = navigateToProfile;
+
+    /* Run once elements exist */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', hydrateHeader);
+    } else {
+      hydrateHeader();
+    }
   })();
 </script>
