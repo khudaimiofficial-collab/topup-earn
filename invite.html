@@ -1,489 +1,148 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Invite & Earn - Free Gram Token</title>
+import admin from "firebase-admin";
 
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- AJAX Seamless Router -->
-  <script src="/router.js"></script>
-
-  <style>
-    :root {
-      --bg: #070a12;
-      --card: #0f172a;
-      --card-border: rgba(56, 189, 248, 0.15);
-      --accent: #38bdf8;
-      --btn-bg: #22c55e;
-      --text: #ffffff;
-      --text-dim: #94a3b8;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 12px 14px 95px 14px;
-      overflow-x: hidden;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .card {
-      background: var(--card);
-      padding: 22px 18px;
-      border-radius: 20px;
-      border: 1px solid var(--card-border);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-      text-align: center;
-    }
-
-    .commission-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(56, 189, 248, 0.15));
-      border: 1px solid rgba(34, 197, 94, 0.35);
-      color: #22c55e;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin: 16px 0;
-    }
-
-    .stat-card {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 14px 10px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: var(--text-dim);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .stat-val {
-      font-size: 24px;
-      font-weight: 900;
-      color: #fff;
-      margin-top: 4px;
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(0, 0, 0, 0.45);
-      color: #38bdf8;
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-      margin: 10px 0 14px 0;
-      outline: none;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 15px;
-      border-radius: 14px;
-      border: none;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      margin-bottom: 8px;
-      transition: transform 0.1s ease;
-    }
-
-    .btn:active { transform: scale(0.97); }
-
-    .btn-blue {
-      background: linear-gradient(135deg, #38bdf8, #2563eb);
-      color: #fff;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-    }
-
-    .btn-copy {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-      border: 1px solid var(--card-border);
-    }
-
-    .rule-box {
-      text-align: left;
-      font-size: 12px;
-      color: var(--text-dim);
-      line-height: 1.6;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding-top: 14px;
-      margin-top: 14px;
-    }
-
-    /* Invited Friends List Section */
-    .friends-card {
-      text-align: left;
-    }
-
-    .friends-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .friends-header h3 {
-      font-size: 15px;
-      color: #fff;
-    }
-
-    .friend-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
-    }
-
-    .friend-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .friend-avatar-wrap {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .friend-avatar-img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1.5px solid #38bdf8;
-      display: block;
-      background: #1e293b;
-    }
-
-    .friend-avatar-fallback {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #38bdf8, #2563eb);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1.5px solid #38bdf8;
-    }
-
-    .friend-info {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .friend-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 140px;
-    }
-
-    .friend-date {
-      font-size: 10px;
-      color: #64748b;
-    }
-
-    .friend-bonus {
-      text-align: right;
-    }
-
-    .bonus-pts {
-      font-size: 13px;
-      font-weight: 800;
-      color: #22c55e;
-    }
-
-    .bonus-label {
-      font-size: 9.5px;
-      color: var(--text-dim);
-    }
-
-    .empty-friends {
-      text-align: center;
-      padding: 24px 10px;
-      color: var(--text-dim);
-      font-size: 12.5px;
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <!-- Header dynamically loaded from header.html -->
-    <div id="header-container"></div>
-
-    <!-- Referral Link Card -->
-    <div class="card">
-      <span class="commission-badge">🔥 10% Lifetime Earning</span>
-      <h2 style="font-size: 22px; color: #fff;">Invite Friends & Earn</h2>
-      <p style="font-size: 12.5px; color: var(--text-dim); margin-top: 4px;">
-        Earn <b>10% commission (+1.00 PTS)</b> every time your friend watches an ad!
-      </p>
-
-      <!-- LIVE STATS -->
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">Friends Invited</div>
-          <div class="stat-val" style="color: var(--accent);" id="invitedCount">0</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">10% Earnings</div>
-          <div class="stat-val" style="color: #22c55e;" id="referralEarnings">0.00 PTS</div>
-        </div>
-      </div>
-
-      <!-- Referral Link Input -->
-      <input type="text" id="inviteLinkInput" class="input-field" readonly value="Loading referral link..." />
-
-      <button class="btn btn-blue" onclick="shareInvite()">
-        🚀 Share on Telegram
-      </button>
-
-      <button class="btn btn-copy" onclick="copyInviteLink()">
-        📋 Copy Referral Link
-      </button>
-
-      <div class="rule-box">
-        <p>• Whenever your friend earns <b>+10.00 PTS</b>, you receive <b>+1.00 PTS</b> instantly credited to your balance.</p>
-        <p style="margin-top: 6px;">• Convert points to Gram tokens anytime with instant automatic payouts.</p>
-      </div>
-    </div>
-
-    <!-- Invited Users List with Profile Photos -->
-    <div class="card friends-card">
-      <div class="friends-header">
-        <h3>👥 Invited Friends List</h3>
-        <button onclick="loadInvitedFriends()" style="background:transparent; border:none; color:var(--accent); font-size:12px; font-weight:700; cursor:pointer;">
-          🔄 Refresh
-        </button>
-      </div>
-
-      <div id="friendsListContainer">
-        <div class="empty-friends">Loading invited friends...</div>
-      </div>
-    </div>
-
-    <!-- Footer dynamically loaded from footer.html -->
-    <div id="footer-container"></div>
-  </div>
-
-  <script>
-    const tg = window.Telegram && window.Telegram.WebApp;
-    if (tg) {
-      try {
-        tg.ready();
-        tg.expand();
-        tg.BackButton.show();
-        tg.BackButton.onClick(() => {
-          if (typeof window.navigateSpa === 'function') {
-            window.navigateSpa('/index.html');
-          } else {
-            window.location.href = '/index.html';
-          }
-        });
-      } catch (e) {}
-    }
-
-    const user = tg?.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
-    const botUser = "AdBoostEarningBot";
-    const refLink = `https://t.me/${botUser}?start=${user.id}`;
-    document.getElementById('inviteLinkInput').value = refLink;
-
-    // 1. Hydrate Header
-    fetch('/header.html').then(r => r.text()).then(html => {
-      document.getElementById('header-container').innerHTML = html;
-      const tgUser = tg?.initDataUnsafe?.user;
-      const uEl = document.getElementById('userName');
-      const pEl = document.getElementById('userHeaderPhoto');
-      const fEl = document.getElementById('userHeaderFallback');
-      const tEl = document.getElementById('botTitle');
-
-      if (tEl) tEl.innerText = "Free Gram Token";
-
-      if (tgUser) {
-        if (tgUser.first_name && uEl) uEl.innerText = tgUser.first_name;
-        if (fEl) fEl.innerText = (tgUser.first_name || 'K').charAt(0).toUpperCase();
-        if (tgUser.photo_url && pEl) {
-          pEl.src = tgUser.photo_url;
-          pEl.style.display = 'block';
-          if (fEl) fEl.style.display = 'none';
-        }
-      }
-    });
-
-    // 2. Hydrate Footer
-    fetch('/footer.html').then(r => r.text()).then(html => {
-      document.getElementById('footer-container').innerHTML = html;
-      const s = document.createElement('script');
-      s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
-      document.body.appendChild(s);
-    });
-
-    // 3. Load Live Invited Stats & Friends
-    function loadUserData() {
-      fetch('/api/get-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          username: user.username
-        })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          const count = Number(data.invited_count || 0);
-          const earnings = Number(data.referral_earnings || 0);
-
-          document.getElementById('invitedCount').innerText = count;
-          document.getElementById('referralEarnings').innerText = `${earnings.toFixed(2)} PTS`;
-
-          loadInvitedFriends(count, data.invited_users);
-        }
-      })
-      .catch(() => loadInvitedFriends(0, null));
-    }
-    loadUserData();
-
-    // 4. Render Invited Users with Profile Photos
-    function loadInvitedFriends(invitedCount = 0, serverUsers = null) {
-      const container = document.getElementById('friendsListContainer');
-
-      // Use server data if returned, otherwise fall back to local friend storage
-      const storageKey = 'invited_users_' + user.id;
-      let friends = serverUsers || JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-      // If user has invited count > 0 but list is empty, create realistic placeholders for existing referrals
-      if ((!friends || friends.length === 0) && invitedCount > 0) {
-        friends = [];
-        for (let i = 1; i <= invitedCount; i++) {
-          friends.push({
-            name: `Friend #${i}`,
-            username: `user_${i}`,
-            photo_url: '',
-            joined: 'Recently',
-            earned: (invitedCount > 0 ? (Number(document.getElementById('referralEarnings').innerText.replace(' PTS', '') || 0) / invitedCount) : 1.0).toFixed(2)
-          });
-        }
-      }
-
-      if (!friends || friends.length === 0) {
-        container.innerHTML = `
-          <div class="empty-friends">
-            No friends invited yet.<br>
-            Share your link above to start earning 10% lifetime commission!
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = friends.map(f => {
-        const initial = (f.name || 'F').charAt(0).toUpperCase();
-        const photoSrc = f.photo_url || (f.username ? `https://t.me/i/userpic/320/${f.username.replace('@', '')}.jpg` : '');
-
-        return `
-          <div class="friend-item">
-            <div class="friend-left">
-              <div class="friend-avatar-wrap">
-                ${photoSrc ? `
-                  <img class="friend-avatar-img" src="${photoSrc}" alt="${f.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                  <div class="friend-avatar-fallback" style="display:none;">${initial}</div>
-                ` : `
-                  <div class="friend-avatar-fallback">${initial}</div>
-                `}
-              </div>
-              <div class="friend-info">
-                <span class="friend-name">${f.name || 'Telegram User'}</span>
-                <span class="friend-date">${f.username ? '@' + f.username.replace('@', '') : (f.joined || 'Active')}</span>
-              </div>
-            </div>
-            <div class="friend-bonus">
-              <div class="bonus-pts">+${f.earned || '1.00'} PTS</div>
-              <div class="bonus-label">Commission</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 5. Actions: Copy & Share
-    function copyInviteLink() {
-      const input = document.getElementById('inviteLinkInput');
-      input.select();
-      input.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(input.value).then(() => {
-        tg?.HapticFeedback?.notificationOccurred('success');
-        alert("✅ Referral link copied to clipboard!");
+if (!admin.apps.length) {
+  try {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      admin.initializeApp({
+        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+      });
+    } else {
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault()
       });
     }
+  } catch (e) {
+    console.error("Firebase init error:", e);
+  }
+}
+const db = admin.firestore();
 
-    function shareInvite() {
-      tg?.HapticFeedback?.impactOccurred('light');
-      const text = encodeURIComponent("💎 Join me to earn Free Gram Tokens! Watch short ads and withdraw instantly directly on-chain:");
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${text}`;
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, '_blank');
+  const { telegram_id, first_name, username, referrer_id, add_points } = req.body;
+  if (!telegram_id) {
+    return res.status(400).json({ error: "telegram_id is required" });
+  }
+
+  const botToken = process.env.TELEGRAM_BOT_TOKEN || "";
+  let photo_url = null;
+  let bot_name = "Free Gram Token";
+
+  // 1. Fetch User Photo & Bot Name
+  if (botToken) {
+    try {
+      const botRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+      const botData = await botRes.json();
+      if (botData.ok && botData.result.first_name) {
+        bot_name = botData.result.first_name;
+      }
+
+      const photoRes = await fetch(
+        `https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${telegram_id}&limit=1`
+      );
+      const photoData = await photoRes.json();
+      if (photoData.ok && photoData.result.total_count > 0) {
+        const fileId = photoData.result.photos[0][0].file_id;
+        const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+        const fileData = await fileRes.json();
+        if (fileData.ok && fileData.result.file_path) {
+          photo_url = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
+        }
+      }
+    } catch (err) {
+      console.error("Telegram API fetch error:", err);
+    }
+  }
+
+  // 2. Query User in Firestore
+  try {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const userRef = db.collection("users").doc(String(telegram_id));
+    const userDoc = await userRef.get();
+
+    let userData;
+    if (!userDoc.exists) {
+      userData = {
+        telegram_id: String(telegram_id),
+        first_name: first_name || "Friend",
+        username: username || "",
+        balance: 0.0,
+        ads_watched: 0,
+        today_ads_watched: 0,
+        last_ad_date: todayStr,
+        invited_count: 0,
+        referral_earnings: 0.0,
+        referrer_id: referrer_id || null,
+        channel_joined: true,
+        created_at: new Date().toISOString()
+      };
+      await userRef.set(userData);
+
+      // Increment referrer's count if valid
+      if (referrer_id && String(referrer_id) !== String(telegram_id)) {
+        const refUser = db.collection("users").doc(String(referrer_id));
+        await refUser.update({
+          invited_count: admin.firestore.FieldValue.increment(1)
+        }).catch(() => {});
+      }
+    } else {
+      userData = userDoc.data();
+
+      // Support direct background PTS balance adjustments
+      if (add_points && typeof add_points === "number") {
+        await userRef.update({
+          balance: admin.firestore.FieldValue.increment(add_points),
+          ads_watched: admin.firestore.FieldValue.increment(add_points > 0 ? 1 : 0)
+        });
+        userData.balance = (userData.balance || 0) + add_points;
+      }
+
+      if (userData.last_ad_date !== todayStr) {
+        await userRef.update({ today_ads_watched: 0, last_ad_date: todayStr });
+        userData.today_ads_watched = 0;
       }
     }
-  </script>
-</body>
-</html>
+
+    // 3. FETCH REAL REFERRALS FROM FIRESTORE
+    let invitedUsers = [];
+    try {
+      const friendsSnap = await db.collection("users")
+        .where("referrer_id", "==", String(telegram_id))
+        .limit(20)
+        .get();
+
+      invitedUsers = friendsSnap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: d.telegram_id,
+          name: d.first_name || "Telegram User",
+          username: d.username || "",
+          photo_url: d.username ? `https://t.me/i/userpic/320/${d.username.replace('@', '')}.jpg` : "",
+          earned: (Number(d.ads_watched || 0) * 1.0).toFixed(2)
+        };
+      });
+    } catch (fErr) {
+      console.warn("Friends query note:", fErr);
+    }
+
+    return res.status(200).json({
+      status: "success",
+      balance: Number(userData.balance || 0),
+      ads_watched: Number(userData.ads_watched || 0),
+      today_ads_watched: Number(userData.today_ads_watched || 0),
+      invited_count: Math.max(invitedUsers.length, Number(userData.invited_count || 0)),
+      referral_earnings: Number(userData.referral_earnings || (invitedUsers.length * 2.0)),
+      channel_joined: userData.channel_joined !== false,
+      bot_name: bot_name,
+      photo_url: photo_url,
+      invited_users: invitedUsers
+    });
+
+  } catch (err) {
+    console.error("Database user error:", err);
+    return res.status(500).json({ status: "error", message: err.message });
+  }
+}
