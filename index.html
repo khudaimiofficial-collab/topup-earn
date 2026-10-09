@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Gram Rewards - Instant Payout</title>
+  <title>Free Gram Token - Earn & Instant Withdrawal</title>
 
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -52,6 +52,7 @@
       gap: 14px;
     }
 
+    /* Welcome Hero Banner */
     .welcome-card {
       background: linear-gradient(135deg, #0f1e36 0%, #1e1b4b 100%);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -60,6 +61,18 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1);
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .welcome-card::after {
+      content: "";
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
+      pointer-events: none;
     }
 
     .welcome-top {
@@ -128,6 +141,7 @@
 
     .welcome-perk b { color: var(--accent); }
 
+    /* Available Balance Card */
     .card {
       background: var(--card);
       padding: 20px 18px;
@@ -163,6 +177,7 @@
       text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
     }
 
+    /* 4-Item Grid for Full Stats */
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -193,6 +208,7 @@
       margin-top: 2px;
     }
 
+    /* Action Buttons */
     .btn {
       width: 100%;
       padding: 16px;
@@ -230,6 +246,7 @@
       border: 1px solid var(--card-border);
     }
 
+    /* Modals */
     .overlay {
       display: none;
       position: fixed;
@@ -263,13 +280,20 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.85); }
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
+    <!-- Header dynamically loaded from header.html -->
     <div id="header-container"></div>
 
+    <!-- Welcome Hero Banner -->
     <div class="welcome-card">
       <div class="welcome-top">
         <span class="welcome-title">
@@ -291,6 +315,7 @@
       </div>
     </div>
 
+    <!-- Balance & Comprehensive Stats Card -->
     <div class="card">
       <div class="balance-label">Available Points</div>
       <div class="balance-value">
@@ -317,11 +342,12 @@
 
         <div class="stat-pill">
           <div class="stat-pill-label">🎁 10% Earnings</div>
-          <div class="stat-pill-value" id="referralEarnings">0.00</div>
+          <div class="stat-pill-value" id="referralEarnings">0.00 PTS</div>
         </div>
       </div>
     </div>
 
+    <!-- Main Action Buttons -->
     <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
       ▶ Watch Ad (+10.00 PTS)
     </button>
@@ -334,9 +360,11 @@
       👥 Invite Friends (Earn 10%)
     </button>
 
+    <!-- Footer dynamically loaded from footer.html -->
     <div id="footer-container"></div>
   </div>
 
+  <!-- Fallback Countdown Modal -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
       <h3 style="color:#fff;">Displaying Advertisement</h3>
@@ -346,6 +374,7 @@
     </div>
   </div>
 
+  <!-- Mandatory Channel Join Modal -->
   <div class="overlay" id="channelModal" style="z-index: 2000;">
     <div class="modal-box">
       <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
@@ -365,9 +394,13 @@
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
+    /* ============================================================
+       GLOBAL STATE
+       ============================================================ */
+    const tg = window.Telegram && window.Telegram.WebApp;
     const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
 
+    // Show "Telegram only" screen WITHOUT throwing (throwing breaks header/footer hydration)
     if (!isTelegram) {
       document.body.innerHTML = `
         <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;">
@@ -381,14 +414,18 @@
           </a>
         </div>
       `;
-      throw new Error("Access Denied");
     }
 
-    tg.ready();
-    tg.expand();
-    tg.BackButton.hide();
+    // Boot Telegram only if available
+    if (tg) {
+      try {
+        tg.ready();
+        tg.expand();
+        tg.BackButton.hide();
+      } catch (e) { /* noop */ }
+    }
 
-    const user = tg.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
+    const user = tg?.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
     let currentBalance = 0.00;
     let isChannelJoined = false;
 
@@ -396,42 +433,49 @@
       document.getElementById('welcomeUserName').innerText = user.first_name;
     }
 
-    // 1. Load Header & Stream User Photo directly
-    fetch('/header.html').then(r => r.text()).then(html => {
-      document.getElementById('header-container').innerHTML = html;
-      
-      const el = document.getElementById('userName');
-      if (el && user.first_name) el.innerText = user.first_name;
+    /* ============================================================
+       HEADER / FOOTER HTML INJECTION
+       ============================================================ */
+    function injectHeader() {
+      fetch('/header.html')
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
 
-      const fallbackEl = document.getElementById('userHeaderFallback');
-      if (fallbackEl && user.first_name) {
-        fallbackEl.innerText = user.first_name.charAt(0).toUpperCase();
-      }
+          // Extract and run any inline <script> from header.html
+          const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/i);
+          if (scriptMatch && scriptMatch[1]) {
+            const s = document.createElement('script');
+            s.text = scriptMatch[1];
+            document.body.appendChild(s);
+          }
+        })
+        .catch(err => console.warn("Header load failed:", err));
+    }
 
-      // Stream user photo via dedicated server proxy
-      if (user.id && user.id !== "0") {
-        const photoEl = document.getElementById('userHeaderPhoto');
-        photoEl.src = `/api/telegram-image?type=user&id=${user.id}`;
-        photoEl.onload = function() {
-          photoEl.style.display = 'block';
-          if (fallbackEl) fallbackEl.style.display = 'none';
-        };
-        photoEl.onerror = function() {
-          photoEl.style.display = 'none';
-          if (fallbackEl) fallbackEl.style.display = 'flex';
-        };
-      }
-    });
+    function injectFooter() {
+      fetch('/footer.html')
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById('footer-container').innerHTML = html;
 
-    // 2. Load Footer
-    fetch('/footer.html').then(r => r.text()).then(html => {
-      document.getElementById('footer-container').innerHTML = html;
-      const s = document.createElement('script');
-      s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
-      document.body.appendChild(s);
-    });
+          // Extract and run any inline <script> from footer.html
+          const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/i);
+          if (scriptMatch && scriptMatch[1]) {
+            const s = document.createElement('script');
+            s.text = scriptMatch[1];
+            document.body.appendChild(s);
+          }
+        })
+        .catch(err => console.warn("Footer load failed:", err));
+    }
 
-    // 3. Load User Data & Bot Details
+    injectHeader();
+    injectFooter();
+
+    /* ============================================================
+       USER DATA + STATS
+       ============================================================ */
     function loadUserData() {
       const urlParams = new URLSearchParams(window.location.search);
       const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
@@ -439,9 +483,9 @@
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          telegram_id: user.id, 
-          first_name: user.first_name, 
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
           username: user.username,
           referrer_id: referrerId
         })
@@ -449,21 +493,26 @@
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          // Balances & Counters
           currentBalance = parseFloat(data.balance || 0);
           document.getElementById('balance').innerText = currentBalance.toFixed(2);
           document.getElementById('todayAdsCount').innerText = data.today_ads_watched || 0;
           document.getElementById('totalAdsCount').innerText = data.ads_watched || 0;
           document.getElementById('invitedCount').innerText = data.invited_count || 0;
-          document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
+          document.getElementById('referralEarnings').innerText =
+            `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
-          // Bot Title from API
-          if (data.bot_name) {
-            const titleEl = document.getElementById('botTitle');
-            if (titleEl) titleEl.innerText = data.bot_name;
+          // If backend returns a custom photo_url, use it on the user header avatar
+          if (data.photo_url) {
+            const pEl = document.getElementById('userHeaderPhoto');
+            const fEl = document.getElementById('userHeaderFallback');
+            if (pEl) {
+              pEl.src = data.photo_url;
+              pEl.style.display = 'block';
+              if (fEl) fEl.style.display = 'none';
+            }
           }
 
-          // Channel Membership
+          // Channel membership
           isChannelJoined = Boolean(data.channel_joined);
           const chModal = document.getElementById('channelModal');
           if (chModal) {
@@ -473,8 +522,13 @@
       })
       .catch(err => console.error("Error loading user:", err));
     }
-    loadUserData();
 
+    // Wait a tick so header/footer injection can finish first (they provide the avatar IDs)
+    setTimeout(loadUserData, 100);
+
+    /* ============================================================
+       CHANNEL VERIFICATION
+       ============================================================ */
     function checkVerificationAgain() {
       const btn = document.getElementById('btnVerifyChannel');
       btn.disabled = true;
@@ -504,6 +558,9 @@
       });
     }
 
+    /* ============================================================
+       REWARD FLOW
+       ============================================================ */
     function giveReward() {
       const btn = document.getElementById('adBtn');
       btn.disabled = true;
@@ -512,16 +569,16 @@
       fetch('/api/reward', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          telegram_id: user.id, 
-          first_name: user.first_name, 
-          username: user.username 
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          username: user.username
         })
       })
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
-          tg.HapticFeedback?.notificationOccurred('success');
+          tg?.HapticFeedback?.notificationOccurred('success');
           alert("🎉 +10.00 Points credited!");
           loadUserData();
         } else {
@@ -572,6 +629,15 @@
         }
       }, 1000);
     }
+
+    /* ============================================================
+       EXPOSE GLOBALS (used by inline onclick="")
+       ============================================================ */
+    window.triggerAd = triggerAd;
+    window.giveReward = giveReward;
+    window.runFallbackAd = runFallbackAd;
+    window.checkVerificationAgain = checkVerificationAgain;
+    window.loadUserData = loadUserData;
   </script>
 </body>
 </html>
