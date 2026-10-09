@@ -50,18 +50,33 @@
 </head>
 <body>
 
-  <!-- ================= AUTH PIN BOX ================= -->
-  <div class="card" id="authBox" style="max-width: 400px; margin-top: 60px;">
-    <h2>🔐 Master Admin Access</h2>
-    <p>Authorized Admin Telegram ID: <code>8960497898</code></p>
+  <!-- ================= AUTH OTP BOX ================= -->
+  <div class="card" id="authBox" style="max-width: 400px; margin-top: 50px;">
+    <h2>🔐 Telegram OTP Sign In</h2>
+    <p>Authentication code will be sent to your Telegram account <code>(ID: 8960497898)</code>.</p>
 
-    <div class="form-group">
-      <label>Enter Master PIN:</label>
-      <input type="password" id="inputPin" placeholder="Enter PIN (Default: 8960)" maxlength="8" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: 800;">
+    <div id="stepSendOtp">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Telegram Bot Token (for dispatch):</label>
+        <input type="text" id="loginBotToken" placeholder="123456:ABC-DEF..." />
+      </div>
+      <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
+        📩 Send 6-Digit OTP to Telegram
+      </button>
     </div>
-    <button class="btn-green" style="width: 100%;" onclick="verifyPin()">
-      ✅ Sign In to Panel
-    </button>
+
+    <div id="stepVerifyOtp" style="display: none; margin-top: 14px;">
+      <div class="form-group">
+        <label>Enter 6-Digit OTP:</label>
+        <input type="text" id="inputOtp" placeholder="123456" maxlength="6" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: 800;">
+      </div>
+      <button class="btn-green" style="width: 100%;" onclick="verifyOtp()">
+        ✅ Verify & Access Panel
+      </button>
+      <button style="background:transparent; border:none; color:#94a3b8; font-size:12px; margin-top:8px; width:100%; cursor:pointer;" onclick="resetOtpStep()">
+        ← Change Bot Token
+      </button>
+    </div>
   </div>
 
   <!-- ================= MAIN DASHBOARD ================= -->
@@ -88,8 +103,8 @@
           <div class="wallet-stat-val" id="dispTonBal" style="color:#38bdf8;">0.000 TON</div>
         </div>
         <div class="wallet-stat-card">
-          <div class="wallet-stat-label">Hot Wallet (GRAM Tokens)</div>
-          <div class="wallet-stat-val" id="dispGramBal" style="color:#22c55e;">0.000 GRAM</div>
+          <div class="wallet-stat-label">Current Fee / Payout</div>
+          <div class="wallet-stat-val" id="dispFeeVal" style="color:#facc15;">0.002 GRAM</div>
         </div>
         <div class="wallet-stat-card">
           <div class="wallet-stat-label">API Status</div>
@@ -103,7 +118,7 @@
     <div class="admin-nav">
       <button class="nav-btn active" id="btnTabWithdrawals" onclick="switchAdminTab('withdrawals')">⚡ Gram Withdrawals</button>
       <button class="nav-btn" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Manage Members</button>
-      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Hot Wallet & Settings</button>
+      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Bot & Wallet Settings</button>
     </div>
 
     <!-- SECTION 1: WITHDRAWALS -->
@@ -166,16 +181,53 @@
       </div>
     </div>
 
-    <!-- SECTION 3: SETTINGS & HOT WALLET KEYS -->
+    <!-- SECTION 3: SETTINGS, FEE & BOT WEBHOOK -->
     <div id="sectionSettings" class="card" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3>⚙️ Hot Wallet & API Key Settings</h3>
+        <h3>⚙️ Bot, Webhook & Fee Settings</h3>
         <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-weight: 700;">Encrypted</span>
       </div>
-      <p>Configure hot wallet mnemonic, public address, and Gram/Toncenter API keys.</p>
+      <p>Configure bot token, webhook, withdrawal fees, and hot wallet keys.</p>
 
+      <!-- BOT TOKEN & WEBHOOK CONTROLS -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
-        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">💎 Blockchain Credentials</h4>
+        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">🤖 Telegram Bot & Webhook</h4>
+
+        <div class="form-group">
+          <label>Telegram Bot Token:</label>
+          <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" />
+        </div>
+
+        <div class="form-group">
+          <label>Webhook URL (Vercel domain):</label>
+          <input type="text" id="settingWebhookUrl" placeholder="https://your-domain.vercel.app/api/bot-webhook" />
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-purple" onclick="activateTelegramWebhook()">⚡ Set Webhook</button>
+          <button class="btn-red" style="padding: 10px 14px; font-size: 12px;" onclick="removeTelegramWebhook()">❌ Delete Webhook</button>
+        </div>
+      </div>
+
+      <!-- FEE & ECONOMICS -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.25); margin-bottom: 14px;">
+        <h4 style="color: #22c55e; font-size: 13px; margin-bottom: 10px;">💰 Withdrawal Fee & Limits</h4>
+
+        <div class="form-group">
+          <label>Network Fee Deducted per Withdrawal (in GRAM):</label>
+          <input type="number" id="settingWithdrawFee" step="0.0001" placeholder="0.002" />
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Deducted from each payout to cover TON gas and maximize app profits.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Minimum Withdrawal Points (PTS):</label>
+          <input type="number" id="settingMinWithdraw" placeholder="5000" />
+        </div>
+      </div>
+
+      <!-- BLOCKCHAIN & HOT WALLET -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
+        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">💎 Blockchain Hot Wallet Credentials</h4>
 
         <div class="form-group">
           <label>Hot Wallet Public Address (UQ... / EQ...):</label>
@@ -188,18 +240,13 @@
         </div>
 
         <div class="form-group">
-          <label>TonCenter / Gram API Key:</label>
+          <label>TonCenter / Gram API Key (Optional):</label>
           <input type="text" id="settingTonApiKey" placeholder="Your TonCenter API Key" />
         </div>
       </div>
 
-      <div class="form-group">
-        <label>Minimum Withdrawal Points (Default: 5000):</label>
-        <input type="number" id="settingMinWithdraw" placeholder="5000" />
-      </div>
-
       <div class="btn-row">
-        <button class="btn-blue" onclick="saveSettings()">💾 Save Settings & Keys</button>
+        <button class="btn-blue" onclick="saveSettings()">💾 Save All Configurations</button>
       </div>
     </div>
 
@@ -233,34 +280,114 @@
   </div>
 
   <script>
-    const MASTER_PIN = "8960"; // Change this to your preferred PIN
+    const MASTER_ADMIN_ID = "8960497898";
+    let generatedOtp = null;
+    let otpExpiresAt = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
+      // Pre-fill bot token from settings if saved
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      if (cfg.bot_token) {
+        document.getElementById('loginBotToken').value = cfg.bot_token;
+      }
+
       if (sessionStorage.getItem('admin_logged') === 'true') {
         showDashboard();
       }
     });
 
-    function verifyPin() {
-      const pin = document.getElementById('inputPin').value.trim();
-      if (pin === MASTER_PIN) {
-        sessionStorage.setItem('admin_logged', 'true');
-        showDashboard();
-      } else {
-        alert("❌ Incorrect Master PIN!");
+    // ================= REAL TELEGRAM OTP AUTHENTICATION =================
+    async function sendTelegramOtp() {
+      const botToken = document.getElementById('loginBotToken').value.trim();
+      const btn = document.getElementById('btnSendOtp');
+
+      if (!botToken) {
+        return alert("❌ Please enter your Telegram Bot Token to dispatch OTP!");
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Dispatching code to Telegram...";
+
+      // Generate secure 6-digit random code
+      generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      otpExpiresAt = Date.now() + 5 * 60 * 1000; // 5 min expiry
+
+      try {
+        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: MASTER_ADMIN_ID,
+            text: `🔐 *Admin Verification Code*\n\nYour 6-Digit OTP is: \`${generatedOtp}\`\n\n_Valid for 5 minutes. Do not share._`,
+            parse_mode: "Markdown"
+          })
+        });
+
+        const data = await tgRes.json();
+        if (data.ok) {
+          alert("📩 OTP sent to your Telegram! Check bot messages.");
+          document.getElementById('stepSendOtp').style.display = 'none';
+          document.getElementById('stepVerifyOtp').style.display = 'block';
+
+          // Save token for future ease
+          const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+          cfg.bot_token = botToken;
+          localStorage.setItem('admin_cfg', JSON.stringify(cfg));
+        } else {
+          alert("❌ Failed to send OTP: " + (data.description || "Check bot token and start bot first."));
+        }
+      } catch (err) {
+        alert("❌ Network error connecting to Telegram Bot API.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "📩 Send 6-Digit OTP to Telegram";
       }
     }
 
+    function verifyOtp() {
+      const enteredOtp = document.getElementById('inputOtp').value.trim();
+
+      if (!enteredOtp || enteredOtp.length !== 6) {
+        return alert("❌ Enter the complete 6-digit OTP!");
+      }
+
+      if (Date.now() > otpExpiresAt) {
+        alert("❌ OTP has expired! Please request a new one.");
+        resetOtpStep();
+        return;
+      }
+
+      if (enteredOtp === generatedOtp) {
+        sessionStorage.setItem('admin_logged', 'true');
+        alert("✅ Verified successfully!");
+        showDashboard();
+      } else {
+        alert("❌ Invalid OTP! Try again.");
+      }
+    }
+
+    function resetOtpStep() {
+      document.getElementById('stepVerifyOtp').style.display = 'none';
+      document.getElementById('stepSendOtp').style.display = 'block';
+      document.getElementById('inputOtp').value = '';
+    }
+
+    // ================= DASHBOARD DISPLAY =================
     function showDashboard() {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
 
       // Load Settings from LocalStorage
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      document.getElementById('settingBotToken').value = cfg.bot_token || '';
+      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || `${window.location.origin}/api/bot-webhook`;
+      document.getElementById('settingWithdrawFee').value = cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.002';
+      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 5000;
       document.getElementById('settingWalletAddress').value = cfg.wallet_address || '';
       document.getElementById('settingMnemonic').value = cfg.mnemonic || '';
       document.getElementById('settingTonApiKey').value = cfg.api_key || '';
-      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 5000;
+
+      document.getElementById('dispFeeVal').innerText = `${cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.002'} GRAM`;
 
       if (cfg.wallet_address) {
         document.getElementById('dispWalletAddr').innerHTML = `Wallet Address: <code>${cfg.wallet_address}</code>`;
@@ -303,7 +430,6 @@
 
       if (!address) {
         document.getElementById('dispTonBal').innerText = "0.000 TON";
-        document.getElementById('dispGramBal').innerText = "0.000 GRAM";
         document.getElementById('dispApiStatus').innerText = "NO WALLET ⚠️";
         return;
       }
@@ -311,7 +437,6 @@
       document.getElementById('dispApiStatus').innerText = "FETCHING...";
 
       try {
-        // Query TonCenter API directly
         const headers = apiKey ? { "X-API-Key": apiKey } : {};
         const res = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${address}`, { headers });
         const data = await res.json();
@@ -319,13 +444,43 @@
         if (data.ok) {
           const tonBal = (parseInt(data.result, 10) / 1e9).toFixed(3);
           document.getElementById('dispTonBal').innerText = `${tonBal} TON`;
-          document.getElementById('dispGramBal').innerText = "Active Pool";
           document.getElementById('dispApiStatus').innerText = "ONLINE 🟢";
         } else {
           document.getElementById('dispApiStatus').innerText = "API LIMIT ⚠️";
         }
       } catch (e) {
         document.getElementById('dispApiStatus').innerText = "OFFLINE 🔴";
+      }
+    }
+
+    // ================= TELEGRAM WEBHOOK CONTROLS =================
+    async function activateTelegramWebhook() {
+      const token = document.getElementById('settingBotToken').value.trim();
+      const webhookUrl = document.getElementById('settingWebhookUrl').value.trim();
+
+      if (!token || !webhookUrl) {
+        return alert("❌ Both Bot Token and Webhook URL are required!");
+      }
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+        const data = await res.json();
+        alert(data.ok ? "✅ Webhook successfully connected!" : "❌ Error: " + data.description);
+      } catch (e) {
+        alert("❌ Failed to activate webhook.");
+      }
+    }
+
+    async function removeTelegramWebhook() {
+      const token = document.getElementById('settingBotToken').value.trim();
+      if (!token) return alert("❌ Bot Token required!");
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+        const data = await res.json();
+        alert(data.ok ? "✅ Webhook deleted!" : "❌ Error: " + data.description);
+      } catch (e) {
+        alert("❌ Failed to remove webhook.");
       }
     }
 
@@ -458,17 +613,28 @@
       loadUsers();
     }
 
-    // ================= SAVE SETTINGS =================
+    // ================= SAVE CONFIGURATION =================
     function saveSettings() {
+      const bot_token = document.getElementById('settingBotToken').value.trim();
+      const webhook_url = document.getElementById('settingWebhookUrl').value.trim();
+      const withdraw_fee = parseFloat(document.getElementById('settingWithdrawFee').value) || 0.002;
+      const min_withdraw = Number(document.getElementById('settingMinWithdraw').value) || 5000;
       const wallet_address = document.getElementById('settingWalletAddress').value.trim();
       const mnemonic = document.getElementById('settingMnemonic').value.trim();
       const api_key = document.getElementById('settingTonApiKey').value.trim();
-      const min_withdraw = document.getElementById('settingMinWithdraw').value.trim();
 
-      const cfg = { wallet_address, mnemonic, api_key, min_withdraw: Number(min_withdraw) || 5000 };
+      const cfg = {
+        bot_token,
+        webhook_url,
+        withdraw_fee,
+        min_withdraw,
+        wallet_address,
+        mnemonic,
+        api_key
+      };
+
       localStorage.setItem('admin_cfg', JSON.stringify(cfg));
-
-      alert('✅ Hot Wallet Settings & API Keys saved successfully!');
+      alert('✅ Configuration & Withdrawal Fee saved successfully!');
       showDashboard();
     }
   </script>
