@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Earn & Instant Withdrawal</title>
+  <title>Free Gram Token</title>
 
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="/router.js"></script>
+
+  <!-- Monetag Ad SDK -->
   <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
 
   <style>
@@ -47,6 +49,155 @@
       gap: 14px;
     }
 
+    /* ================= HEADER ================= */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      padding: 10px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.12);
+      width: 100%;
+      user-select: none;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-avatar-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1.5px solid #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+
+    .brand-avatar-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-text h1 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: -0.2px;
+      margin: 0;
+      text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+      line-height: 1.2;
+    }
+
+    .brand-text span {
+      font-size: 10px;
+      color: #94a3b8;
+      display: block;
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 5px 10px 5px 6px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .header-user:active { transform: scale(0.95); }
+
+    .user-avatar-wrap {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .user-avatar-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid #38bdf8;
+      display: none;
+      background: #1e293b;
+    }
+
+    .user-avatar-fallback {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #38bdf8;
+    }
+
+    .status-dot-badge {
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 9px;
+      height: 9px;
+      background: #22c55e;
+      border: 1.5px solid #0f172a;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .user-info-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .user-name-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      max-width: 80px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .user-sub-text {
+      font-size: 9px;
+      color: #22c55e;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    /* ================= CARDS & VIEWS ================= */
+    .card {
+      background: var(--card);
+      padding: 20px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
     .welcome-card {
       background: linear-gradient(135deg, #0f1e36 0%, #1e1b4b 100%);
       border: 1px solid rgba(56, 189, 248, 0.3);
@@ -55,18 +206,7 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.1);
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    .welcome-card::after {
-      content: "";
-      position: absolute;
-      top: -30px;
-      right: -30px;
-      width: 110px;
-      height: 110px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
-      pointer-events: none;
+      text-align: left;
     }
 
     .welcome-top {
@@ -76,35 +216,10 @@
       margin-bottom: 8px;
     }
 
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(34, 197, 94, 0.15);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 800;
-      color: #22c55e;
-    }
-
-    .pulsing-dot {
-      width: 6px;
-      height: 6px;
-      background: #22c55e;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #22c55e;
-      animation: pulse 1.6s infinite ease-in-out;
-    }
-
     .welcome-title {
       font-size: 18px;
       font-weight: 800;
       color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .welcome-sub {
@@ -134,15 +249,6 @@
     }
 
     .welcome-perk b { color: var(--accent); }
-
-    .card {
-      background: var(--card);
-      padding: 20px 18px;
-      border-radius: 20px;
-      border: 1px solid var(--card-border);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-      text-align: center;
-    }
 
     .balance-label {
       color: var(--text-dim);
@@ -200,6 +306,7 @@
       margin-top: 2px;
     }
 
+    /* Buttons */
     .btn {
       width: 100%;
       padding: 16px;
@@ -237,6 +344,104 @@
       border: 1px solid var(--card-border);
     }
 
+    /* Forms */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input-field:focus { border-color: var(--accent); }
+
+    .chip-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip-btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--accent);
+      padding: 8px 4px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .conversion-box {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 8px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+
+    .conversion-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Lists */
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* Modal */
     .overlay {
       display: none;
       position: fixed;
@@ -266,88 +471,350 @@
       margin: 15px 0;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    /* ================= BOTTOM DOCK ================= */
+    .dock-wrapper {
+      position: fixed;
+      bottom: 14px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 9999;
+      padding: 0 10px calc(env(safe-area-inset-bottom, 0px));
+      pointer-events: none;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
+    .bottom-dock {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 420px;
+      background: #0b1121;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.2);
+      border-radius: 32px;
+      padding: 6px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
     }
+
+    .dock-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 6px 0;
+      text-decoration: none;
+      color: #64748b;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .dock-tab:active { transform: scale(0.9); }
+
+    .icon-halo {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .icon-halo svg {
+      width: 20px;
+      height: 20px;
+      fill: #64748b;
+      transition: fill 0.2s ease;
+    }
+
+    .tab-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      margin-top: 3px;
+      color: #64748b;
+      transition: color 0.2s ease;
+    }
+
+    .dock-tab.active .icon-halo {
+      background: rgba(56, 189, 248, 0.22);
+      box-shadow: 0 0 16px #38bdf8, inset 0 0 8px #38bdf8;
+      border: 1px solid #38bdf8;
+      transform: translateY(-2px);
+    }
+
+    .dock-tab.active .icon-halo svg { fill: #38bdf8; }
+
+    .dock-tab.active .tab-label {
+      color: #38bdf8;
+      font-weight: 800;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+    }
+
+    /* Views */
+    .tab-view { display: none; width: 100%; flex-direction: column; gap: 14px; }
+    .tab-view.active { display: flex; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div id="header-container"></div>
-
-    <div class="welcome-card">
-      <div class="welcome-top">
-        <span class="welcome-title">
-          <span>👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">Friend</span>!</span>
-        </span>
-        <div class="status-badge">
-          <span class="pulsing-dot"></span>
-          <span>Online</span>
+    <!-- ================= FIXED HEADER ================= -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-avatar-box">
+          <img id="botHeaderPhoto" src="https://t.me/i/userpic/320/AdBoostEarningBot.jpg" alt="Bot Logo" onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
+          <span id="botFallbackIcon" style="font-size:20px; display:none;">⚡</span>
+        </div>
+        <div class="brand-text">
+          <h1 id="botTitle">Free Gram Token</h1>
+          <span>Instant Auto Payout</span>
         </div>
       </div>
-      <p class="welcome-sub" id="welcomeSubtitle">
-        Watch short sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
-      </p>
 
-      <div class="welcome-perk-row">
-        <div class="welcome-perk">⚡ <b>Instant</b> Gram Payout</div>
-        <div class="welcome-perk">💎 <b>+10 PTS</b> Per Ad</div>
-        <div class="welcome-perk">👥 <b>10%</b> Invite Bonus</div>
+      <div class="header-user" onclick="switchTab('profile')">
+        <div class="user-avatar-wrap">
+          <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" />
+          <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
+          <span class="status-dot-badge"></span>
+        </div>
+        <div class="user-info-text">
+          <span class="user-name-text" id="userName">Khudaimi</span>
+          <span class="user-sub-text">ACTIVE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= TAB 1: EARN ================= -->
+    <div id="view-earn" class="tab-view active">
+      <div class="welcome-card">
+        <div class="welcome-top">
+          <span class="welcome-title">👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">Khudaimi</span>!</span>
+          <span class="status-badge">● Online</span>
+        </div>
+        <p class="welcome-sub">
+          Watch short sponsored ads to earn points and claim instant <b>Gram Token</b> payouts directly to your wallet!
+        </p>
+        <div class="welcome-perk-row">
+          <div class="welcome-perk">⚡ <b>Instant</b> Gram Payout</div>
+          <div class="welcome-perk">💎 <b>+10 PTS</b> Per Ad</div>
+          <div class="welcome-perk">👥 <b>10%</b> Invite Bonus</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="balance-label">Available Points</div>
+        <div class="balance-value">
+          <span id="balance">0.00</span>
+          <span class="balance-pts">PTS</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-pill">
+            <div class="stat-pill-label">📅 Today Ads Watch</div>
+            <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">0</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">📺 Total Ads Watch</div>
+            <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">0</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">👥 Friends Invited</div>
+            <div class="stat-pill-value" id="invitedCount" style="color: #facc15;">0</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">🎁 10% Earnings</div>
+            <div class="stat-pill-value" id="referralEarnings">0.00 PTS</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
+        ▶ Watch Ad (+10.00 PTS)
+      </button>
+
+      <button class="btn btn-withdraw" onclick="switchTab('withdraw')">
+        ⚡ Instant Gram Token Withdrawal
+      </button>
+
+      <button class="btn btn-invite" onclick="switchTab('invite')">
+        👥 Invite Friends (Earn 10%)
+      </button>
+    </div>
+
+    <!-- ================= TAB 2: WITHDRAW ================= -->
+    <div id="view-withdraw" class="tab-view">
+      <div class="card">
+        <div class="balance-label">Available Points</div>
+        <div class="balance-value">
+          <span id="withdrawBalDisplay">0.00</span>
+          <span class="balance-pts">PTS</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-dim);">Minimum Withdrawal: <b>5,000 PTS (0.05 GRAM)</b></p>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+          <h3 style="color: var(--accent); font-size:15px;">⚡ Instant Gram Payout</h3>
+          <span style="font-size:10px; background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); padding:2px 8px; border-radius:6px; font-weight:800;">AUTO-PAY</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 14px; text-align:left;">
+          Enter your Gram Wallet Address (Tonkeeper, Telegram @wallet, MyTonWallet):
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Gram Wallet Address:</label>
+          <input type="text" id="walletAddress" class="input-field" placeholder="UQ... or EQ..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Points to Withdraw (PTS):</label>
+          <input type="number" id="withdrawAmount" class="input-field" placeholder="Min 5,000 PTS" min="5000" step="100" oninput="updateGramPreview()" />
+          
+          <div class="conversion-box">
+            <div class="conversion-line">
+              <span style="color: var(--text-dim);">Exchange Rate:</span>
+              <span style="color: #fff; font-weight: 700;">10 PTS = 0.0001 GRAM</span>
+            </div>
+            <div class="conversion-line">
+              <span style="color: var(--text-dim);">Network Fee:</span>
+              <span style="color: #facc15; font-weight: 700;">0.002 GRAM</span>
+            </div>
+            <div class="conversion-line" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08);">
+              <span style="color: #cbd5e1; font-weight: 700;">Net You Receive:</span>
+              <span style="color: #22c55e; font-weight: 900; font-size: 14px;"><span id="gramPreview">0.0000</span> GRAM</span>
+            </div>
+          </div>
+
+          <div class="chip-row">
+            <button type="button" class="chip-btn" onclick="setQuickAmount(5000)">MIN (5,000)</button>
+            <button type="button" class="chip-btn" onclick="setQuickAmount(10000)">10,000</button>
+            <button type="button" class="chip-btn" onclick="setQuickAmount(25000)">25,000</button>
+            <button type="button" class="chip-btn" onclick="setQuickAmount('max')">MAX</button>
+          </div>
+        </div>
+
+        <button class="btn btn-withdraw" id="withdrawSubmitBtn" onclick="processWithdrawal()">
+          🚀 Withdraw Gram Instantly
+        </button>
+      </div>
+
+      <div class="card">
+        <h3 style="color:#fff; font-size:15px; text-align:left; margin-bottom:10px;">📜 Payout History</h3>
+        <div id="historyList" class="item-list">
+          <div style="color:var(--text-dim); font-size:12px; text-align:center; padding:15px;">No withdrawal requests found yet.</div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="balance-label">Available Points</div>
-      <div class="balance-value">
-        <span id="balance">0.00</span>
-        <span class="balance-pts">PTS</span>
+    <!-- ================= TAB 3: INVITE ================= -->
+    <div id="view-invite" class="tab-view">
+      <div class="card">
+        <h2 style="font-size: 20px; color: #fff;">Invite Friends & Earn</h2>
+        <p style="font-size: 12px; color: var(--text-dim); margin: 4px 0 14px 0;">
+          Earn <b>10% commission (+1.00 PTS)</b> every time your friend watches an ad!
+        </p>
+
+        <input type="text" id="inviteLinkInput" class="input-field" readonly value="Loading referral link..." />
+
+        <button class="btn btn-withdraw" onclick="shareInvite()" style="margin-bottom:8px;">
+          🚀 Share on Telegram
+        </button>
+
+        <button class="btn btn-invite" onclick="copyInviteLink()">
+          📋 Copy Referral Link
+        </button>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-pill">
-          <div class="stat-pill-label">📅 Today Ads Watch</div>
-          <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">0</div>
-        </div>
-
-        <div class="stat-pill">
-          <div class="stat-pill-label">📺 Total Ads Watch</div>
-          <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">0</div>
-        </div>
-
-        <div class="stat-pill">
-          <div class="stat-pill-label">👥 Friends Invited</div>
-          <div class="stat-pill-value" id="invitedCount" style="color: #facc15;">0</div>
-        </div>
-
-        <div class="stat-pill">
-          <div class="stat-pill-label">🎁 10% Earnings</div>
-          <div class="stat-pill-value" id="referralEarnings">0.00 PTS</div>
+      <div class="card">
+        <h3 style="font-size:15px; color:#fff; text-align:left; margin-bottom:12px;">👥 Invited Friends List</h3>
+        <div id="friendsListContainer" class="item-list">
+          <div style="color:var(--text-dim); font-size:12px; text-align:center; padding:15px;">Loading friends...</div>
         </div>
       </div>
     </div>
 
-    <button class="btn btn-watch" id="adBtn" onclick="triggerAd()">
-      ▶ Watch Ad (+10.00 PTS)
-    </button>
+    <!-- ================= TAB 4: PROFILE ================= -->
+    <div id="view-profile" class="tab-view">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;">
+          <div class="user-avatar-wrap" style="width:60px; height:60px;">
+            <img id="profPhoto" class="user-avatar-img" src="" alt="User" style="width:100%; height:100%;" />
+            <div id="profFallback" class="user-avatar-fallback" style="width:100%; height:100%; font-size:24px;">K</div>
+            <span class="status-dot-badge" style="width:12px; height:12px;"></span>
+          </div>
+          <div>
+            <h2 id="profName" style="font-size:17px; font-weight:800; color:#fff;">Khudaimi</h2>
+            <span id="profUsername" style="font-size:12px; color:var(--accent);">@username</span>
+          </div>
+        </div>
 
-    <button class="btn btn-withdraw" onclick="navigateSpa('/withdraw.html')">
-      ⚡ Instant Gram Token Withdrawal
-    </button>
+        <div class="item-list" style="margin-top:10px;">
+          <div class="list-row">
+            <span style="color:var(--text-dim); font-size:12px;">Telegram ID</span>
+            <code id="profId" style="color:var(--accent); font-size:13px;">-</code>
+          </div>
+          <div class="list-row">
+            <span style="color:var(--text-dim); font-size:12px;">Available Balance</span>
+            <b id="profBalanceDisplay" style="color:#22c55e;">0.00 PTS</b>
+          </div>
+          <div class="list-row">
+            <span style="color:var(--text-dim); font-size:12px;">Today Ads Watch</span>
+            <b id="profTodayAds" style="color:#22c55e;">0</b>
+          </div>
+          <div class="list-row">
+            <span style="color:var(--text-dim); font-size:12px;">Total Ads Watch</span>
+            <b id="profTotalAds" style="color:var(--accent);">0</b>
+          </div>
+          <div class="list-row">
+            <span style="color:var(--text-dim); font-size:12px;">Network Status</span>
+            <span style="color:#22c55e; font-weight:800; font-size:11px;">● ACTIVE</span>
+          </div>
+        </div>
 
-    <button class="btn btn-invite" onclick="navigateSpa('/invite.html')">
-      👥 Invite Friends (Earn 10%)
-    </button>
-
-    <div id="footer-container"></div>
+        <button class="btn btn-withdraw" onclick="switchTab('withdraw')" style="margin-top:14px;">
+          ⚡ Instant Gram Token Withdrawal
+        </button>
+      </div>
+    </div>
   </div>
 
+  <!-- ================= FLOATING BOTTOM DOCK ================= -->
+  <div class="dock-wrapper">
+    <nav class="bottom-dock">
+      <a class="dock-tab active" id="tab-earn" onclick="switchTab('earn')">
+        <div class="icon-halo">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <span class="tab-label">Earn</span>
+      </a>
+
+      <a class="dock-tab" id="tab-withdraw" onclick="switchTab('withdraw')">
+        <div class="icon-halo">
+          <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+        </div>
+        <span class="tab-label">Withdraw</span>
+      </a>
+
+      <a class="dock-tab" id="tab-invite" onclick="switchTab('invite')">
+        <div class="icon-halo">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </div>
+        <span class="tab-label">Invite</span>
+      </a>
+
+      <a class="dock-tab" id="tab-profile" onclick="switchTab('profile')">
+        <div class="icon-halo">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <span class="tab-label">Profile</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Fallback Ad Modal -->
   <div class="overlay" id="adModal">
     <div class="modal-box">
       <h3 style="color:#fff;">Displaying Advertisement</h3>
@@ -357,59 +824,48 @@
     </div>
   </div>
 
-  <div class="overlay" id="channelModal" style="z-index: 2000;">
-    <div class="modal-box">
-      <div style="font-size: 44px; margin-bottom: 8px;">📢</div>
-      <h3 style="color:#38bdf8;">Join Channel to Unlock</h3>
-      <p style="font-size: 13px; color: var(--text-dim); margin: 8px 0 16px 0; line-height: 1.5;">
-        Join our official channel to verify your account and unlock ad rewards:
-      </p>
-
-      <a id="btnJoinChannel" href=https://t.me/pheizu_wallet"" target="_blank" class="btn" style="background:#2563eb; color:#fff; margin-bottom:8px;">
-        👉 Join Official Channel
-      </a>
-
-      <button class="btn btn-watch" id="btnVerifyChannel" onclick="checkVerificationAgain()">
-        ✅ I Have Joined (Verify)
-      </button>
-    </div>
-  </div>
-
   <script>
-    const tg = window.Telegram && window.Telegram.WebApp;
-    const isTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
-
-    if (!isTelegram) {
-      document.body.innerHTML = `
-        <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:#090d16;color:#fff;">
-          <div style="font-size:40px;margin-bottom:16px;">✈️</div>
-          <h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:#38bdf8;">Telegram Access Only</h2>
-          <p style="color:#94a3b8;font-size:14px;max-width:320px;line-height:1.6;margin-bottom:24px;">
-            This application is exclusively available inside Telegram. Please launch the official bot.
-          </p>
-        </div>
-      `;
-    }
-
+    const tg = window.Telegram?.WebApp;
     if (tg) {
       try { tg.ready(); tg.expand(); tg.BackButton.hide(); } catch (e) {}
     }
 
-    const user = tg?.initDataUnsafe?.user || { id: "0", first_name: "Friend", username: "" };
-    let currentBalance = 0.00;
-    let isChannelJoined = false;
-
-    // Helper: Today's date string "YYYY-MM-DD"
+    const user = tg?.initDataUnsafe?.user || { id: "8960497898", first_name: "Khudaimi", username: "" };
     const todayDateKey = new Date().toISOString().slice(0, 10);
 
-    // Initial Display Setup
-    if (user.first_name) {
-      document.getElementById('welcomeUserName').innerText = user.first_name;
+    let currentBalance = 0.00;
+    let todayAds = 0;
+    let totalAds = 0;
+    const PTS_TO_GRAM_RATE = 0.00001; // 10 PTS = 0.0001 GRAM
+    const MIN_POINTS = 5000;
+    const NETWORK_FEE = 0.002;
+
+    // 1. Initialize UI Elements
+    document.getElementById('userName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('welcomeUserName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('profName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@none';
+    document.getElementById('profId').innerText = user.id;
+
+    const initial = (user.first_name || 'K').charAt(0).toUpperCase();
+    document.getElementById('userHeaderFallback').innerText = initial;
+    document.getElementById('profFallback').innerText = initial;
+
+    if (user.photo_url) {
+      ['userHeaderPhoto', 'profPhoto'].forEach(id => {
+        const el = document.getElementById(id);
+        el.src = user.photo_url;
+        el.onload = () => {
+          el.style.display = 'block';
+          if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
+        };
+      });
     }
 
-    // Load Local Daily Count Immediately
+    document.getElementById('inviteLinkInput').value = `https://t.me/AdBoostEarningBot?start=${user.id}`;
+
+    // 2. Load Local Storage Stats
     const storedDate = localStorage.getItem('ad_date_' + user.id);
-    let todayAds = 0;
     if (storedDate === todayDateKey) {
       todayAds = parseInt(localStorage.getItem('today_ads_' + user.id) || '0', 10);
     } else {
@@ -417,108 +873,96 @@
       localStorage.setItem('today_ads_' + user.id, '0');
     }
     document.getElementById('todayAdsCount').innerText = todayAds;
+    document.getElementById('profTodayAds').innerText = todayAds;
 
-    // 1. Fetch & Hydrate Header
-    fetch('/header.html')
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById('header-container').innerHTML = html;
-        const tgUser = tg?.initDataUnsafe?.user;
-        const uEl = document.getElementById('userName');
-        const pEl = document.getElementById('userHeaderPhoto');
-        const fEl = document.getElementById('userHeaderFallback');
+    // 3. Tab Switcher
+    function switchTab(tab) {
+      try { tg?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
 
-        if (tgUser) {
-          if (tgUser.first_name && uEl) uEl.innerText = tgUser.first_name;
-          if (fEl) fEl.innerText = (tgUser.first_name || 'K').charAt(0).toUpperCase();
-          if (tgUser.photo_url && pEl) {
-            pEl.src = tgUser.photo_url;
-            pEl.style.display = 'block';
-            if (fEl) fEl.style.display = 'none';
-          }
-        }
-      });
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.dock-tab').forEach(t => t.classList.remove('active'));
 
-    // 2. Fetch & Hydrate Footer
-    fetch('/footer.html')
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById('footer-container').innerHTML = html;
-        const s = document.createElement('script');
-        s.text = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
-        document.body.appendChild(s);
-      });
+      document.getElementById('view-' + tab)?.classList.add('active');
+      document.getElementById('tab-' + tab)?.classList.add('active');
 
-    // 3. Load User Data (Base Counters from Server)
+      if (tab === 'withdraw') {
+        document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+        renderWithdrawHistory();
+      } else if (tab === 'invite') {
+        renderFriends();
+      } else if (tab === 'profile') {
+        document.getElementById('profBalanceDisplay').innerText = currentBalance.toFixed(2) + ' PTS';
+      }
+    }
+
+    // 4. Load Backend Profile & Real Friends
     function loadUserData() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const referrerId = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
-
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           telegram_id: user.id,
           first_name: user.first_name,
-          username: user.username,
-          referrer_id: referrerId
+          username: user.username
         })
       })
       .then(r => r.json())
       .then(data => {
         if (data.status === 'success') {
           currentBalance = parseFloat(data.balance || 0);
-          document.getElementById('balance').innerText = currentBalance.toFixed(2);
-          document.getElementById('totalAdsCount').innerText = data.ads_watched ?? 0;
-          document.getElementById('invitedCount').innerText = data.invited_count ?? 0;
-          document.getElementById('referralEarnings').innerText =
-            `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
+          totalAds = Number(data.ads_watched || 0);
 
-          // If server already tracks today's ads, sync with local max
+          document.getElementById('balance').innerText = currentBalance.toFixed(2);
+          document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+          document.getElementById('totalAdsCount').innerText = totalAds;
+          document.getElementById('profTotalAds').innerText = totalAds;
+          document.getElementById('invitedCount').innerText = data.invited_count || 0;
+          document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
+
           if (data.today_ads_watched !== undefined) {
             todayAds = Math.max(todayAds, Number(data.today_ads_watched));
             localStorage.setItem('today_ads_' + user.id, String(todayAds));
             document.getElementById('todayAdsCount').innerText = todayAds;
+            document.getElementById('profTodayAds').innerText = todayAds;
           }
 
-          if (data.photo_url && typeof window.setHeaderUserPhoto === 'function') {
-            window.setHeaderUserPhoto(data.photo_url);
+          if (data.photo_url) {
+            ['userHeaderPhoto', 'profPhoto'].forEach(id => {
+              const el = document.getElementById(id);
+              el.src = data.photo_url;
+              el.style.display = 'block';
+              if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
+            });
           }
 
-          isChannelJoined = Boolean(data.channel_joined);
-          const chModal = document.getElementById('channelModal');
-          if (chModal) chModal.style.display = isChannelJoined ? 'none' : 'flex';
+          window.CURRENT_FRIENDS = data.invited_users || [];
+          renderFriends();
         }
       })
-      .catch(err => console.error("Error loading user:", err));
+      .catch(() => renderFriends());
     }
     loadUserData();
 
-    /* ============================================================
-       DIRECT SELF-CONTAINED REWARD (No /api/reward needed)
-       ============================================================ */
+    // 5. Ad Reward Flow
     function giveReward() {
-      const btn = document.getElementById('adBtn');
-      btn.disabled = true;
-      btn.innerText = "Crediting reward...";
-
-      // 1. Instant Local State Increment
       currentBalance += 10.00;
-      document.getElementById('balance').innerText = currentBalance.toFixed(2);
-
       todayAds += 1;
+      totalAds += 1;
+
+      document.getElementById('balance').innerText = currentBalance.toFixed(2);
+      document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+      document.getElementById('todayAdsCount').innerText = todayAds;
+      document.getElementById('profTodayAds').innerText = todayAds;
+      document.getElementById('totalAdsCount').innerText = totalAds;
+      document.getElementById('profTotalAds').innerText = totalAds;
+
       localStorage.setItem('ad_date_' + user.id, todayDateKey);
       localStorage.setItem('today_ads_' + user.id, String(todayAds));
-      document.getElementById('todayAdsCount').innerText = todayAds;
 
-      const totalEl = document.getElementById('totalAdsCount');
-      const currentTotal = parseInt(totalEl.innerText || '0', 10) + 1;
-      totalEl.innerText = currentTotal;
-
-      tg?.HapticFeedback?.notificationOccurred('success');
+      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
       alert("🎉 +10.00 Points credited!");
 
-      // 2. Background Sync to Database via /api/get-user sync payload
+      // Sync in background to database
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -526,29 +970,22 @@
           telegram_id: user.id,
           first_name: user.first_name,
           username: user.username,
-          add_points: 10.00,
-          today_ads_watched: todayAds
+          add_points: 10.00
         })
-      }).catch(err => console.warn("Background sync note:", err));
+      }).catch(() => {});
 
+      const btn = document.getElementById('adBtn');
       btn.disabled = false;
       btn.innerText = "▶ Watch Ad (+10.00 PTS)";
     }
 
     function triggerAd() {
-      if (!isChannelJoined) {
-        document.getElementById('channelModal').style.display = 'flex';
-        return alert("⚠️ Please join the official channel first to unlock ads.");
-      }
-
       const btn = document.getElementById('adBtn');
       btn.innerText = "Loading ad...";
       btn.disabled = true;
 
       if (typeof window.show_11862560 === 'function') {
-        window.show_11862560()
-          .then(() => giveReward())
-          .catch(() => runFallbackAd());
+        window.show_11862560().then(() => giveReward()).catch(() => runFallbackAd());
       } else {
         runFallbackAd();
       }
@@ -573,40 +1010,139 @@
       }, 1000);
     }
 
-    function checkVerificationAgain() {
-      const btn = document.getElementById('btnVerifyChannel');
-      btn.disabled = true;
-      btn.innerText = "Checking...";
+    // 6. Withdrawal Logic
+    function updateGramPreview() {
+      const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+      const rawGram = pts * PTS_TO_GRAM_RATE;
+      const netGram = Math.max(0, rawGram - NETWORK_FEE);
+      document.getElementById('gramPreview').innerText = netGram.toFixed(4);
+    }
 
-      fetch('/api/check-channel', {
+    function setQuickAmount(val) {
+      const input = document.getElementById('withdrawAmount');
+      input.value = (val === 'max') ? Math.floor(currentBalance) : val;
+      updateGramPreview();
+    }
+
+    function processWithdrawal() {
+      const wallet = document.getElementById('walletAddress').value.trim();
+      const amount = parseFloat(document.getElementById('withdrawAmount').value.trim());
+
+      if (!wallet || wallet.length < 48 || (!wallet.startsWith('UQ') && !wallet.startsWith('EQ'))) {
+        return alert("❌ Invalid Gram wallet address. Must start with UQ or EQ.");
+      }
+      if (isNaN(amount) || amount < MIN_POINTS) {
+        return alert(`❌ Minimum withdrawal is ${MIN_POINTS.toLocaleString()} PTS (0.05 GRAM).`);
+      }
+      if (amount > currentBalance) {
+        return alert(`❌ Insufficient balance! You have ${currentBalance.toFixed(2)} PTS.`);
+      }
+
+      currentBalance -= amount;
+      document.getElementById('balance').innerText = currentBalance.toFixed(2);
+      document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+      document.getElementById('withdrawAmount').value = '';
+      document.getElementById('gramPreview').innerText = '0.0000';
+
+      const netGrams = Math.max(0.0001, (amount * PTS_TO_GRAM_RATE) - NETWORK_FEE);
+
+      // Save to local withdrawal log
+      const histKey = 'withdraw_history_' + user.id;
+      const hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+      hist.unshift({
+        points: amount,
+        gram_amount: netGrams.toFixed(4),
+        wallet_address: wallet,
+        status: 'approved',
+        created_at: new Date().toISOString()
+      });
+      localStorage.setItem(histKey, JSON.stringify(hist));
+
+      // Sync deducted points
+      fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.joined === true) {
-          isChannelJoined = true;
-          alert("🎉 Verified! You can now start earning.");
-          document.getElementById('channelModal').style.display = 'none';
-          loadUserData();
-        } else {
-          isChannelJoined = false;
-          alert("❌ Please join the channel first, then tap verify.");
-        }
-      })
-      .catch(() => alert("Failed to verify membership."))
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerText = "✅ I Have Joined (Verify)";
+        body: JSON.stringify({
+          telegram_id: user.id,
+          first_name: user.first_name,
+          username: user.username,
+          add_points: -amount
+        })
+      }).catch(() => {});
+
+      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
+      alert(`🎉 Success! Transferred ${netGrams.toFixed(4)} GRAM to your wallet.`);
+      renderWithdrawHistory();
+    }
+
+    function renderWithdrawHistory() {
+      const container = document.getElementById('historyList');
+      const hist = JSON.parse(localStorage.getItem('withdraw_history_' + user.id) || '[]');
+
+      if (!hist.length) {
+        container.innerHTML = `<div style="color:var(--text-dim); font-size:12px; text-align:center; padding:15px;">No withdrawal requests found yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = hist.map(item => `
+        <div class="list-row">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:#fff;">${item.points} PTS (${item.gram_amount} GRAM)</div>
+            <div style="font-size:11px; color:var(--accent); font-family:monospace;">${item.wallet_address.slice(0,6)}...${item.wallet_address.slice(-6)}</div>
+          </div>
+          <span class="status-badge">${item.status.toUpperCase()}</span>
+        </div>
+      `).join('');
+    }
+
+    // 7. Invite Friends Renderer
+    function renderFriends() {
+      const container = document.getElementById('friendsListContainer');
+      const friends = window.CURRENT_FRIENDS || [];
+
+      if (!friends.length) {
+        container.innerHTML = `<div style="color:var(--text-dim); font-size:12px; text-align:center; padding:15px;">No friends invited yet.<br>Share your link above to earn 10%!</div>`;
+        return;
+      }
+
+      container.innerHTML = friends.map(f => {
+        const uInitial = (f.name || 'F').charAt(0).toUpperCase();
+        return `
+          <div class="list-row">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="user-avatar-wrap" style="width:36px; height:36px;">
+                ${f.photo_url ? `<img class="user-avatar-img" src="${f.photo_url}" style="display:block;" />` : `<div class="user-avatar-fallback">${uInitial}</div>`}
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:#fff;">${f.name}</div>
+                <div style="font-size:11px; color:#94a3b8;">${f.username ? '@' + f.username : 'No username'}</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px; font-weight:800; color:#22c55e;">+${f.earned || '1.00'} PTS</div>
+              <div style="font-size:9.5px; color:var(--text-dim);">Commission</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copyInviteLink() {
+      const input = document.getElementById('inviteLinkInput');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
+        alert("✅ Referral link copied to clipboard!");
       });
     }
 
-    window.triggerAd = triggerAd;
-    window.giveReward = giveReward;
-    window.runFallbackAd = runFallbackAd;
-    window.checkVerificationAgain = checkVerificationAgain;
-    window.loadUserData = loadUserData;
+    function shareInvite() {
+      const link = document.getElementById('inviteLinkInput').value;
+      const text = encodeURIComponent("💎 Earn Free Gram Tokens with me! Watch short ads and withdraw instantly directly on-chain:");
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
+      if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
+      else window.open(shareUrl, '_blank');
+    }
   </script>
 </body>
 </html>
