@@ -202,7 +202,7 @@
             <input type="password" id="settingBotToken" placeholder="Paste your Telegram Bot Token" style="flex: 1;" />
             <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('settingBotToken')">👁️</button>
           </div>
-          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Never exposed in public GitHub files. Saved locally & in browser storage.</span>
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Saved securely to your database and local storage.</span>
         </div>
 
         <div class="form-group">
@@ -759,6 +759,21 @@
       const mnemonic = document.getElementById('settingMnemonic').value.trim();
       const api_key = document.getElementById('settingTonApiKey').value.trim();
 
+      // 1. Sync Bot Token & Configuration directly to /api/webhook backend
+      if (bot_token) {
+        fetch('/api/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_admin_config',
+            bot_token: bot_token,
+            log_channel: log_channel,
+            withdraw_fee: withdraw_fee
+          })
+        }).catch(() => {});
+      }
+
+      // 2. Save settings locally in browser storage
       const cfg = {
         bot_token,
         webhook_url,
@@ -771,7 +786,7 @@
       };
 
       localStorage.setItem('admin_cfg', JSON.stringify(cfg));
-      alert('✅ Configuration, Log Channel & Fees saved successfully!');
+      alert('✅ Configuration, Bot Token & Log Channel saved successfully!');
       showDashboard();
     }
   </script>
