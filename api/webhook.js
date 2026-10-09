@@ -1,8 +1,9 @@
 // topup-earn-main/api/webhook.js
 import admin from "firebase-admin";
 
-if (!admin.apps.length) {
-  try {
+let db = null;
+try {
+  if (!admin.apps.length) {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
@@ -12,42 +13,74 @@ if (!admin.apps.length) {
         credential: admin.credential.applicationDefault()
       });
     }
-  } catch (e) {
-    console.error("Firebase init error in webhook.js:", e);
   }
+  db = admin.firestore();
+} catch (e) {
+  console.warn("Firebase init note:", e.message);
 }
 
-const db = admin.firestore();
 const WEBAPP_URL = "https://pheizubot.vercel.app";
 
 export default async function handler(req, res) {
+  // If visited in browser
   if (req.method !== "POST") {
     return res.status(200).send("✅ Webhook is online and ready!");
   }
 
-  const update = req.body;
-  if (!update || !update.message) {
+  const body = req.body || {};
+
+  // 1. RECEIVE & SAVE BOT TOKEN FROM ADMIN PANEL (No extra files needed!)
+  if (body.action === "save_admin_config") {
+    if (db && body.bot_token) {
+      try {
+        await db.collection("app_config").doc("main").set({
+          bot_token: String(body.bot_token).trim(),
+          log_channel: String(body.log_channel || "@pheizu_wallet").trim(),
+          withdraw_fee: Number(body.withdraw_fee || 0.002),
+          updated_at: new Date().toISOString()
+        }, { merge: true });
+        return res.status(200).json({ status: "success", message: "Token saved to cloud database!" });
+      } catch (err) {
+        return res.status(500).json({ status: "error", message: err.message });
+      }
+    }
+    return res.status(200).json({ status: "ok" });
+  }
+
+  // 2. INCOMING TELEGRAM UPDATES
+  const message = body.message;
+  if (!message) {
     return res.status(200).send("OK");
   }
 
-  const message = update.message;
   const chatId = message.chat.id;
   const text = (message.text || "").trim();
   const fromUser = message.from || {};
 
-  // Loaded securely from environment variables (hidden from public code)
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  // Get Bot Token: Checks Environment Variable first, then Cloud Database
+  let botToken = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
+
+  if (!botToken && db) {
+    try {
+      const cfgDoc = await db.collection("app_config").doc("main").get();
+      if (cfgDoc.exists && cfgDoc.data()?.bot_token) {
+        botToken = cfgDoc.data().bot_token.trim();
+      }
+    } catch (e) {
+      console.warn("Error reading bot token from DB:", e);
+    }
+  }
 
   if (!botToken) {
-    console.error("TELEGRAM_BOT_TOKEN is missing in Vercel Environment Variables!");
+    console.error("❌ Bot Token is missing! Save it in Admin Settings or Vercel Environment.");
     return res.status(200).send("OK");
   }
 
+  // User sends /start
   if (text.startsWith("/start")) {
     const parts = text.split(" ");
     const referrerId = parts.length > 1 ? parts[1].trim() : null;
 
-    // Send Welcome Message & Button
     const welcomeText = 
       `👋 *Welcome to Free Gram Token, ${fromUser.first_name || "Friend"}!*\n\n` +
       `💎 *Earn Gram Tokens* easily by watching short sponsored ads.\n\n` +
@@ -79,18 +112,18 @@ export default async function handler(req, res) {
     };
 
     try {
-      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const result = await response.json();
-      console.log("Telegram sendMessage response:", result);
+      const tgData = await tgRes.json();
+      console.log("Telegram sendMessage response:", tgData);
     } catch (err) {
-      console.error("Error dispatching Telegram message:", err);
+      console.error("Error sending Telegram message:", err);
     }
 
-    // Register user in background Firestore if db is available
+    // Save user to Firestore in background
     if (db) {
       try {
         const todayStr = new Date().toISOString().slice(0, 10);
@@ -121,7 +154,7 @@ export default async function handler(req, res) {
           }
         }
       } catch (dbErr) {
-        console.error("Firestore user registration note:", dbErr);
+        console.warn("Firestore registration note:", dbErr);
       }
     }
   }
