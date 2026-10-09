@@ -58,7 +58,10 @@
     <div id="stepSendOtp">
       <div class="form-group" style="margin-bottom:12px;">
         <label>Telegram Bot Token:</label>
-        <input type="text" id="loginBotToken" placeholder="Your Bot Token" />
+        <div style="display: flex; gap: 8px;">
+          <input type="password" id="loginBotToken" placeholder="Paste Bot Token" style="flex: 1;" />
+          <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('loginBotToken')">👁️</button>
+        </div>
       </div>
       <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
         📩 Send 6-Digit OTP to Telegram
@@ -187,15 +190,19 @@
         <h3>⚙️ Bot, Log Channel & Fee Settings</h3>
         <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-weight: 700;">Encrypted</span>
       </div>
-      <p>Configure bot token, log broadcast channel, withdrawal fees, and hot wallet keys.</p>
+      <p>Configure bot token, webhook, log channel, withdrawal fees, and hot wallet keys.</p>
 
       <!-- BOT TOKEN & WEBHOOK CONTROLS -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
         <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">🤖 Telegram Bot & Webhook</h4>
 
         <div class="form-group">
-          <label>Telegram Bot Token:</label>
-          <input type="text" id="settingBotToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" />
+          <label>Telegram Bot Token (Hidden & Protected):</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="settingBotToken" placeholder="Paste your Telegram Bot Token" style="flex: 1;" />
+            <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('settingBotToken')">👁️</button>
+          </div>
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Never exposed in public GitHub files. Saved locally & in browser storage.</span>
         </div>
 
         <div class="form-group">
@@ -212,12 +219,12 @@
       <!-- LOG CHANNEL SETTINGS -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25); margin-bottom: 14px;">
         <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📢 Log Channel Broadcast</h4>
-        <p style="font-size: 11px; margin-bottom: 10px;">Withdrawal and payment receipts are broadcast here automatically.</p>
+        <p style="font-size: 11px; margin-bottom: 10px;">Withdrawal receipts and payout alerts are posted here automatically.</p>
 
         <div class="form-group">
           <label>Telegram Log Channel Username / ID:</label>
           <input type="text" id="settingLogChannel" placeholder="@pheizu_wallet" value="@pheizu_wallet" />
-          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Make sure your bot is added as an administrator to this channel to post logs!</span>
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Make sure your bot is an administrator in this channel to send logs.</span>
         </div>
 
         <button class="btn-blue" style="padding: 8px 14px; font-size: 12px;" onclick="sendTestLogMessage()">📢 Send Test Message to Log Channel</button>
@@ -250,7 +257,10 @@
 
         <div class="form-group">
           <label>Hot Wallet 24-Word Secret Phrase (Mnemonic):</label>
-          <input type="password" id="settingMnemonic" placeholder="word1 word2 word3 ... word24" />
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="settingMnemonic" placeholder="word1 word2 word3 ... word24" style="flex: 1;" />
+            <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('settingMnemonic')">👁️</button>
+          </div>
         </div>
 
         <div class="form-group">
@@ -309,8 +319,12 @@
     let generatedOtp = null;
     let otpExpiresAt = 0;
 
+    function togglePasswordVisibility(fieldId) {
+      const el = document.getElementById(fieldId);
+      if (el) el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      // 1. Auto-fill saved bot token from local storage or config
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       if (cfg.bot_token) {
         document.getElementById('loginBotToken').value = cfg.bot_token;
@@ -325,7 +339,6 @@
     async function sendTelegramOtp() {
       let botToken = document.getElementById('loginBotToken').value.trim();
       
-      // Fallback to saved token if empty
       if (!botToken) {
         const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
         botToken = cfg.bot_token || "";
@@ -360,7 +373,6 @@
           document.getElementById('stepSendOtp').style.display = 'none';
           document.getElementById('stepVerifyOtp').style.display = 'block';
 
-          // Keep token updated in storage
           const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
           cfg.bot_token = botToken;
           localStorage.setItem('admin_cfg', JSON.stringify(cfg));
@@ -600,7 +612,6 @@
       item.status = 'approved';
       localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
 
-      // Broadcast receipt to Log Channel (@pheizu_wallet)
       const logText = 
         `🚀 *New Withdrawal Approved!*\n\n` +
         `👤 *Member ID:* \`${item.telegram_id || 'User'}\`\n` +
