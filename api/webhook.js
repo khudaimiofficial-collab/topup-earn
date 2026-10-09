@@ -24,9 +24,9 @@ const db = admin.firestore();
 const WEBAPP_URL = "https://pheizubot.vercel.app";
 
 export default async function handler(req, res) {
-  // Telegram sends updates via POST
+  // Telegram sends all webhook event updates via POST
   if (req.method !== "POST") {
-    return res.status(200).send("Telegram Webhook for @pheizu_wallet is active.");
+    return res.status(200).send("Telegram Webhook endpoint is online.");
   }
 
   const update = req.body;
@@ -39,13 +39,23 @@ export default async function handler(req, res) {
   const text = message.text || "";
   const fromUser = message.from || {};
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  // Retrieve Bot Token from Firestore settings or environment fallback
+  let botToken = process.env.TELEGRAM_BOT_TOKEN || "";
+  try {
+    const cfgDoc = await db.collection("app_config").doc("main").get();
+    if (cfgDoc.exists && cfgDoc.data()?.bot_token) {
+      botToken = cfgDoc.data().bot_token.trim();
+    }
+  } catch (err) {
+    console.warn("Config fetch note:", err);
+  }
+
   if (!botToken) {
-    console.error("Missing TELEGRAM_BOT_TOKEN environment variable!");
+    console.error("Missing Bot Token! Set it in Admin Settings or TELEGRAM_BOT_TOKEN env.");
     return res.status(200).send("OK");
   }
 
-  // Intercept the /start command
+  // Intercept the /start command (including referral parameters)
   if (text.startsWith("/start")) {
     const parts = text.split(" ");
     const referrerId = parts.length > 1 ? parts[1].trim() : null;
@@ -55,7 +65,7 @@ export default async function handler(req, res) {
       const userRef = db.collection("users").doc(String(fromUser.id));
       const userDoc = await userRef.get();
 
-      // 1. Register new user in Firestore if they don't exist
+      // 1. Register new member in Firestore if not already present
       if (!userDoc.exists) {
         await userRef.set({
           telegram_id: String(fromUser.id),
@@ -72,7 +82,7 @@ export default async function handler(req, res) {
           created_at: new Date().toISOString()
         });
 
-        // If referred by someone, increment referrer's count
+        // Increment inviter's referral count if valid
         if (referrerId && referrerId !== String(fromUser.id)) {
           const refUserRef = db.collection("users").doc(String(referrerId));
           await refUserRef.update({
@@ -81,7 +91,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // 2. Build Welcome Message with inline WebApp button
+      // 2. Format Welcome Message
       const welcomeText = 
         `👋 *Welcome to Free Gram Token, ${fromUser.first_name || "Friend"}!*\n\n` +
         `💎 *Earn Gram Tokens* easily by watching short sponsored ads.\n\n` +
@@ -112,6 +122,7 @@ export default async function handler(req, res) {
         }
       };
 
+      // 3. Dispatch reply to user
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,6 +134,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // Always return 200 OK so Telegram doesn't retry delivery
+  // Always return 200 OK so Telegram considers the webhook delivered
   return res.status(200).send("OK");
 }
