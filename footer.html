@@ -1,4 +1,4 @@
-<!-- ================= PERMANENT BOTTOM FLOATING DOCK ================= -->
+<!-- ================= STABLE BOTTOM FLOATING DOCK ================= -->
 <style>
   .dock-wrapper {
     position: fixed;
@@ -83,10 +83,10 @@
   }
 </style>
 
-<div class="dock-wrapper" id="permanentDockWrapper">
+<div class="dock-wrapper">
   <nav class="bottom-dock">
     <!-- 1. Earn -->
-    <a href="/index.html" class="dock-tab" id="tab-earn" onclick="navTab(event, '/index.html')">
+    <a href="/index.html" class="dock-tab" id="tab-earn" onclick="hapticTab()">
       <div class="icon-halo">
         <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       </div>
@@ -94,7 +94,7 @@
     </a>
 
     <!-- 2. Withdraw -->
-    <a href="/withdraw.html" class="dock-tab" id="tab-withdraw" onclick="navTab(event, '/withdraw.html')">
+    <a href="/withdraw.html" class="dock-tab" id="tab-withdraw" onclick="hapticTab()">
       <div class="icon-halo">
         <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       </div>
@@ -102,7 +102,7 @@
     </a>
 
     <!-- 3. Invite -->
-    <a href="/invite.html" class="dock-tab" id="tab-invite" onclick="navTab(event, '/invite.html')">
+    <a href="/invite.html" class="dock-tab" id="tab-invite" onclick="hapticTab()">
       <div class="icon-halo">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
       </div>
@@ -110,7 +110,7 @@
     </a>
 
     <!-- 4. Profile -->
-    <a href="/profile.html" class="dock-tab" id="tab-profile" onclick="navTab(event, '/profile.html')">
+    <a href="/profile.html" class="dock-tab" id="tab-profile" onclick="hapticTab()">
       <div class="icon-halo">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
       </div>
@@ -120,19 +120,13 @@
 </div>
 
 <script>
-  function navTab(e, url) {
-    if (e) e.preventDefault();
-    try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch(err) {}
-
-    if (typeof window.navigateSpa === 'function') {
-      window.navigateSpa(url);
-    } else {
-      window.location.href = url;
-    }
+  function hapticTab() {
+    try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch(e) {}
   }
 
-  function syncActiveTab(path) {
-    var p = path || window.location.pathname;
+  // Highlight active tab based on current URL path
+  (function setActiveTab() {
+    var p = window.location.pathname;
     document.querySelectorAll('.dock-tab').forEach(function(t) { t.classList.remove('active'); });
 
     if (p.includes('withdraw')) {
@@ -144,8 +138,5 @@
     } else {
       document.getElementById('tab-earn')?.classList.add('active');
     }
-  }
-
-  syncActiveTab();
-  window.syncActiveTab = syncActiveTab;
+  })();
 </script>
