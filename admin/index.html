@@ -53,12 +53,12 @@
   <!-- ================= AUTH OTP BOX ================= -->
   <div class="card" id="authBox" style="max-width: 400px; margin-top: 50px;">
     <h2>🔐 Telegram OTP Sign In</h2>
-    <p>Authentication code will be sent to your Telegram account <code>(ID: 8960497898)</code>.</p>
+    <p>Authentication code will be sent to master Telegram account <code>(ID: 8960497898)</code>.</p>
 
     <div id="stepSendOtp">
       <div class="form-group" style="margin-bottom:12px;">
-        <label>Telegram Bot Token (for dispatch):</label>
-        <input type="text" id="loginBotToken" placeholder="123456:ABC-DEF..." />
+        <label>Telegram Bot Token:</label>
+        <input type="text" id="loginBotToken" placeholder="Your Bot Token" />
       </div>
       <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
         📩 Send 6-Digit OTP to Telegram
@@ -181,13 +181,13 @@
       </div>
     </div>
 
-    <!-- SECTION 3: SETTINGS, FEE & BOT WEBHOOK -->
+    <!-- SECTION 3: SETTINGS, FEE, LOG CHANNEL & BOT WEBHOOK -->
     <div id="sectionSettings" class="card" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3>⚙️ Bot, Webhook & Fee Settings</h3>
+        <h3>⚙️ Bot, Log Channel & Fee Settings</h3>
         <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-weight: 700;">Encrypted</span>
       </div>
-      <p>Configure bot token, webhook, withdrawal fees, and hot wallet keys.</p>
+      <p>Configure bot token, log broadcast channel, withdrawal fees, and hot wallet keys.</p>
 
       <!-- BOT TOKEN & WEBHOOK CONTROLS -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
@@ -199,14 +199,28 @@
         </div>
 
         <div class="form-group">
-          <label>Webhook URL (Vercel domain):</label>
-          <input type="text" id="settingWebhookUrl" placeholder="https://your-domain.vercel.app/api/bot-webhook" />
+          <label>Webhook URL (Vercel Domain):</label>
+          <input type="text" id="settingWebhookUrl" value="https://pheizubot.vercel.app/api/webhook" />
         </div>
 
         <div class="btn-row">
           <button class="btn-purple" onclick="activateTelegramWebhook()">⚡ Set Webhook</button>
           <button class="btn-red" style="padding: 10px 14px; font-size: 12px;" onclick="removeTelegramWebhook()">❌ Delete Webhook</button>
         </div>
+      </div>
+
+      <!-- LOG CHANNEL SETTINGS -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25); margin-bottom: 14px;">
+        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📢 Log Channel Broadcast</h4>
+        <p style="font-size: 11px; margin-bottom: 10px;">Withdrawal and payment receipts are broadcast here automatically.</p>
+
+        <div class="form-group">
+          <label>Telegram Log Channel Username / ID:</label>
+          <input type="text" id="settingLogChannel" placeholder="@pheizu_wallet" value="@pheizu_wallet" />
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Make sure your bot is added as an administrator to this channel to post logs!</span>
+        </div>
+
+        <button class="btn-blue" style="padding: 8px 14px; font-size: 12px;" onclick="sendTestLogMessage()">📢 Send Test Message to Log Channel</button>
       </div>
 
       <!-- FEE & ECONOMICS -->
@@ -216,7 +230,7 @@
         <div class="form-group">
           <label>Network Fee Deducted per Withdrawal (in GRAM):</label>
           <input type="number" id="settingWithdrawFee" step="0.0001" placeholder="0.002" />
-          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Deducted from each payout to cover TON gas and maximize app profits.</span>
+          <span style="font-size: 10.5px; color: #94a3b8; margin-top: 4px;">Deducted from each payout to cover TON gas and maximize profits.</span>
         </div>
 
         <div class="form-group">
@@ -296,6 +310,7 @@
     let otpExpiresAt = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
+      // 1. Auto-fill saved bot token from local storage or config
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       if (cfg.bot_token) {
         document.getElementById('loginBotToken').value = cfg.bot_token;
@@ -308,7 +323,14 @@
 
     // ================= REAL TELEGRAM OTP AUTHENTICATION =================
     async function sendTelegramOtp() {
-      const botToken = document.getElementById('loginBotToken').value.trim();
+      let botToken = document.getElementById('loginBotToken').value.trim();
+      
+      // Fallback to saved token if empty
+      if (!botToken) {
+        const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+        botToken = cfg.bot_token || "";
+      }
+
       const btn = document.getElementById('btnSendOtp');
 
       if (!botToken) {
@@ -334,15 +356,16 @@
 
         const data = await tgRes.json();
         if (data.ok) {
-          alert("📩 OTP sent to your Telegram! Check bot messages.");
+          alert("📩 OTP sent to your Telegram! Check messages from your bot.");
           document.getElementById('stepSendOtp').style.display = 'none';
           document.getElementById('stepVerifyOtp').style.display = 'block';
 
+          // Keep token updated in storage
           const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
           cfg.bot_token = botToken;
           localStorage.setItem('admin_cfg', JSON.stringify(cfg));
         } else {
-          alert("❌ Failed to send OTP: " + (data.description || "Check bot token."));
+          alert("❌ Failed to send OTP: " + (data.description || "Make sure you started the bot first."));
         }
       } catch (err) {
         alert("❌ Network error connecting to Telegram Bot API.");
@@ -387,7 +410,8 @@
 
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       document.getElementById('settingBotToken').value = cfg.bot_token || '';
-      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || `${window.location.origin}/api/bot-webhook`;
+      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || 'https://pheizubot.vercel.app/api/webhook';
+      document.getElementById('settingLogChannel').value = cfg.log_channel || '@pheizu_wallet';
       document.getElementById('settingWithdrawFee').value = cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.002';
       document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 5000;
       document.getElementById('settingWalletAddress').value = cfg.wallet_address || '';
@@ -426,6 +450,57 @@
       } else if (tabName === 'settings') {
         document.getElementById('btnTabSettings').classList.add('active');
         document.getElementById('sectionSettings').style.display = 'block';
+      }
+    }
+
+    // ================= LOG CHANNEL BROADCAST =================
+    async function sendLogMessage(text) {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const token = cfg.bot_token;
+      const channel = cfg.log_channel || '@pheizu_wallet';
+
+      if (!token || !channel) return;
+
+      try {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: channel,
+            text: text,
+            parse_mode: "Markdown"
+          })
+        });
+      } catch (e) {
+        console.warn("Log channel delivery note:", e);
+      }
+    }
+
+    async function sendTestLogMessage() {
+      const channel = document.getElementById('settingLogChannel').value.trim() || '@pheizu_wallet';
+      const token = document.getElementById('settingBotToken').value.trim();
+
+      if (!token) return alert("❌ Bot Token required!");
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: channel,
+            text: `⚡ *Gram Log Channel Connected Successfully!*\n\nLog channel \`${channel}\` is ready to receive automated withdrawal receipts and payouts.`,
+            parse_mode: "Markdown"
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert(`✅ Test message posted to ${channel}! Check the channel.`);
+        } else {
+          alert(`❌ Failed to post to ${channel}: ` + (data.description || "Make sure the bot is an admin in the channel."));
+        }
+      } catch (e) {
+        alert("❌ Error dispatching test message.");
       }
     }
 
@@ -472,7 +547,7 @@
       try {
         const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
         const data = await res.json();
-        alert(data.ok ? "✅ Webhook successfully connected!" : "❌ Error: " + data.description);
+        alert(data.ok ? "✅ Webhook successfully connected to https://pheizubot.vercel.app/api/webhook!" : "❌ Error: " + data.description);
       } catch (e) {
         alert("❌ Failed to activate webhook.");
       }
@@ -510,10 +585,34 @@
           <td class="${w.status || 'approved'}">${(w.status || 'APPROVED').toUpperCase()}</td>
           <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at || Date.now()).toLocaleDateString()}</td>
           <td>
-            <button class="btn-red" style="padding:4px 8px; font-size:11px;" onclick="deleteWithdrawal(${idx})">🗑️</button>
+            <button class="btn-green" style="padding:4px 8px; font-size:11px;" onclick="approveWithdrawal(${idx})">Approve & Log 📢</button>
+            <button class="btn-red" style="padding:4px 8px; font-size:11px; margin-left:4px;" onclick="deleteWithdrawal(${idx})">🗑️</button>
           </td>
         </tr>
       `).join('');
+    }
+
+    function approveWithdrawal(idx) {
+      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
+      const item = wList[idx];
+      if (!item) return;
+
+      item.status = 'approved';
+      localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
+
+      // Broadcast receipt to Log Channel (@pheizu_wallet)
+      const logText = 
+        `🚀 *New Withdrawal Approved!*\n\n` +
+        `👤 *Member ID:* \`${item.telegram_id || 'User'}\`\n` +
+        `💎 *Amount:* \`${item.gram_amount} GRAM\`\n` +
+        `🪙 *Points Deducted:* \`${item.points} PTS\`\n` +
+        `💳 *Recipient Wallet:* \`${item.wallet_address}\`\n` +
+        `✅ *Status:* Complete / Dispatched\n\n` +
+        `⚡ *Free Gram Token Automated Payout*`;
+
+      sendLogMessage(logText);
+      alert(`✅ Withdrawal approved and broadcasted to log channel!`);
+      loadWithdrawals();
     }
 
     function deleteWithdrawal(idx) {
@@ -630,7 +729,6 @@
         return alert("❌ Reset canceled. Confirmation phrase did not match.");
       }
 
-      // Preserve admin configuration keys while clearing user and withdrawal records
       const savedCfg = localStorage.getItem('admin_cfg');
       localStorage.clear();
       if (savedCfg) localStorage.setItem('admin_cfg', savedCfg);
@@ -643,6 +741,7 @@
     function saveSettings() {
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const webhook_url = document.getElementById('settingWebhookUrl').value.trim();
+      const log_channel = document.getElementById('settingLogChannel').value.trim();
       const withdraw_fee = parseFloat(document.getElementById('settingWithdrawFee').value) || 0.002;
       const min_withdraw = Number(document.getElementById('settingMinWithdraw').value) || 5000;
       const wallet_address = document.getElementById('settingWalletAddress').value.trim();
@@ -652,6 +751,7 @@
       const cfg = {
         bot_token,
         webhook_url,
+        log_channel,
         withdraw_fee,
         min_withdraw,
         wallet_address,
@@ -660,7 +760,7 @@
       };
 
       localStorage.setItem('admin_cfg', JSON.stringify(cfg));
-      alert('✅ Configuration & Withdrawal Fee saved successfully!');
+      alert('✅ Configuration, Log Channel & Fees saved successfully!');
       showDashboard();
     }
   </script>
