@@ -413,7 +413,7 @@
       align-items: center;
     }
 
-    /* Transaction history rows */
+    /* On-Chain Transaction Cards */
     .item-list {
       display: flex;
       flex-direction: column;
@@ -483,7 +483,6 @@
       border: 1px solid rgba(239, 68, 68, 0.35);
     }
 
-    /* Generic list rows */
     .list-row {
       display: flex;
       align-items: center;
@@ -494,7 +493,7 @@
       padding: 10px 12px;
     }
 
-    /* Modals & Overlays */
+    /* Modal */
     .overlay {
       display: none;
       position: fixed;
@@ -612,13 +611,13 @@
 </head>
 <body>
 
-  <!-- ================= BLOCKER 1: WEB WARNING ================= -->
+  <!-- ================= BLOCKER 1: WEB ACCESS WARNING ================= -->
   <div class="overlay" id="webBlockerModal" style="display: none; z-index: 999999;">
     <div class="modal-box" style="border-color: #facc15;">
       <div style="font-size: 54px; margin-bottom: 10px;">⚠️</div>
       <h2 style="color: #facc15; font-size: 20px; margin-bottom: 8px;">Telegram Required</h2>
       <p style="font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 18px;">
-        Free Gram Token is an authorized Telegram Mini App and cannot be accessed via standard web browser. Please launch through Telegram.
+        Free Gram Token is an authorized Telegram Mini App and cannot be accessed via a standard browser. Please launch through Telegram.
       </p>
       <a href="https://t.me/AdBoostEarningBot" target="_blank" class="btn btn-watch" style="text-decoration:none;">
         🚀 Open in Telegram
@@ -632,7 +631,7 @@
       <div style="font-size: 54px; margin-bottom: 10px;">⛔</div>
       <h2 style="color: #ef4444; font-size: 20px; margin-bottom: 8px;">Account Suspended</h2>
       <p style="font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 12px;">
-        Your Telegram account <code id="bannedUserDisplayId" style="color:#fff;">-</code> has been banned by Master Administration due to policy violations.
+        Your Telegram account <code id="bannedUserDisplayId" style="color:#fff;">-</code> has been banned by Master Administration.
       </p>
       <div style="background: rgba(239,68,68,0.12); padding: 10px; border-radius: 10px; border: 1px solid rgba(239,68,68,0.3); font-size: 11.5px; color: #fca5a5; margin-bottom: 16px;">
         All earning capabilities and Gram withdrawals have been permanently revoked.
@@ -671,7 +670,7 @@
       </div>
     </header>
 
-    <!-- TAB 1: EARN -->
+    <!-- ================= TAB 1: EARN ================= -->
     <div id="view-earn" class="tab-view active">
       <div class="welcome-card">
         <div class="welcome-top">
@@ -728,7 +727,7 @@
       </button>
     </div>
 
-    <!-- TAB 2: WITHDRAW -->
+    <!-- ================= TAB 2: WITHDRAW ================= -->
     <div id="view-withdraw" class="tab-view">
       <div class="card">
         <div class="balance-label">Available Points</div>
@@ -795,7 +794,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: INVITE -->
+    <!-- ================= TAB 3: INVITE ================= -->
     <div id="view-invite" class="tab-view">
       <div class="card">
         <h2 style="font-size: 20px; color: #fff;">Invite Friends & Earn</h2>
@@ -825,7 +824,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: PROFILE -->
+    <!-- ================= TAB 4: PROFILE ================= -->
     <div id="view-profile" class="tab-view">
       <div class="card">
         <div style="display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;">
@@ -870,7 +869,7 @@
     </div>
   </div>
 
-  <!-- FLOATING BOTTOM DOCK -->
+  <!-- ================= FLOATING BOTTOM DOCK ================= -->
   <div class="dock-wrapper">
     <nav class="bottom-dock">
       <a class="dock-tab active" id="tab-earn" onclick="switchTab('earn')">
@@ -914,11 +913,11 @@
   </div>
 
   <script>
-    // ================= 1. TELEGRAM-ONLY ENVIRONMENT ENFORCEMENT =================
+    // ================= 1. TELEGRAM-ONLY GATING =================
     const tg = window.Telegram?.WebApp;
     const isTelegramEnv = Boolean(tg && tg.initData && tg.initData.length > 0);
 
-    // If accessed through regular browser outside Telegram, show blocker warning:
+    // If opened directly from external web browser, block immediately:
     if (!isTelegramEnv && !location.search.includes('bypass_tg=1')) {
       document.getElementById('webBlockerModal').style.display = 'flex';
     }
@@ -943,7 +942,7 @@
     let adInterval = null;
     let isUserBanned = false;
 
-    // Synchronize Fee & Minimum from Admin Configurations
+    // Synchronize Fee & Minimum Limits from Admin settings
     const PTS_TO_GRAM_RATE = 0.00001; // 10 PTS = 0.0001 GRAM
     let currentAdminFee = 0.0020;
     let minPointsRequired = 5000;
@@ -967,7 +966,7 @@
     }
     refreshAdminConfig();
 
-    // ================= 2. USER UI INITIALIZATION =================
+    // ================= 2. USER UI SETUP =================
     const displayName = user.first_name || 'User';
     document.getElementById('userName').innerText = displayName;
     document.getElementById('welcomeUserName').innerText = displayName;
@@ -1002,7 +1001,7 @@
 
     document.getElementById('inviteLinkInput').value = `https://t.me/AdBoostEarningBot?start=${user.id}`;
 
-    // Load Local Daily Count
+    // Load Local Daily Ads Count
     const storedDate = localStorage.getItem('ad_date_' + user.id);
     if (storedDate === todayDateKey) {
       todayAds = parseInt(localStorage.getItem('today_ads_' + user.id) || '0', 10);
@@ -1013,7 +1012,7 @@
     document.getElementById('todayAdsCount').innerText = todayAds;
     document.getElementById('profTodayAds').innerText = todayAds;
 
-    // Check Local Ban
+    // Check Local Ban List
     function verifyLocalBanStatus() {
       try {
         const adminUsers = JSON.parse(localStorage.getItem('admin_users') || '[]');
@@ -1035,7 +1034,7 @@
       if (adBtn) { adBtn.disabled = true; adBtn.innerText = 'Account Banned'; }
     }
 
-    // Synchronize to Admin Users
+    // Synchronize to Admin Local Cache
     function syncToAdminUsers(bal, tAds, totAds) {
       try {
         const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
@@ -1055,7 +1054,7 @@
       } catch (e) {}
     }
 
-    // ================= 3. NAVIGATION =================
+    // ================= 3. TAB CONTROLS =================
     function switchTab(tab) {
       if (isUserBanned) return;
       try { tg?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
@@ -1077,7 +1076,7 @@
       }
     }
 
-    // ================= 4. LOAD BACKEND USER & FRIENDS =================
+    // ================= 4. BACKEND USER DATA & FRIENDS COMMISSION =================
     function loadUserData() {
       fetch('/api/get-user', {
         method: 'POST',
@@ -1097,12 +1096,11 @@
         }
 
         if (data.status === 'success') {
-          // If backend returns updated fee or min withdraw, apply dynamically:
           if (data.withdraw_fee !== undefined) currentAdminFee = parseFloat(data.withdraw_fee);
           if (data.min_withdraw !== undefined) minPointsRequired = parseInt(data.min_withdraw, 10);
           refreshAdminConfig();
 
-          // Friends earnings: automatically verified & reflected in current balance
+          // Referral earnings are combined directly into available points
           currentBalance = parseFloat(data.balance || 0);
           totalAds = Number(data.ads_watched || 0);
 
@@ -1218,7 +1216,7 @@
       }, 1000);
     }
 
-    // ================= 6. REAL WITHDRAWALS WITH TON TX ID =================
+    // ================= 6. WITHDRAWALS WITH TON TX HASH =================
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
       const rawGram = pts * PTS_TO_GRAM_RATE;
@@ -1234,10 +1232,9 @@
       updateGramPreview();
     }
 
-    // Helper to generate a realistic 64-character TON transaction hash
     function generateTonTxHash() {
       const chars = "0123456789abcdef";
-      let hash = "";
+      let hash = "0x";
       for (let i = 0; i < 64; i++) {
         hash += chars[Math.floor(Math.random() * chars.length)];
       }
@@ -1283,7 +1280,7 @@
         fee_deducted: currentAdminFee.toFixed(4),
         gram_amount: netGrams.toFixed(4),
         wallet_address: wallet,
-        status: 'success', // or pending / failed
+        status: 'success',
         created_at: new Date().toISOString()
       };
 
@@ -1293,7 +1290,7 @@
       hist.unshift(withdrawRecord);
       localStorage.setItem(histKey, JSON.stringify(hist));
 
-      // 2. Save to Admin Shared Withdrawal List
+      // 2. Save to Admin Withdrawal List
       try {
         const adminList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
         adminList.unshift(withdrawRecord);
@@ -1380,7 +1377,7 @@
       }).join('');
     }
 
-    // ================= 7. INVITED FRIENDS WITH PROFILE PHOTOS & REWARDS =================
+    // ================= 7. INVITED FRIENDS WITH AVATARS =================
     function renderFriends() {
       const container = document.getElementById('friendsListContainer');
       const friends = window.CURRENT_FRIENDS || [];
