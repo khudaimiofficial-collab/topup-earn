@@ -53,6 +53,12 @@
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #131b2e; border: 1px solid #38bdf8; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.6); max-width: 90vw; }
     .toast.err { border-color: #ef4444; color: #fca5a5; }
     .toast.ok { border-color: #22c55e; color: #86efac; }
+
+    /* Hot Wallet panel responsive tweaks */
+    .hw-grid { display: grid; grid-template-columns: 1fr 190px; gap: 18px; align-items: start; }
+    @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; } }
+    .hw-send-grid { display: grid; grid-template-columns: 1fr 130px auto; gap: 8px; }
+    @media (max-width: 620px) { .hw-send-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -128,6 +134,68 @@
         </div>
       </div>
       <p style="font-size:11px; margin:0;" id="dispWalletAddr">Wallet Address: <code>Not configured</code></p>
+    </div>
+
+    <!-- ================= HOT WALLET DEPOSIT & SEND ================= -->
+    <div class="card" style="padding: 18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size:15px; margin:0;">💎 Hot Wallet Deposit &amp; Send</h3>
+        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="refreshHotWallet()">🔄 Refresh</button>
+      </div>
+
+      <div class="hw-grid">
+        <!-- LEFT: Address + Balance -->
+        <div>
+          <label style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Deposit Address (Send TON here)</label>
+          <div id="hwAddressDisplay"
+               style="background:rgba(0,0,0,0.5); padding:10px 12px; border-radius:8px; margin-top:6px;
+                      font-family:monospace; font-size:11px; word-break:break-all;
+                      border:1px solid rgba(56,189,248,0.35); color:#38bdf8;">
+            Not configured
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn-blue" style="padding:8px 12px; font-size:11px; flex:1;" onclick="copyHotWalletAddr()">📋 Copy Address</button>
+            <a class="btn-purple" id="hwExplorerLink" href="#" target="_blank"
+               style="padding:8px 12px; font-size:11px; flex:1; text-decoration:none; text-align:center; color:#fff;">🔍 Explorer</a>
+          </div>
+
+          <div style="margin-top:14px; padding:12px; background:rgba(34,197,94,0.08);
+                      border-radius:10px; border:1px solid rgba(34,197,94,0.3);">
+            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:700;">Live Hot Wallet Balance</div>
+            <div id="hwBalanceDisplay" style="font-size:26px; font-weight:900; color:#22c55e; margin-top:2px;">-- TON</div>
+            <div style="font-size:10px; color:#94a3b8; margin-top:4px;">≈ <span id="hwBalanceUsd">--</span> USD</div>
+          </div>
+
+          <div style="margin-top:12px; font-size:11px; color:#94a3b8; line-height:1.5;">
+            💡 <b style="color:#facc15;">How to deposit:</b> Send TON from any wallet or exchange
+            (Tonkeeper, Telegram @wallet, Binance, OKX) to the address above. Funds are used to pay
+            on-chain gas for user withdrawals. <b>Minimum 0.1 TON</b> recommended.
+          </div>
+        </div>
+
+        <!-- RIGHT: QR Code -->
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Scan to Deposit</div>
+          <div style="background:#fff; padding:8px; border-radius:12px; display:inline-block;">
+            <img id="hwQrCode" src="" style="width:160px; height:160px; display:block;" alt="Deposit QR" />
+          </div>
+          <p style="font-size:10px; color:#94a3b8; margin-top:8px; line-height:1.4;">Scan with any TON-compatible wallet</p>
+        </div>
+      </div>
+
+      <!-- SEND TON FROM HOT WALLET -->
+      <div style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
+        <h4 style="color:#38bdf8; font-size:13px; margin-bottom:8px;">💸 Send TON from Hot Wallet</h4>
+        <div class="hw-send-grid">
+          <input type="text" id="hwSendAddress" placeholder="Recipient UQ... / EQ..." />
+          <input type="number" id="hwSendAmount" placeholder="0.1" step="0.001" min="0.001" />
+          <button class="btn-green" id="hwSendBtn" style="padding:12px 18px;" onclick="sendFromHotWallet()">Send 🚀</button>
+        </div>
+        <p style="font-size:10px; color:#facc15; margin-top:6px;">
+          ⚠️ Real on-chain transfer from your hot wallet — uses the mnemonic saved in Settings.
+        </p>
+      </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -307,7 +375,7 @@
   <div class="overlay" id="addUserModal">
     <div class="modal-box">
       <h3 style="margin-bottom: 12px;">➕ Add Member</h3>
-      
+
       <div class="form-group">
         <label>Telegram Numeric ID:</label>
         <input type="text" id="newUserId" placeholder="e.g. 6849201940">
@@ -460,7 +528,7 @@
       document.getElementById('mainDashboard').style.display = 'block';
 
       applyLocalConfigToForm();
-      checkLiveBlockchainBalance();
+      refreshHotWallet();
       loadWithdrawals();
       loadUsers();
     }
@@ -497,6 +565,7 @@
         };
         localStorage.setItem('admin_cfg', JSON.stringify(merged));
         applyLocalConfigToForm();
+        refreshHotWallet();
         toast("☁️ Config loaded from server.", "ok");
       } catch (e) {
         toast("❌ Failed to load config from server.", "err");
@@ -529,8 +598,117 @@
     }
 
     async function refreshAll() {
-      await Promise.all([checkLiveBlockchainBalance(), loadUsers(), loadWithdrawals()]);
+      refreshHotWallet();
+      await Promise.all([loadUsers(), loadWithdrawals()]);
       toast("🔄 Refreshed.", "ok", 1800);
+    }
+
+    /* ================= HOT WALLET DEPOSIT & SEND ================= */
+    function refreshHotWallet() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const address = (cfg.wallet_address || '').trim();
+
+      const addrEl  = document.getElementById('hwAddressDisplay');
+      const qrEl    = document.getElementById('hwQrCode');
+      const balEl   = document.getElementById('hwBalanceDisplay');
+      const usdEl   = document.getElementById('hwBalanceUsd');
+      const expLink = document.getElementById('hwExplorerLink');
+      if (!addrEl) return; // panel not present
+
+      if (!address) {
+        addrEl.innerText = 'Not configured — set it in the Settings tab';
+        qrEl.src = '';
+        balEl.innerText = '-- TON';
+        usdEl.innerText = '--';
+        expLink.href = '#';
+        return;
+      }
+
+      addrEl.innerText = address;
+      expLink.href = `https://tonviewer.com/${address}`;
+
+      // QR: public QR generator API (wallet addresses are public anyway)
+      qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=${encodeURIComponent(address)}`;
+
+      // Live balance refresh
+      checkLiveBlockchainBalance();
+    }
+
+    function copyHotWalletAddr() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const address = (cfg.wallet_address || '').trim();
+      if (!address) return toast('❌ No wallet address configured', 'err');
+
+      const done = () => toast('📋 Wallet address copied!', 'ok');
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(address).then(done).catch(done);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = address;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done();
+      }
+    }
+
+    async function sendFromHotWallet() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const to  = document.getElementById('hwSendAddress').value.trim();
+      const amt = parseFloat(document.getElementById('hwSendAmount').value);
+
+      if (!to || (!to.startsWith('UQ') && !to.startsWith('EQ'))) {
+        return toast('❌ Invalid recipient address (must start with UQ or EQ)', 'err');
+      }
+      if (isNaN(amt) || amt <= 0) {
+        return toast('❌ Enter a valid positive TON amount', 'err');
+      }
+      if (!cfg.mnemonic) {
+        return toast('❌ Hot wallet mnemonic not configured (Settings tab)', 'err');
+      }
+
+      const shortTo = `${to.slice(0, 8)}...${to.slice(-8)}`;
+      const ok = confirm(
+        `⚠️ CONFIRM ON-CHAIN SEND\n\n` +
+        `Amount: ${amt} TON\n` +
+        `To: ${shortTo}\n\n` +
+        `This is a REAL blockchain transfer and cannot be reversed.`
+      );
+      if (!ok) return;
+
+      const btn = document.getElementById('hwSendBtn');
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+
+      try {
+        const res = await fetch('/api/gram-service', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipient_address: to, gram_amount: amt })
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch (e) {}
+
+        if (res.ok && data.status === 'success') {
+          toast(
+            `✅ Broadcast: ${amt} TON\nSeqno: ${data.data?.seqno ?? 'N/A'}`,
+            'ok', 8000
+          );
+          document.getElementById('hwSendAddress').value = '';
+          document.getElementById('hwSendAmount').value = '';
+          setTimeout(refreshHotWallet, 3000);
+        } else {
+          toast('❌ ' + (data.message || data.error || `HTTP ${res.status}`), 'err', 8000);
+        }
+      } catch (e) {
+        toast('❌ ' + e.message, 'err', 8000);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
     }
 
     /* ================= WITHDRAWALS ================= */
@@ -895,24 +1073,41 @@
     /* ================= BLOCKCHAIN ================= */
     async function checkLiveBlockchainBalance() {
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      const address = cfg.wallet_address;
+      const address = (cfg.wallet_address || '').trim();
       const apiKey = cfg.api_key;
 
+      const hwBal = document.getElementById('hwBalanceDisplay');
+      const hwUsd = document.getElementById('hwBalanceUsd');
+
       if (!address) {
-        document.getElementById('dispTonBal').innerText = "0.000 TON";
+        document.getElementById('dispTonBal').innerText = '0.000 TON';
+        if (hwBal) hwBal.innerText = '-- TON';
+        if (hwUsd) hwUsd.innerText = '--';
         return;
       }
 
       try {
-        const headers = apiKey ? { "X-API-Key": apiKey } : {};
-        const res = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(address)}`, { headers });
+        const headers = apiKey ? { 'X-API-Key': apiKey } : {};
+        const res = await fetch(
+          `https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(address)}`,
+          { headers }
+        );
         const data = await res.json();
+
         if (data.ok) {
-          const bal = (parseInt(data.result, 10) / 1e9).toFixed(3);
-          document.getElementById('dispTonBal').innerText = `${bal} TON`;
+          const balTon = parseInt(data.result, 10) / 1e9;
+          const balStr = balTon.toFixed(4);
+
+          document.getElementById('dispTonBal').innerText = `${balStr} TON`;
+          if (hwBal) hwBal.innerText = `${balStr} TON`;
+          if (hwUsd) hwUsd.innerText = (balTon * 5.5).toFixed(2); // rough USD estimate
+        } else {
+          document.getElementById('dispTonBal').innerText = 'API err';
+          if (hwBal) hwBal.innerText = 'API err';
         }
       } catch (e) {
-        document.getElementById('dispTonBal').innerText = "API err";
+        document.getElementById('dispTonBal').innerText = 'Network err';
+        if (hwBal) hwBal.innerText = 'Network err';
       }
     }
 
@@ -1006,7 +1201,6 @@
         if (!confirm("⚠️ Wallet address or mnemonic missing. Real withdrawals won't work. Save anyway?")) return;
       }
 
-      // Validate mnemonic word count before saving
       if (mnemonic) {
         const words = mnemonic.split(/\s+/).filter(Boolean);
         if (words.length !== 24 && words.length !== 12) {
@@ -1014,7 +1208,6 @@
         }
       }
 
-      // Save to cloud
       try {
         const res = await fetch(API_BASE + '/api/webhook', {
           method: 'POST',
@@ -1049,6 +1242,7 @@
       localStorage.setItem('admin_cfg', JSON.stringify(cfg));
 
       applyLocalConfigToForm();
+      refreshHotWallet();
       toast("✅ Configuration saved!", "ok");
     }
   </script>
