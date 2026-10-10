@@ -413,7 +413,7 @@
       align-items: center;
     }
 
-    /* On-Chain Transaction Cards */
+    /* Lists */
     .item-list {
       display: flex;
       flex-direction: column;
@@ -493,7 +493,7 @@
       padding: 10px 12px;
     }
 
-    /* Modal */
+    /* Modals */
     .overlay {
       display: none;
       position: fixed;
@@ -523,7 +523,7 @@
       margin: 15px 0;
     }
 
-    /* Bottom dock */
+    /* Floating Dock */
     .dock-wrapper {
       position: fixed;
       bottom: 14px;
@@ -611,7 +611,7 @@
 </head>
 <body>
 
-  <!-- ================= BLOCKER 1: WEB ACCESS WARNING ================= -->
+  <!-- ================= BLOCKER 1: WEB WARNING ================= -->
   <div class="overlay" id="webBlockerModal" style="display: none; z-index: 999999;">
     <div class="modal-box" style="border-color: #facc15;">
       <div style="font-size: 54px; margin-bottom: 10px;">⚠️</div>
@@ -625,7 +625,7 @@
     </div>
   </div>
 
-  <!-- ================= BLOCKER 2: BANNED USER POPUP ================= -->
+  <!-- ================= BLOCKER 2: BANNED MODAL ================= -->
   <div class="overlay" id="banBlockerModal" style="display: none; z-index: 999999;">
     <div class="modal-box" style="border-color: #ef4444;">
       <div style="font-size: 54px; margin-bottom: 10px;">⛔</div>
@@ -637,7 +637,7 @@
         All earning capabilities and Gram withdrawals have been permanently revoked.
       </div>
       <a href="https://t.me/pheizu_wallet" target="_blank" class="btn btn-invite" style="text-decoration:none;">
-        Contact Appeals Support
+        Contact Support
       </a>
     </div>
   </div>
@@ -660,11 +660,11 @@
       <div class="header-user" onclick="switchTab('profile')">
         <div class="user-avatar-wrap">
           <img id="userHeaderPhoto" class="user-avatar-img" src="" alt="User" referrerpolicy="no-referrer" />
-          <div id="userHeaderFallback" class="user-avatar-fallback">U</div>
+          <div id="userHeaderFallback" class="user-avatar-fallback">K</div>
           <span class="status-dot-badge"></span>
         </div>
         <div class="user-info-text">
-          <span class="user-name-text" id="userName">User</span>
+          <span class="user-name-text" id="userName">Khudaimi</span>
           <span class="user-sub-text">ACTIVE</span>
         </div>
       </div>
@@ -674,7 +674,7 @@
     <div id="view-earn" class="tab-view active">
       <div class="welcome-card">
         <div class="welcome-top">
-          <span class="welcome-title">👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">User</span>!</span>
+          <span class="welcome-title">👋 Hello, <span id="welcomeUserName" style="color: var(--accent);">Khudaimi</span>!</span>
           <span class="status-badge status-success">● Online</span>
         </div>
         <p class="welcome-sub">
@@ -690,26 +690,26 @@
       <div class="card">
         <div class="balance-label">Available Points</div>
         <div class="balance-value">
-          <span id="balance">0.00</span>
+          <span id="balance">130.00</span>
           <span class="balance-pts">PTS</span>
         </div>
 
         <div class="stats-grid">
           <div class="stat-pill">
             <div class="stat-pill-label">📅 Today Ads Watch</div>
-            <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">0</div>
+            <div class="stat-pill-value" id="todayAdsCount" style="color: #22c55e;">5</div>
           </div>
           <div class="stat-pill">
             <div class="stat-pill-label">📺 Total Ads Watch</div>
-            <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">0</div>
+            <div class="stat-pill-value" id="totalAdsCount" style="color: var(--accent);">13</div>
           </div>
           <div class="stat-pill">
             <div class="stat-pill-label">👥 Friends Invited</div>
-            <div class="stat-pill-value" id="invitedCount" style="color: #facc15;">0</div>
+            <div class="stat-pill-value" id="invitedCount" style="color: #facc15;">2</div>
           </div>
           <div class="stat-pill">
             <div class="stat-pill-label">🎁 Referral Bonus</div>
-            <div class="stat-pill-value" id="referralEarnings">0.00 PTS</div>
+            <div class="stat-pill-value" id="referralEarnings">4.00 PTS</div>
           </div>
         </div>
       </div>
@@ -732,7 +732,7 @@
       <div class="card">
         <div class="balance-label">Available Points</div>
         <div class="balance-value">
-          <span id="withdrawBalDisplay">0.00</span>
+          <span id="withdrawBalDisplay">130.00</span>
           <span class="balance-pts">PTS</span>
         </div>
         <p style="font-size: 12px; color: var(--text-dim);" id="minWithdrawalNotice">
@@ -765,7 +765,7 @@
             </div>
             <div class="conversion-line">
               <span style="color: var(--text-dim);">Admin Network Fee:</span>
-              <span style="color: #facc15; font-weight: 700;" id="dispNetworkFee">0.0020 GRAM</span>
+              <span style="color: #facc15; font-weight: 700;" id="dispNetworkFee">0.0050 GRAM</span>
             </div>
             <div class="conversion-line" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08);">
               <span style="color: #cbd5e1; font-weight: 700;">Net You Receive:</span>
@@ -802,7 +802,7 @@
           Earn <b>10% commission (+1.00 PTS)</b> automatically added to your available points every time a friend watches an ad!
         </p>
 
-        <input type="text" id="inviteLinkInput" class="input-field" readonly value="Loading referral link..." />
+        <input type="text" id="inviteLinkInput" class="input-field" readonly value="https://t.me/AdBoostEarningBot?start=8960497898" />
 
         <button class="btn btn-withdraw" onclick="shareInvite()" style="margin-bottom:8px;">
           🚀 Share on Telegram
@@ -816,10 +816,10 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="font-size:15px; color:#fff; margin:0;">👥 Invited Friends</h3>
-          <span style="font-size:11px; color:#22c55e; font-weight:800;" id="friendsCountBadge">0 Members</span>
+          <span style="font-size:11px; color:#22c55e; font-weight:800;" id="friendsCountBadge">2 Members</span>
         </div>
         <div id="friendsListContainer" class="item-list">
-          <div style="color:var(--text-dim); font-size:12px; text-align:center; padding:15px;">Loading friends...</div>
+          <!-- Rendered dynamically -->
         </div>
       </div>
     </div>
@@ -830,11 +830,11 @@
         <div style="display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:left;">
           <div class="user-avatar-wrap" style="width:60px; height:60px;">
             <img id="profPhoto" class="user-avatar-img" src="" alt="User" style="width:100%; height:100%;" referrerpolicy="no-referrer" />
-            <div id="profFallback" class="user-avatar-fallback" style="width:100%; height:100%; font-size:24px;">U</div>
+            <div id="profFallback" class="user-avatar-fallback" style="width:100%; height:100%; font-size:24px;">K</div>
             <span class="status-dot-badge" style="width:12px; height:12px;"></span>
           </div>
           <div>
-            <h2 id="profName" style="font-size:17px; font-weight:800; color:#fff;">User</h2>
+            <h2 id="profName" style="font-size:17px; font-weight:800; color:#fff;">Khudaimi</h2>
             <span id="profUsername" style="font-size:12px; color:var(--accent);">@username</span>
           </div>
         </div>
@@ -842,19 +842,19 @@
         <div class="item-list" style="margin-top:10px;">
           <div class="list-row">
             <span style="color:var(--text-dim); font-size:12px;">Telegram ID</span>
-            <code id="profId" style="color:var(--accent); font-size:13px;">-</code>
+            <code id="profId" style="color:var(--accent); font-size:13px;">8960497898</code>
           </div>
           <div class="list-row">
             <span style="color:var(--text-dim); font-size:12px;">Available Balance</span>
-            <b id="profBalanceDisplay" style="color:#22c55e;">0.00 PTS</b>
+            <b id="profBalanceDisplay" style="color:#22c55e;">130.00 PTS</b>
           </div>
           <div class="list-row">
             <span style="color:var(--text-dim); font-size:12px;">Today Ads Watch</span>
-            <b id="profTodayAds" style="color:#22c55e;">0</b>
+            <b id="profTodayAds" style="color:#22c55e;">5</b>
           </div>
           <div class="list-row">
             <span style="color:var(--text-dim); font-size:12px;">Total Ads Watch</span>
-            <b id="profTotalAds" style="color:var(--accent);">0</b>
+            <b id="profTotalAds" style="color:var(--accent);">13</b>
           </div>
           <div class="list-row">
             <span style="color:var(--text-dim); font-size:12px;">Network Status</span>
@@ -917,7 +917,6 @@
     const tg = window.Telegram?.WebApp;
     const isTelegramEnv = Boolean(tg && tg.initData && tg.initData.length > 0);
 
-    // If opened directly from external web browser, block immediately:
     if (!isTelegramEnv && !location.search.includes('bypass_tg=1')) {
       document.getElementById('webBlockerModal').style.display = 'flex';
     }
@@ -933,50 +932,24 @@
 
     const defaultUser = { id: "8960497898", first_name: "Khudaimi", username: "" };
     const user = tg?.initDataUnsafe?.user || defaultUser;
-    const startParam = tg?.initDataUnsafe?.start_param || new URLSearchParams(window.location.search).get('start');
     const todayDateKey = new Date().toISOString().slice(0, 10);
 
-    let currentBalance = 0.00;
-    let todayAds = 0;
-    let totalAds = 0;
+    let currentBalance = 130.00;
+    let todayAds = 5;
+    let totalAds = 13;
     let adInterval = null;
     let isUserBanned = false;
 
-    // Synchronize Fee & Minimum Limits from Admin settings
-    const PTS_TO_GRAM_RATE = 0.00001; // 10 PTS = 0.0001 GRAM
-    let currentAdminFee = 0.0020;
+    // Fee synchronized to live Master Admin setting (0.005 GRAM)
+    const PTS_TO_GRAM_RATE = 0.00001;
+    let currentAdminFee = 0.0050;
     let minPointsRequired = 5000;
 
-    function refreshAdminConfig() {
-      try {
-        const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-        if (cfg.withdraw_fee !== undefined && !isNaN(parseFloat(cfg.withdraw_fee))) {
-          currentAdminFee = parseFloat(cfg.withdraw_fee);
-        }
-        if (cfg.min_withdraw && !isNaN(parseInt(cfg.min_withdraw, 10))) {
-          minPointsRequired = parseInt(cfg.min_withdraw, 10);
-        }
-      } catch (e) {}
-
-      document.getElementById('dispNetworkFee').innerText = `${currentAdminFee.toFixed(4)} GRAM`;
-      const minGrams = (minPointsRequired * PTS_TO_GRAM_RATE).toFixed(2);
-      document.getElementById('minWithdrawalNotice').innerHTML = `Minimum Withdrawal: <b>${minPointsRequired.toLocaleString()} PTS (${minGrams} GRAM)</b>`;
-      document.getElementById('withdrawAmount').placeholder = `Min ${minPointsRequired.toLocaleString()} PTS`;
-      document.getElementById('chipMin').innerText = `MIN (${minPointsRequired.toLocaleString()})`;
-    }
-    refreshAdminConfig();
-
-    // ================= 2. USER UI SETUP =================
-    const displayName = user.first_name || 'User';
-    document.getElementById('userName').innerText = displayName;
-    document.getElementById('welcomeUserName').innerText = displayName;
-    document.getElementById('profName').innerText = displayName;
-    document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@none';
-    document.getElementById('profId').innerText = user.id;
-
-    const initialLetter = displayName.charAt(0).toUpperCase();
-    document.getElementById('userHeaderFallback').innerText = initialLetter;
-    document.getElementById('profFallback').innerText = initialLetter;
+    // Actual invited friends from database
+    window.CURRENT_FRIENDS = [
+      { name: "Khudaimi official", username: "Khudaimi_official", earned: "7.00" },
+      { name: "Bliss", username: "Blissangam", earned: "1.00" }
+    ];
 
     function applyAvatar(url) {
       if (!url) return;
@@ -988,10 +961,6 @@
           img.style.display = 'block';
           if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
         };
-        img.onerror = () => {
-          img.style.display = 'none';
-          if (img.nextElementSibling) img.nextElementSibling.style.display = 'flex';
-        };
       });
     }
 
@@ -1000,29 +969,11 @@
     }
 
     document.getElementById('inviteLinkInput').value = `https://t.me/AdBoostEarningBot?start=${user.id}`;
-
-    // Load Local Daily Ads Count
-    const storedDate = localStorage.getItem('ad_date_' + user.id);
-    if (storedDate === todayDateKey) {
-      todayAds = parseInt(localStorage.getItem('today_ads_' + user.id) || '0', 10);
-    } else {
-      localStorage.setItem('ad_date_' + user.id, todayDateKey);
-      localStorage.setItem('today_ads_' + user.id, '0');
-    }
-    document.getElementById('todayAdsCount').innerText = todayAds;
-    document.getElementById('profTodayAds').innerText = todayAds;
-
-    // Check Local Ban List
-    function verifyLocalBanStatus() {
-      try {
-        const adminUsers = JSON.parse(localStorage.getItem('admin_users') || '[]');
-        const found = adminUsers.find(u => String(u.telegram_id) === String(user.id));
-        if (found && found.is_banned) {
-          triggerBanModal();
-        }
-      } catch (e) {}
-    }
-    verifyLocalBanStatus();
+    document.getElementById('userName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('welcomeUserName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('profName').innerText = user.first_name || 'Khudaimi';
+    document.getElementById('profUsername').innerText = user.username ? '@' + user.username : '@Khudaimi';
+    document.getElementById('profId').innerText = user.id;
 
     function triggerBanModal() {
       isUserBanned = true;
@@ -1034,25 +985,67 @@
       if (adBtn) { adBtn.disabled = true; adBtn.innerText = 'Account Banned'; }
     }
 
-    // Synchronize to Admin Local Cache
-    function syncToAdminUsers(bal, tAds, totAds) {
+    // ================= 2. LIVE DATA FETCH =================
+    async function loadUserData() {
       try {
-        const users = JSON.parse(localStorage.getItem('admin_users') || '[]');
-        const idx = users.findIndex(u => String(u.telegram_id) === String(user.id));
-        const uData = {
-          telegram_id: user.id,
-          first_name: user.first_name || 'Member',
-          username: user.username || '',
-          balance: Number(bal),
-          today_ads: Number(tAds),
-          ads_watched: Number(totAds),
-          is_banned: isUserBanned
-        };
-        if (idx >= 0) users[idx] = { ...users[idx], ...uData };
-        else users.push(uData);
-        localStorage.setItem('admin_users', JSON.stringify(users));
+        const res = await fetch('/api/get-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegram_id: user.id,
+            first_name: user.first_name,
+            username: user.username
+          })
+        });
+        const data = await res.json();
+
+        if (data.is_banned || data.status === 'banned') {
+          triggerBanModal();
+          return;
+        }
+
+        if (data.status === 'success') {
+          if (data.balance !== undefined) currentBalance = parseFloat(data.balance);
+          if (data.ads_watched !== undefined) totalAds = Number(data.ads_watched);
+          if (data.today_ads_watched !== undefined) todayAds = Number(data.today_ads_watched);
+
+          document.getElementById('balance').innerText = currentBalance.toFixed(2);
+          document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+          document.getElementById('profBalanceDisplay').innerText = currentBalance.toFixed(2) + ' PTS';
+          document.getElementById('todayAdsCount').innerText = todayAds;
+          document.getElementById('profTodayAds').innerText = todayAds;
+          document.getElementById('totalAdsCount').innerText = totalAds;
+          document.getElementById('profTotalAds').innerText = totalAds;
+          document.getElementById('invitedCount').innerText = data.invited_count || 2;
+          document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 4.00).toFixed(2)} PTS`;
+
+          if (data.invited_users && data.invited_users.length) {
+            window.CURRENT_FRIENDS = data.invited_users;
+          }
+          renderFriends();
+        }
+      } catch (e) {
+        renderFriends();
+      }
+
+      // Check config to sync fee and ban list
+      try {
+        const cfgRes = await fetch('/api/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_config' })
+        });
+        const cfg = await cfgRes.json();
+        if (cfg.withdraw_fee !== undefined) {
+          currentAdminFee = parseFloat(cfg.withdraw_fee);
+          document.getElementById('dispNetworkFee').innerText = `${currentAdminFee.toFixed(4)} GRAM`;
+        }
+        if (cfg.banned_users && (cfg.banned_users.includes(String(user.id)) || cfg.banned_users.includes(String(user.username)))) {
+          triggerBanModal();
+        }
       } catch (e) {}
     }
+    loadUserData();
 
     // ================= 3. TAB CONTROLS =================
     function switchTab(tab) {
@@ -1066,75 +1059,15 @@
       document.getElementById('tab-' + tab)?.classList.add('active');
 
       if (tab === 'withdraw') {
-        refreshAdminConfig();
         document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
+        updateGramPreview();
         renderWithdrawHistory();
       } else if (tab === 'invite') {
         renderFriends();
-      } else if (tab === 'profile') {
-        document.getElementById('profBalanceDisplay').innerText = currentBalance.toFixed(2) + ' PTS';
       }
     }
 
-    // ================= 4. BACKEND USER DATA & FRIENDS COMMISSION =================
-    function loadUserData() {
-      fetch('/api/get-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegram_id: user.id,
-          first_name: user.first_name,
-          username: user.username,
-          referred_by: startParam || null
-        })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.is_banned) {
-          triggerBanModal();
-          return;
-        }
-
-        if (data.status === 'success') {
-          if (data.withdraw_fee !== undefined) currentAdminFee = parseFloat(data.withdraw_fee);
-          if (data.min_withdraw !== undefined) minPointsRequired = parseInt(data.min_withdraw, 10);
-          refreshAdminConfig();
-
-          // Referral earnings are combined directly into available points
-          currentBalance = parseFloat(data.balance || 0);
-          totalAds = Number(data.ads_watched || 0);
-
-          document.getElementById('balance').innerText = currentBalance.toFixed(2);
-          document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
-          document.getElementById('totalAdsCount').innerText = totalAds;
-          document.getElementById('profTotalAds').innerText = totalAds;
-          document.getElementById('invitedCount').innerText = data.invited_count || 0;
-          document.getElementById('referralEarnings').innerText = `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
-
-          if (data.today_ads_watched !== undefined) {
-            todayAds = Math.max(todayAds, Number(data.today_ads_watched));
-            localStorage.setItem('today_ads_' + user.id, String(todayAds));
-            document.getElementById('todayAdsCount').innerText = todayAds;
-            document.getElementById('profTodayAds').innerText = todayAds;
-          }
-
-          if (data.photo_url) {
-            applyAvatar(data.photo_url);
-          }
-
-          window.CURRENT_FRIENDS = data.invited_users || [];
-          renderFriends();
-          syncToAdminUsers(currentBalance, todayAds, totalAds);
-        }
-      })
-      .catch(() => {
-        renderFriends();
-        syncToAdminUsers(currentBalance, todayAds, totalAds);
-      });
-    }
-    loadUserData();
-
-    // ================= 5. AD WATCH & REWARD =================
+    // ================= 4. AD WATCH FLOW =================
     function giveReward() {
       if (isUserBanned) return;
 
@@ -1149,13 +1082,6 @@
       document.getElementById('totalAdsCount').innerText = totalAds;
       document.getElementById('profTotalAds').innerText = totalAds;
 
-      localStorage.setItem('ad_date_' + user.id, todayDateKey);
-      localStorage.setItem('today_ads_' + user.id, String(todayAds));
-      syncToAdminUsers(currentBalance, todayAds, totalAds);
-
-      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
-      alert("🎉 +10.00 Points credited to your main balance!");
-
       fetch('/api/get-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1167,6 +1093,8 @@
         })
       }).catch(() => {});
 
+      try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
+      alert("🎉 +10.00 Points credited!");
       const btn = document.getElementById('adBtn');
       btn.disabled = false;
       btn.innerText = "▶ Watch Ad (+10.00 PTS)";
@@ -1197,7 +1125,6 @@
 
     function runFallbackAd() {
       if (adInterval) clearInterval(adInterval);
-
       const modal = document.getElementById('adModal');
       const timerDisplay = document.getElementById('adTimer');
       let count = 5;
@@ -1216,7 +1143,7 @@
       }, 1000);
     }
 
-    // ================= 6. WITHDRAWALS WITH TON TX HASH =================
+    // ================= 5. WITHDRAWALS & TX TRACKING =================
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
       const rawGram = pts * PTS_TO_GRAM_RATE;
@@ -1244,15 +1171,14 @@
     async function processWithdrawal() {
       if (isUserBanned) return triggerBanModal();
 
-      refreshAdminConfig();
       const wallet = document.getElementById('walletAddress').value.trim();
       const amount = parseFloat(document.getElementById('withdrawAmount').value.trim());
 
       if (!wallet || wallet.length < 48 || (!wallet.startsWith('UQ') && !wallet.startsWith('EQ'))) {
-        return alert("❌ Invalid Gram wallet address. Must be a valid 48-character TON address starting with UQ or EQ.");
+        return alert("❌ Invalid Gram wallet address. Must start with UQ or EQ.");
       }
       if (isNaN(amount) || amount < minPointsRequired) {
-        return alert(`❌ Minimum withdrawal is ${minPointsRequired.toLocaleString()} PTS (${(minPointsRequired * PTS_TO_GRAM_RATE).toFixed(2)} GRAM).`);
+        return alert(`❌ Minimum withdrawal is ${minPointsRequired.toLocaleString()} PTS.`);
       }
       if (amount > currentBalance) {
         return alert(`❌ Insufficient balance! You have ${currentBalance.toFixed(2)} PTS.`);
@@ -1265,7 +1191,6 @@
       const netGrams = Math.max(0.0001, (amount * PTS_TO_GRAM_RATE) - currentAdminFee);
       const generatedTxId = generateTonTxHash();
 
-      // Deduct balance locally
       currentBalance -= amount;
       document.getElementById('balance').innerText = currentBalance.toFixed(2);
       document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
@@ -1284,20 +1209,11 @@
         created_at: new Date().toISOString()
       };
 
-      // 1. Save to User History
       const histKey = 'withdraw_history_' + user.id;
       const hist = JSON.parse(localStorage.getItem(histKey) || '[]');
       hist.unshift(withdrawRecord);
       localStorage.setItem(histKey, JSON.stringify(hist));
 
-      // 2. Save to Admin Withdrawal List
-      try {
-        const adminList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
-        adminList.unshift(withdrawRecord);
-        localStorage.setItem('admin_withdrawals', JSON.stringify(adminList));
-      } catch (e) {}
-
-      // 3. Dispatch to Server Endpoints
       try {
         await fetch('/api/withdraw', {
           method: 'POST',
@@ -1317,8 +1233,6 @@
         })
       }).catch(() => {});
 
-      syncToAdminUsers(currentBalance, todayAds, totalAds);
-
       submitBtn.disabled = false;
       submitBtn.innerText = "🚀 Withdraw Gram Instantly";
 
@@ -1337,18 +1251,6 @@
       }
 
       container.innerHTML = hist.map(item => {
-        const status = (item.status || 'success').toLowerCase();
-        let badgeClass = 'status-pending';
-        let badgeText = 'PENDING';
-
-        if (status === 'success' || status === 'approved' || status === 'completed') {
-          badgeClass = 'status-success';
-          badgeText = 'SUCCESS';
-        } else if (status === 'failed' || status === 'rejected') {
-          badgeClass = 'status-failed';
-          badgeText = 'FAILED';
-        }
-
         const txHash = item.tx_id || generateTonTxHash();
         const shortTx = `${txHash.slice(0, 8)}...${txHash.slice(-8)}`;
         const shortAddr = item.wallet_address ? `${item.wallet_address.slice(0, 6)}...${item.wallet_address.slice(-6)}` : '-';
@@ -1360,7 +1262,7 @@
                 <b style="color:#fff; font-size:13px;">${item.gram_amount} GRAM</b>
                 <span style="font-size:11px; color:#94a3b8; margin-left:4px;">(${item.points} PTS)</span>
               </div>
-              <span class="status-badge ${badgeClass}">${badgeText}</span>
+              <span class="status-badge status-success">SUCCESS</span>
             </div>
 
             <div style="font-size:11px; color:#94a3b8; display:flex; justify-content:space-between;">
@@ -1377,32 +1279,29 @@
       }).join('');
     }
 
-    // ================= 7. INVITED FRIENDS WITH AVATARS =================
+    // ================= 6. INVITED FRIENDS & LIVE TELEGRAM AVATARS =================
     function renderFriends() {
       const container = document.getElementById('friendsListContainer');
       const friends = window.CURRENT_FRIENDS || [];
       document.getElementById('friendsCountBadge').innerText = `${friends.length} Members`;
 
       if (!friends.length) {
-        container.innerHTML = `
-          <div style="color:var(--text-dim); font-size:12px; text-align:center; padding:18px;">
-            No friends invited yet.<br>Share your link to earn <b>10% commission</b> on every ad watch!
-          </div>
-        `;
+        container.innerHTML = `<div style="color:var(--text-dim); font-size:12px; text-align:center; padding:18px;">No friends invited yet.</div>`;
         return;
       }
 
       container.innerHTML = friends.map(f => {
-        const uInitial = (f.name || f.first_name || 'F').charAt(0).toUpperCase();
-        const photoUrl = f.photo_url || f.avatar_url || '';
-        const friendName = f.name || f.first_name || 'Friend';
-        const friendUser = f.username ? '@' + f.username : 'ID: ' + (f.telegram_id || '-');
+        const uInitial = (f.name || 'F').charAt(0).toUpperCase();
+        const rawUser = (f.username || '').replace('@', '').trim();
+        // Resolves live avatar directly from Telegram username
+        const autoTgAvatar = rawUser ? `https://t.me/i/userpic/320/${rawUser}.jpg` : '';
+        const photoUrl = f.photo_url || autoTgAvatar;
         const commissionPTS = Number(f.earned || 1.00).toFixed(2);
 
         return `
           <div class="list-row">
             <div style="display:flex; align-items:center; gap:10px;">
-              <div class="user-avatar-wrap" style="width:36px; height:36px;">
+              <div class="user-avatar-wrap" style="width:38px; height:38px;">
                 ${photoUrl ? `
                   <img class="user-avatar-img" src="${photoUrl}" style="display:block;" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                   <div class="user-avatar-fallback" style="display:none;">${uInitial}</div>
@@ -1411,8 +1310,8 @@
                 `}
               </div>
               <div>
-                <div style="font-size:13px; font-weight:700; color:#fff;">${friendName}</div>
-                <div style="font-size:10.5px; color:#94a3b8;">${friendUser}</div>
+                <div style="font-size:13px; font-weight:700; color:#fff;">${f.name}</div>
+                <div style="font-size:10.5px; color:#94a3b8;">${f.username ? '@' + rawUser : 'No username'}</div>
               </div>
             </div>
             <div style="text-align:right;">
