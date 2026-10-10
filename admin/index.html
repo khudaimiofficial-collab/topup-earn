@@ -356,13 +356,13 @@
 
   <script>
     const MASTER_ADMIN_ID = "8960497898";
-    const API_BASE = ""; // same origin
+    const API_BASE = "";
 
     let generatedOtp = null;
     let otpExpiresAt = 0;
     let ALL_MEMBERS = [];
 
-    // ================= UI HELPERS =================
+    /* ================= UI HELPERS ================= */
     function toast(msg, type = "ok", ms = 3500) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -388,7 +388,7 @@
       }
     });
 
-    // ================= OTP AUTH =================
+    /* ================= OTP AUTH ================= */
     async function sendTelegramOtp() {
       let botToken = document.getElementById('loginBotToken').value.trim();
       if (!botToken) {
@@ -454,7 +454,7 @@
       document.getElementById('inputOtp').value = '';
     }
 
-    // ================= DASHBOARD =================
+    /* ================= DASHBOARD ================= */
     function showDashboard() {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
@@ -489,7 +489,6 @@
           body: JSON.stringify({ action: 'get_config' })
         });
         const data = await res.json();
-
         const merged = {
           ...JSON.parse(localStorage.getItem('admin_cfg') || '{}'),
           withdraw_fee: data.withdraw_fee,
@@ -534,7 +533,7 @@
       toast("🔄 Refreshed.", "ok", 1800);
     }
 
-    // ================= WITHDRAWALS =================
+    /* ================= WITHDRAWALS ================= */
     async function loadWithdrawals() {
       const tbody = document.getElementById('withdrawalListBody');
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#38bdf8; padding:20px;">Loading withdrawals...</td></tr>`;
@@ -547,7 +546,6 @@
           wList = Array.isArray(data) ? data : (data.withdrawals || []);
         }
       } catch (e) {
-        // fallback to local
         wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
       }
 
@@ -561,13 +559,14 @@
         const shortTx = txHash.length > 20 ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}` : (txHash || 'Pending');
         const shortAddr = w.wallet_address ? `${w.wallet_address.slice(0, 6)}...${w.wallet_address.slice(-6)}` : '-';
         const st = (w.status || 'success').toLowerCase();
+        const isRealHash = txHash && !txHash.startsWith('pending') && txHash.length >= 40;
 
         return `
           <tr>
             <td><code>${w.telegram_id || 'User'}</code></td>
             <td><code style="color:#38bdf8;">${shortAddr}</code></td>
             <td>
-              ${txHash.length >= 40 ? `
+              ${isRealHash ? `
                 <a href="https://tonviewer.com/transaction/${txHash}" target="_blank" style="color:#38bdf8; text-decoration:none; font-family:monospace; font-weight:700;">
                   ${shortTx} ↗
                 </a>
@@ -588,7 +587,6 @@
         `;
       }).join('');
 
-      // Cache for later approve/reject/delete
       window._W_LIST = wList;
     }
 
@@ -640,7 +638,7 @@
       loadWithdrawals();
     }
 
-    // ================= USERS =================
+    /* ================= USERS ================= */
     async function loadUsers() {
       const tbody = document.getElementById('userListBody');
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#38bdf8; padding:20px;">Fetching all registered members...</td></tr>`;
@@ -656,7 +654,6 @@
         toast("⚠️ Could not load users from server.", "err");
       }
 
-      // Load server ban list
       let bannedList = [];
       try {
         const banRes = await fetch(API_BASE + '/api/webhook', {
@@ -737,7 +734,7 @@
       renderUserTable(filtered);
     }
 
-    // ================= BAN =================
+    /* ================= BAN ================= */
     async function toggleBan(idx) {
       const u = ALL_MEMBERS[idx];
       if (!u) return;
@@ -759,7 +756,7 @@
         if (data.status !== 'success') throw new Error(data.message || 'Server rejected');
       } catch (e) {
         toast("⚠️ Ban save failed: " + e.message, "err");
-        u.is_banned = !newBanState; // revert
+        u.is_banned = !newBanState;
         return;
       }
 
@@ -793,13 +790,12 @@
         return toast("⚠️ " + e.message, "err");
       }
 
-      // Refresh
       closeModal('directBanModal');
       await loadUsers();
       toast(`User ${cleanInput} is now ${banStatus ? 'BANNED' : 'ACTIVE'}!`, banStatus ? 'err' : 'ok');
     }
 
-    // ================= USER EDITS =================
+    /* ================= USER EDITS ================= */
     async function editUserBal(idx) {
       const u = ALL_MEMBERS[idx];
       const newBal = prompt(`Enter new balance (PTS) for ${u.first_name || u.telegram_id}:`, u.balance || 0);
@@ -877,7 +873,7 @@
       }
     }
 
-    // ================= FACTORY RESET =================
+    /* ================= FACTORY RESET ================= */
     async function factoryResetDatabase() {
       if (!confirm("⚠️ Delete ALL users, balances, and stats?")) return;
       const phrase = prompt("Type 'RESET_ALL' to confirm:");
@@ -896,7 +892,7 @@
       }
     }
 
-    // ================= BLOCKCHAIN =================
+    /* ================= BLOCKCHAIN ================= */
     async function checkLiveBlockchainBalance() {
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
       const address = cfg.wallet_address;
@@ -920,7 +916,7 @@
       }
     }
 
-    // ================= WEBHOOK MGMT =================
+    /* ================= WEBHOOK MGMT ================= */
     async function activateTelegramWebhook() {
       const token = document.getElementById('settingBotToken').value.trim();
       const webhookUrl = document.getElementById('settingWebhookUrl').value.trim();
@@ -967,7 +963,7 @@
       }
     }
 
-    // ================= TEST LOG CHANNEL =================
+    /* ================= TEST LOG CHANNEL ================= */
     async function sendTestLogMessage() {
       const channel = document.getElementById('settingLogChannel').value.trim();
       const token = document.getElementById('settingBotToken').value.trim();
@@ -990,7 +986,7 @@
       }
     }
 
-    // ================= SAVE SETTINGS =================
+    /* ================= SAVE SETTINGS ================= */
     async function saveSettings() {
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const webhook_url = document.getElementById('settingWebhookUrl').value.trim();
@@ -1001,31 +997,47 @@
       const mnemonic = document.getElementById('settingMnemonic').value.trim();
       const api_key = document.getElementById('settingTonApiKey').value.trim();
 
-      if (bot_token) {
-        try {
-          const res = await fetch(API_BASE + '/api/webhook', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'save_admin_config',
-              bot_token,
-              log_channel,
-              withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
-              min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
-              wallet_address,
-              mnemonic,
-              api_key
-            })
-          });
-          const data = await res.json();
-          if (data.status !== 'success') {
-            toast("⚠️ Cloud save: " + (data.message || 'Unknown error'), "err", 6000);
-          } else {
-            toast("☁️ Synced to Firestore.", "ok");
-          }
-        } catch (e) {
-          toast("⚠️ Network error — saved locally only.", "err", 6000);
+      if (!bot_token) {
+        toast("❌ Bot token is required!", "err");
+        return;
+      }
+
+      if (!wallet_address || !mnemonic) {
+        if (!confirm("⚠️ Wallet address or mnemonic missing. Real withdrawals won't work. Save anyway?")) return;
+      }
+
+      // Validate mnemonic word count before saving
+      if (mnemonic) {
+        const words = mnemonic.split(/\s+/).filter(Boolean);
+        if (words.length !== 24 && words.length !== 12) {
+          if (!confirm(`⚠️ Mnemonic has ${words.length} words, should be 24. Save anyway?`)) return;
         }
+      }
+
+      // Save to cloud
+      try {
+        const res = await fetch(API_BASE + '/api/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_admin_config',
+            bot_token,
+            log_channel,
+            withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
+            min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
+            wallet_address,
+            mnemonic,
+            api_key
+          })
+        });
+        const data = await res.json();
+        if (data.status !== 'success') {
+          toast("⚠️ Cloud save failed: " + (data.message || 'Unknown error'), "err", 7000);
+        } else {
+          toast("☁️ Synced to Firestore.", "ok");
+        }
+      } catch (e) {
+        toast("⚠️ Network error — saved locally only.", "err", 6000);
       }
 
       const cfg = {
