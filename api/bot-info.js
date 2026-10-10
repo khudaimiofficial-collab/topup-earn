@@ -1,24 +1,25 @@
 // /api/bot-info.js
-// Bulletproof combined endpoint — never throws, always returns valid JSON.
+// Combined endpoint — reads bot token from Vercel env OR Firestore (admin panel)
 //   GET /api/bot-info           → JSON { id, name, username, photo_url, subtitle }
 //   GET /api/bot-info?avatar=1  → streams the bot avatar image
 
-// ---------- Optional Firebase (for overrides only) ----------
+let adminMod = null;
 let db = null;
+
 async function initFirebase() {
   if (db) return db;
   try {
-    const admin = (await import("firebase-admin")).default;
-    if (!admin.apps.length) {
+    adminMod = (await import("firebase-admin")).default;
+    if (!adminMod.apps.length) {
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        admin.initializeApp({
-          credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+        adminMod.initializeApp({
+          credential: adminMod.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
         });
       } else {
-        admin.initializeApp({ credential: admin.credential.applicationDefault() });
+        adminMod.initializeApp({ credential: adminMod.credential.applicationDefault() });
       }
     }
-    db = admin.firestore();
+    db = adminMod.firestore();
     return db;
   } catch (e) {
     console.warn("Firebase unavailable in bot-info:", e.message);
@@ -26,7 +27,27 @@ async function initFirebase() {
   }
 }
 
-// ---------- In-memory avatar cache ----------
+// ---------- Fetch token: env var first, then Firestore ----------
+async function getBotToken() {
+  const envToken = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
+  if (envToken) return { token: envToken, source: "env" };
+
+  try {
+    const firestore = await initFirebase();
+    if (firestore) {
+      const cfg = await firestore.collection("app_config").doc("main").get();
+      if (cfg.exists) {
+        const t = (cfg.data().bot_token || "").trim();
+        if (t) return { token: t, source: "firestore" };
+      }
+    }
+  } catch (e) {
+    console.warn("Firestore token read failed:", e.message);
+  }
+  return { token: "", source: "none" };
+}
+
+// ---------- Avatar file_path cache ----------
 let cachedAvatarPath = null;
 let cachedAvatarTime = 0;
 const AVATAR_TTL_MS = 6 * 60 * 60 * 1000;
@@ -65,9 +86,11 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
+  // ---------- Resolve token ----------
+  const { token: BOT_TOKEN, source } = await getBotToken();
+  console.log(`[bot-info] token source: ${source}`);
 
-  // ---------- Optional overrides (safe — never blocks) ----------
+  // ---------- Optional overrides ----------
   let overrideName = "";
   let overrideSubtitle = "";
   try {
@@ -79,13 +102,10 @@ export default async function handler(req, res) {
         overrideSubtitle = cfg.data().bot_subtitle || "";
       }
     }
-  } catch (e) {
-    // ignored — overrides are optional
-  }
+  } catch (e) {}
 
-  // ---------- No token ----------
+  // ---------- No token at all ----------
   if (!BOT_TOKEN) {
-    console.error("❌ TELEGRAM_BOT_TOKEN is missing on Vercel.");
     if (req.query.avatar === "1") return res.status(404).end();
     return res.status(200).json({
       id: 0,
@@ -93,7 +113,7 @@ export default async function handler(req, res) {
       username: "",
       photo_url: "",
       subtitle: overrideSubtitle || "",
-      error: "TELEGRAM_BOT_TOKEN missing"
+      error: "No bot token found. Save it in Admin Settings or set TELEGRAM_BOT_TOKEN env."
     });
   }
 
@@ -105,7 +125,6 @@ export default async function handler(req, res) {
     const meRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
     const me = await meRes.json();
     if (!me.ok) {
-      console.error("getMe failed:", me.description);
       if (req.query.avatar === "1") return res.status(404).end();
       return res.status(200).json({
         id: 0,
@@ -120,7 +139,6 @@ export default async function handler(req, res) {
     botName = overrideName || me.result.first_name || "";
     botUsername = me.result.username || "";
   } catch (e) {
-    console.error("getMe network error:", e.message);
     if (req.query.avatar === "1") return res.status(404).end();
     return res.status(200).json({
       id: 0,
@@ -158,6 +176,7 @@ export default async function handler(req, res) {
     name: botName,
     username: botUsername,
     photo_url,
-    subtitle: overrideSubtitle || ""
+    subtitle: overrideSubtitle || "",
+    token_source: source
   });
 }
