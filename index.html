@@ -912,7 +912,9 @@
   </div>
 
   <script>
-    /* ================= ENVIRONMENT ================= */
+    /* ============================================================
+       TELEGRAM ENVIRONMENT
+       ============================================================ */
     const tg = window.Telegram?.WebApp;
     const isTelegramEnv = Boolean(tg && tg.initData && tg.initData.length > 0);
 
@@ -929,46 +931,11 @@
       } catch (e) {}
     }
 
-    /* ================= BOT IDENTITY (from Telegram initDataUnsafe) ================= */
-    (function hydrateBotIdentity() {
-      const init = tg?.initDataUnsafe || {};
-      const botObj = init.bot || {};
-
-      const botName =
-        botObj.first_name ||
-        botObj.name ||
-        init.bot_name ||
-        "Free Gram Token";
-
-      const botUsername = botObj.username || init.bot_username || "";
-      const botPhoto = botObj.photo_url || init.bot_photo_url || "";
-
-      const titleEl = document.getElementById('botTitle');
-      const subEl = document.getElementById('botSubtitle');
-      const photoEl = document.getElementById('botHeaderPhoto');
-      const fallback = document.getElementById('botFallbackIcon');
-
-      if (titleEl) titleEl.textContent = botName;
-      if (subEl) subEl.textContent = "Instant Auto Payout";
-
-      if (botPhoto) {
-        photoEl.onload = () => { photoEl.style.display = 'block'; fallback.style.display = 'none'; };
-        photoEl.onerror = () => { photoEl.style.display = 'none'; fallback.style.display = 'block'; };
-        photoEl.src = botPhoto;
-      } else {
-        fallback.style.display = 'block';
-      }
-
-      // Build invite link from bot username
-      if (botUsername && user.id) {
-        document.getElementById('inviteLinkInput').value = `https://t.me/${botUsername}?start=${user.id}`;
-      }
-    })();
-
-    /* ================= USER DATA (from Telegram) ================= */
+    /* ============================================================
+       USER DATA (from Telegram)
+       ============================================================ */
     const defaultUser = { id: "0", first_name: "", username: "" };
     const user = tg?.initDataUnsafe?.user || defaultUser;
-
     const todayDateKey = new Date().toISOString().slice(0, 10);
 
     let currentBalance = 0.00;
@@ -981,6 +948,7 @@
     const PTS_TO_GRAM_RATE = 0.00001;
 
     window.CURRENT_FRIENDS = [];
+    window.BOT_USERNAME = "";
 
     function applyAvatar(url) {
       if (!url) return;
@@ -1018,7 +986,61 @@
       if (adBtn) { adBtn.disabled = true; adBtn.innerText = 'Account Banned'; }
     }
 
-    /* ================= LIVE ADMIN CONFIG ================= */
+    /* ============================================================
+       BOT IDENTITY — from /api/bot-info
+       ============================================================ */
+    async function hydrateBotIdentity() {
+      const titleEl = document.getElementById('botTitle');
+      const subEl = document.getElementById('botSubtitle');
+      const photoEl = document.getElementById('botHeaderPhoto');
+      const fallback = document.getElementById('botFallbackIcon');
+
+      const init = tg?.initDataUnsafe || {};
+      const botObj = init.bot || {};
+
+      let botName = botObj.first_name || botObj.name || init.bot_name || "";
+      let botUsername = botObj.username || init.bot_username || "";
+      let botPhoto = botObj.photo_url || init.bot_photo_url || "";
+      let botSubtitle = "";
+
+      try {
+        const r = await fetch('/api/bot-info', { cache: 'no-store' });
+        const info = await r.json();
+        botName = botName || info.name || "";
+        botUsername = botUsername || info.username || "";
+        botPhoto = botPhoto || info.photo_url || "";
+        botSubtitle = info.subtitle || "";
+      } catch (e) {
+        console.warn("bot-info fetch failed:", e.message);
+      }
+
+      if (titleEl) titleEl.textContent = botName || "Free Gram Token";
+      if (subEl) subEl.textContent = botSubtitle || "Instant Auto Payout";
+
+      if (botPhoto) {
+        photoEl.onload = () => { photoEl.style.display = 'block'; fallback.style.display = 'none'; };
+        photoEl.onerror = () => { photoEl.style.display = 'none'; fallback.style.display = 'block'; };
+        photoEl.src = botPhoto;
+      } else {
+        fallback.style.display = 'block';
+      }
+
+      window.BOT_USERNAME = botUsername;
+
+      // Build referral link
+      if (botUsername && user.id) {
+        document.getElementById('inviteLinkInput').value =
+          `https://t.me/${botUsername}?start=${user.id}`;
+      } else {
+        document.getElementById('inviteLinkInput').value =
+          "Referral link unavailable";
+      }
+    }
+    hydrateBotIdentity();
+
+    /* ============================================================
+       LIVE ADMIN CONFIG
+       ============================================================ */
     async function loadDynamicAdminConfig() {
       try {
         const cfgRes = await fetch('/api/webhook', {
@@ -1054,7 +1076,9 @@
     }
     loadDynamicAdminConfig();
 
-    /* ================= USER DATA & STATS ================= */
+    /* ============================================================
+       USER DATA + STATS
+       ============================================================ */
     async function loadUserData() {
       try {
         const res = await fetch('/api/get-user', {
@@ -1089,7 +1113,6 @@
           document.getElementById('referralEarnings').innerText =
             `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
-          // Real friends from backend
           if (Array.isArray(data.invited_users)) {
             window.CURRENT_FRIENDS = data.invited_users;
           } else {
@@ -1103,7 +1126,9 @@
     }
     loadUserData();
 
-    /* ================= TAB SWITCHING ================= */
+    /* ============================================================
+       TAB SWITCHING
+       ============================================================ */
     function switchTab(tab) {
       if (isUserBanned) return;
       try { tg?.HapticFeedback?.impactOccurred('light'); } catch (e) {}
@@ -1124,9 +1149,7 @@
     }
 
     /* ============================================================
-       AD REWARD — with INSTANT REFERRAL CREDIT
-       The backend increments the referrer's balance +1.00 PTS
-       in the same /api/get-user call, so credit is instant.
+       AD REWARD (with instant referral credit on backend)
        ============================================================ */
     async function giveReward() {
       if (isUserBanned) return;
@@ -1204,7 +1227,9 @@
       }, 1000);
     }
 
-    /* ================= WITHDRAWALS ================= */
+    /* ============================================================
+       WITHDRAWALS
+       ============================================================ */
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
       const rawGram = pts * PTS_TO_GRAM_RATE;
@@ -1328,7 +1353,9 @@
       }).join('');
     }
 
-    /* ================= FRIENDS LIST ================= */
+    /* ============================================================
+       FRIENDS LIST
+       ============================================================ */
     function renderFriends() {
       const container = document.getElementById('friendsListContainer');
       const friends = window.CURRENT_FRIENDS || [];
@@ -1374,7 +1401,9 @@
 
     function copyInviteLink() {
       const input = document.getElementById('inviteLinkInput');
-      if (!input.value) return alert("Referral link not ready yet.");
+      if (!input.value || input.value === "Referral link unavailable") {
+        return alert("Referral link not ready yet. Please reload in a moment.");
+      }
       input.select();
       navigator.clipboard.writeText(input.value).then(() => {
         try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
@@ -1384,7 +1413,9 @@
 
     function shareInvite() {
       const link = document.getElementById('inviteLinkInput').value;
-      if (!link) return alert("Referral link not ready yet.");
+      if (!link || link === "Referral link unavailable") {
+        return alert("Referral link not ready yet. Please reload in a moment.");
+      }
       const text = encodeURIComponent("💎 Earn Free Gram Tokens with me! Watch short ads and withdraw instantly directly on-chain:");
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
       if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
