@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   console.log("📩 Action:", body.action || "telegram_update");
 
   // ============================================================
-  // SAVE ADMIN CONFIG — now saves ALL keys including wallet
+  // 1. SAVE ADMIN CONFIG
   // ============================================================
   if (body.action === "save_admin_config") {
     if (!db) {
@@ -42,13 +42,13 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString()
       };
 
-      if (body.bot_token !== undefined)      payload.bot_token = String(body.bot_token).trim();
-      if (body.log_channel !== undefined)    payload.log_channel = String(body.log_channel).trim();
-      if (body.withdraw_fee !== undefined)   payload.withdraw_fee = Number(body.withdraw_fee);
-      if (body.min_withdraw !== undefined)   payload.min_withdraw = Number(body.min_withdraw);
-      if (body.wallet_address !== undefined) payload.wallet_address = String(body.wallet_address).trim();
-      if (body.mnemonic !== undefined)       payload.hot_wallet_mnemonic = String(body.mnemonic).trim();
-      if (body.api_key !== undefined)        payload.toncenter_api_key = String(body.api_key).trim();
+      if (body.bot_token !== undefined)       payload.bot_token = String(body.bot_token).trim();
+      if (body.log_channel !== undefined)     payload.log_channel = String(body.log_channel).trim();
+      if (body.withdraw_fee !== undefined)    payload.withdraw_fee = Number(body.withdraw_fee);
+      if (body.min_withdraw !== undefined)    payload.min_withdraw = Number(body.min_withdraw);
+      if (body.wallet_address !== undefined)  payload.wallet_address = String(body.wallet_address).trim();
+      if (body.mnemonic !== undefined)        payload.hot_wallet_mnemonic = String(body.mnemonic).trim();
+      if (body.api_key !== undefined)         payload.toncenter_api_key = String(body.api_key).trim();
 
       await db.collection("app_config").doc("main").set(payload, { merge: true });
 
@@ -61,10 +61,16 @@ export default async function handler(req, res) {
   }
 
   // ============================================================
-  // GET CONFIG — mini app reads fee, min withdraw, banned list
+  // 2. GET CONFIG (mini app reads fee, min withdraw, banned list)
+  //    NOTE: never returns the mnemonic or bot_token
   // ============================================================
   if (body.action === "get_config") {
-    const cfg = { withdraw_fee: 0.005, min_withdraw: 5000, wallet_address: "", banned_users: [] };
+    const cfg = {
+      withdraw_fee: 0.005,
+      min_withdraw: 5000,
+      wallet_address: "",
+      banned_users: []
+    };
     try {
       if (db) {
         const doc = await db.collection("app_config").doc("main").get();
@@ -84,7 +90,7 @@ export default async function handler(req, res) {
   }
 
   // ============================================================
-  // BAN / UNBAN
+  // 3. BAN / UNBAN USER
   // ============================================================
   if (body.action === "ban_user") {
     if (!db) return res.status(500).json({ status: "error", message: "DB missing" });
@@ -108,7 +114,7 @@ export default async function handler(req, res) {
   }
 
   // ============================================================
-  // TELEGRAM UPDATES
+  // 4. TELEGRAM UPDATES
   // ============================================================
   const message = body.message;
   if (!message) {
