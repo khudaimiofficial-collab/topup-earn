@@ -24,12 +24,11 @@
     .btn-red { background: #ef4444; color: #fff; }
     .btn-yellow { background: #facc15; color: #713f12; }
 
-    /* Live Blockchain Balance Cards */
     .wallet-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .wallet-stat-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 14px; text-align: center; }
     .wallet-stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
     .wallet-stat-val { font-size: 22px; font-weight: 900; color: #fff; margin-top: 4px; }
-    
+
     .admin-nav { display: flex; gap: 8px; margin-bottom: 18px; max-width: 1050px; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
     .nav-btn { background: #131b2e; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
     .nav-btn.active { background: #38bdf8; color: #042f2e; border-color: #38bdf8; }
@@ -50,9 +49,15 @@
     .scroll-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; display: block; }
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
     .modal-box { background: #131b2e; width: 100%; max-width: 400px; padding: 24px; border-radius: 16px; border: 1px solid rgba(56, 189, 248, 0.2); }
+
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #131b2e; border: 1px solid #38bdf8; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.6); max-width: 90vw; }
+    .toast.err { border-color: #ef4444; color: #fca5a5; }
+    .toast.ok { border-color: #22c55e; color: #86efac; }
   </style>
 </head>
 <body>
+
+  <div class="toast" id="toast"></div>
 
   <!-- ================= AUTH OTP BOX ================= -->
   <div class="card" id="authBox" style="max-width: 400px; margin-top: 50px;">
@@ -97,32 +102,32 @@
       <p style="color: #22c55e; margin: 4px 0 0 0;">● Master Admin Authenticated (ID: 8960497898)</p>
     </div>
 
-    <!-- LIVE BLOCKCHAIN HOT WALLET & REFERRAL STATS -->
+    <!-- LIVE STATS -->
     <div class="card" style="padding: 16px 20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <h3 style="font-size:15px; margin:0;">💎 Live Blockchain, Users & Referral Stats</h3>
-        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="loadUsers()">🔄 Refresh Live</button>
+        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="refreshAll()">🔄 Refresh Live</button>
       </div>
 
       <div class="wallet-stat-grid">
         <div class="wallet-stat-card">
           <div class="wallet-stat-label">Hot Wallet (TON Gas)</div>
-          <div class="wallet-stat-val" id="dispTonBal" style="color:#38bdf8;">0.136 TON</div>
+          <div class="wallet-stat-val" id="dispTonBal" style="color:#38bdf8;">--</div>
         </div>
         <div class="wallet-stat-card">
           <div class="wallet-stat-label">Current Fee / Payout</div>
-          <div class="wallet-stat-val" id="dispFeeVal" style="color:#facc15;">0.005 GRAM</div>
+          <div class="wallet-stat-val" id="dispFeeVal" style="color:#facc15;">--</div>
         </div>
         <div class="wallet-stat-card">
           <div class="wallet-stat-label">Total Registered Users</div>
-          <div class="wallet-stat-val" id="dispTotalUsersCount" style="color:#22c55e;">3</div>
+          <div class="wallet-stat-val" id="dispTotalUsersCount" style="color:#22c55e;">0</div>
         </div>
         <div class="wallet-stat-card">
           <div class="wallet-stat-label">Total Friends Invited</div>
-          <div class="wallet-stat-val" id="dispTotalInvitedCount" style="color:#a855f7;">2</div>
+          <div class="wallet-stat-val" id="dispTotalInvitedCount" style="color:#a855f7;">0</div>
         </div>
       </div>
-      <p style="font-size:11px; margin:0;" id="dispWalletAddr">Wallet Address: <code>UQBZK_JmNM3nlcK4zCSQIuNldmV-CFwWNHLYHiUHQsPhR7AG</code></p>
+      <p style="font-size:11px; margin:0;" id="dispWalletAddr">Wallet Address: <code>Not configured</code></p>
     </div>
 
     <!-- Navigation Tabs -->
@@ -160,7 +165,7 @@
       </div>
     </div>
 
-    <!-- SECTION 2: USERS MANAGEMENT & INVITES -->
+    <!-- SECTION 2: USERS -->
     <div id="sectionUsers" class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
@@ -226,16 +231,17 @@
 
         <div class="btn-row">
           <button class="btn-purple" onclick="activateTelegramWebhook()">⚡ Set Webhook</button>
+          <button class="btn-blue" onclick="checkTelegramWebhookInfo()">🔍 Check Webhook Info</button>
           <button class="btn-red" style="padding: 10px 14px; font-size: 12px;" onclick="removeTelegramWebhook()">❌ Delete Webhook</button>
         </div>
       </div>
 
-      <!-- LOG CHANNEL SETTINGS -->
+      <!-- LOG CHANNEL -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25); margin-bottom: 14px;">
         <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📢 Log Channel Broadcast</h4>
         <div class="form-group">
           <label>Telegram Log Channel Username / ID:</label>
-          <input type="text" id="settingLogChannel" placeholder="@pheizu_wallet" value="@pheizu_wallet" />
+          <input type="text" id="settingLogChannel" placeholder="@pheizu_wallet" />
         </div>
         <button class="btn-blue" style="padding: 8px 14px; font-size: 12px;" onclick="sendTestLogMessage()">📢 Send Test Message to Log Channel</button>
       </div>
@@ -246,22 +252,22 @@
 
         <div class="form-group">
           <label>Network Fee Deducted per Withdrawal (in GRAM):</label>
-          <input type="number" id="settingWithdrawFee" step="0.0001" placeholder="0.0050" value="0.0050" />
+          <input type="number" id="settingWithdrawFee" step="0.0001" placeholder="0.0050" />
         </div>
 
         <div class="form-group">
           <label>Minimum Withdrawal Points (PTS):</label>
-          <input type="number" id="settingMinWithdraw" placeholder="5000" value="5000" />
+          <input type="number" id="settingMinWithdraw" placeholder="5000" />
         </div>
       </div>
 
-      <!-- BLOCKCHAIN & HOT WALLET -->
+      <!-- HOT WALLET -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
         <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">💎 Blockchain Hot Wallet Credentials</h4>
 
         <div class="form-group">
           <label>Hot Wallet Public Address (UQ... / EQ...):</label>
-          <input type="text" id="settingWalletAddress" value="UQBZK_JmNM3nlcK4zCSQIuNldmV-CFwWNHLYHiUHQsPhR7AG" />
+          <input type="text" id="settingWalletAddress" placeholder="UQ..." />
         </div>
 
         <div class="form-group">
@@ -280,6 +286,7 @@
 
       <div class="btn-row">
         <button class="btn-blue" onclick="saveSettings()">💾 Save All Configurations</button>
+        <button class="btn-green" onclick="loadConfigFromServer()">☁️ Load From Cloud</button>
       </div>
 
       <!-- DANGER ZONE -->
@@ -349,46 +356,21 @@
 
   <script>
     const MASTER_ADMIN_ID = "8960497898";
+    const API_BASE = ""; // same origin
+
     let generatedOtp = null;
     let otpExpiresAt = 0;
     let ALL_MEMBERS = [];
 
-    // Real members: Permanent Telegram IDs and genuine usernames
-    const INITIAL_MEMBERS = [
-      {
-        telegram_id: "8960497898",
-        first_name: "Khudaimi",
-        username: "", // Does not have username; displayed cleanly as 'None'
-        balance: 140.00,
-        today_ads: 5,
-        ads_watched: 13,
-        invited_count: 2,
-        referral_bonus: 4.00,
-        is_banned: false
-      },
-      {
-        telegram_id: "6891048201",
-        first_name: "Khudaimi official",
-        username: "Khudaimi_official",
-        balance: 80.00,
-        today_ads: 2,
-        ads_watched: 7,
-        invited_count: 0,
-        referral_bonus: 0.00,
-        is_banned: false
-      },
-      {
-        telegram_id: "5910382914",
-        first_name: "Bliss",
-        username: "Blissangam",
-        balance: 10.00,
-        today_ads: 1,
-        ads_watched: 1,
-        invited_count: 0,
-        referral_bonus: 0.00,
-        is_banned: false
-      }
-    ];
+    // ================= UI HELPERS =================
+    function toast(msg, type = "ok", ms = 3500) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast ' + (type === 'err' ? 'err' : 'ok');
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = 'none'; }, ms);
+    }
 
     function togglePasswordVisibility(fieldId) {
       const el = document.getElementById(fieldId);
@@ -399,27 +381,23 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      if (cfg.bot_token) {
-        document.getElementById('loginBotToken').value = cfg.bot_token;
-      }
+      if (cfg.bot_token) document.getElementById('loginBotToken').value = cfg.bot_token;
 
       if (sessionStorage.getItem('admin_logged') === 'true') {
         showDashboard();
       }
     });
 
-    // ================= TELEGRAM OTP AUTHENTICATION =================
+    // ================= OTP AUTH =================
     async function sendTelegramOtp() {
       let botToken = document.getElementById('loginBotToken').value.trim();
-      
       if (!botToken) {
         const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
         botToken = cfg.bot_token || "";
       }
-
-      const btn = document.getElementById('btnSendOtp');
       if (!botToken) return alert("❌ Please enter your Telegram Bot Token!");
 
+      const btn = document.getElementById('btnSendOtp');
       btn.disabled = true;
       btn.innerText = "Dispatching code to Telegram...";
 
@@ -439,7 +417,7 @@
 
         const data = await tgRes.json();
         if (data.ok) {
-          alert("📩 OTP sent to your Telegram! Check messages from your bot.");
+          toast("📩 OTP sent to your Telegram!", "ok");
           document.getElementById('stepSendOtp').style.display = 'none';
           document.getElementById('stepVerifyOtp').style.display = 'block';
 
@@ -447,10 +425,10 @@
           cfg.bot_token = botToken;
           localStorage.setItem('admin_cfg', JSON.stringify(cfg));
         } else {
-          alert("❌ Failed to send OTP: " + (data.description || "Start the bot in Telegram first!"));
+          toast("❌ " + (data.description || "Start the bot in Telegram first!"), "err", 6000);
         }
       } catch (err) {
-        alert("❌ Network error connecting to Telegram Bot API.");
+        toast("❌ Network error connecting to Telegram.", "err");
       } finally {
         btn.disabled = false;
         btn.innerText = "📩 Send 6-Digit OTP to Telegram";
@@ -459,23 +437,14 @@
 
     function verifyOtp() {
       const enteredOtp = document.getElementById('inputOtp').value.trim();
-
-      if (!enteredOtp || enteredOtp.length !== 6) {
-        return alert("❌ Enter the complete 6-digit OTP!");
-      }
-
-      if (Date.now() > otpExpiresAt) {
-        alert("❌ OTP has expired! Please request a new one.");
-        resetOtpStep();
-        return;
-      }
-
+      if (!enteredOtp || enteredOtp.length !== 6) return toast("❌ Enter the complete 6-digit OTP!", "err");
+      if (Date.now() > otpExpiresAt) { toast("❌ OTP expired. Request a new one.", "err"); resetOtpStep(); return; }
       if (enteredOtp === generatedOtp) {
         sessionStorage.setItem('admin_logged', 'true');
-        alert("✅ Verified successfully!");
+        toast("✅ Verified successfully!", "ok");
         showDashboard();
       } else {
-        alert("❌ Invalid OTP! Try again.");
+        toast("❌ Invalid OTP!", "err");
       }
     }
 
@@ -485,29 +454,54 @@
       document.getElementById('inputOtp').value = '';
     }
 
-    // ================= DASHBOARD DISPLAY =================
+    // ================= DASHBOARD =================
     function showDashboard() {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
 
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      document.getElementById('settingBotToken').value = cfg.bot_token || '';
-      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || 'https://pheizubot.vercel.app/api/webhook';
-      document.getElementById('settingLogChannel').value = cfg.log_channel || '@pheizu_wallet';
-      document.getElementById('settingWithdrawFee').value = cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.0050';
-      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 5000;
-      document.getElementById('settingWalletAddress').value = cfg.wallet_address || 'UQBZK_JmNM3nlcK4zCSQIuNldmV-CFwWNHLYHiUHQsPhR7AG';
-      document.getElementById('settingMnemonic').value = cfg.mnemonic || '';
-      document.getElementById('settingTonApiKey').value = cfg.api_key || '';
-
-      document.getElementById('dispFeeVal').innerText = `${cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.005'} GRAM`;
-
-      const walletAddr = cfg.wallet_address || 'UQBZK_JmNM3nlcK4zCSQIuNldmV-CFwWNHLYHiUHQsPhR7AG';
-      document.getElementById('dispWalletAddr').innerHTML = `Wallet Address: <code>${walletAddr}</code>`;
-
+      applyLocalConfigToForm();
       checkLiveBlockchainBalance();
       loadWithdrawals();
       loadUsers();
+    }
+
+    function applyLocalConfigToForm() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      document.getElementById('settingBotToken').value = cfg.bot_token || '';
+      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || 'https://pheizubot.vercel.app/api/webhook';
+      document.getElementById('settingLogChannel').value = cfg.log_channel || '';
+      document.getElementById('settingWithdrawFee').value = cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '';
+      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || '';
+      document.getElementById('settingWalletAddress').value = cfg.wallet_address || '';
+      document.getElementById('settingMnemonic').value = cfg.mnemonic || '';
+      document.getElementById('settingTonApiKey').value = cfg.api_key || '';
+
+      document.getElementById('dispFeeVal').innerText = (cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.0050') + ' GRAM';
+      document.getElementById('dispWalletAddr').innerHTML =
+        `Wallet Address: <code>${cfg.wallet_address || 'Not configured'}</code>`;
+    }
+
+    async function loadConfigFromServer() {
+      try {
+        const res = await fetch(API_BASE + '/api/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_config' })
+        });
+        const data = await res.json();
+
+        const merged = {
+          ...JSON.parse(localStorage.getItem('admin_cfg') || '{}'),
+          withdraw_fee: data.withdraw_fee,
+          min_withdraw: data.min_withdraw,
+          wallet_address: data.wallet_address || ''
+        };
+        localStorage.setItem('admin_cfg', JSON.stringify(merged));
+        applyLocalConfigToForm();
+        toast("☁️ Config loaded from server.", "ok");
+      } catch (e) {
+        toast("❌ Failed to load config from server.", "err");
+      }
     }
 
     function logout() {
@@ -535,25 +529,27 @@
       }
     }
 
+    async function refreshAll() {
+      await Promise.all([checkLiveBlockchainBalance(), loadUsers(), loadWithdrawals()]);
+      toast("🔄 Refreshed.", "ok", 1800);
+    }
+
     // ================= WITHDRAWALS =================
     async function loadWithdrawals() {
       const tbody = document.getElementById('withdrawalListBody');
-      let wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#38bdf8; padding:20px;">Loading withdrawals...</td></tr>`;
 
+      let wList = [];
       try {
-        const res = await fetch('/api/withdrawals', { method: 'GET' }).catch(() => null);
-        if (res && res.ok) {
+        const res = await fetch(API_BASE + '/api/withdrawals', { method: 'GET' });
+        if (res.ok) {
           const data = await res.json();
-          const serverW = data.withdrawals || (Array.isArray(data) ? data : []);
-          if (serverW.length > 0) {
-            const map = new Map();
-            wList.forEach(w => map.set(w.tx_id || (w.telegram_id + w.created_at), w));
-            serverW.forEach(w => map.set(w.tx_id || (w.telegram_id + w.created_at), { ...map.get(w.tx_id || (w.telegram_id + w.created_at)), ...w }));
-            wList = Array.from(map.values());
-            localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
-          }
+          wList = Array.isArray(data) ? data : (data.withdrawals || []);
         }
-      } catch (e) {}
+      } catch (e) {
+        // fallback to local
+        wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
+      }
 
       if (!wList.length) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">No withdrawal requests found.</td></tr>`;
@@ -561,8 +557,8 @@
       }
 
       tbody.innerHTML = wList.map((w, idx) => {
-        const txHash = w.tx_id || 'Pending Hash';
-        const shortTx = txHash.length > 20 ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}` : txHash;
+        const txHash = w.tx_id || '';
+        const shortTx = txHash.length > 20 ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}` : (txHash || 'Pending');
         const shortAddr = w.wallet_address ? `${w.wallet_address.slice(0, 6)}...${w.wallet_address.slice(-6)}` : '-';
         const st = (w.status || 'success').toLowerCase();
 
@@ -571,7 +567,7 @@
             <td><code>${w.telegram_id || 'User'}</code></td>
             <td><code style="color:#38bdf8;">${shortAddr}</code></td>
             <td>
-              ${txHash.startsWith('0x') || txHash.length >= 40 ? `
+              ${txHash.length >= 40 ? `
                 <a href="https://tonviewer.com/transaction/${txHash}" target="_blank" style="color:#38bdf8; text-decoration:none; font-family:monospace; font-weight:700;">
                   ${shortTx} ↗
                 </a>
@@ -584,111 +580,102 @@
             <td class="${st}">${st.toUpperCase()}</td>
             <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at || Date.now()).toLocaleDateString()}</td>
             <td>
-              <button class="btn-green" style="padding:4px 8px; font-size:11px;" onclick="approveWithdrawal(${idx})">Approve & Log 📢</button>
+              <button class="btn-green" style="padding:4px 8px; font-size:11px;" onclick="approveWithdrawal(${idx})">Approve 📢</button>
               <button class="btn-yellow" style="padding:4px 8px; font-size:11px; margin-left:2px;" onclick="rejectWithdrawal(${idx})">Reject</button>
               <button class="btn-red" style="padding:4px 8px; font-size:11px; margin-left:2px;" onclick="deleteWithdrawal(${idx})">🗑️</button>
             </td>
           </tr>
         `;
       }).join('');
+
+      // Cache for later approve/reject/delete
+      window._W_LIST = wList;
     }
 
-    function approveWithdrawal(idx) {
-      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
-      const item = wList[idx];
+    async function approveWithdrawal(idx) {
+      const list = window._W_LIST || [];
+      const item = list[idx];
       if (!item) return;
-
       item.status = 'success';
-      localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
-      alert(`✅ Withdrawal approved!`);
+      try {
+        await fetch(API_BASE + '/api/withdrawals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_status', ...item })
+        });
+      } catch (e) {}
+      toast("✅ Withdrawal approved.", "ok");
       loadWithdrawals();
     }
 
-    function rejectWithdrawal(idx) {
-      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
-      const item = wList[idx];
+    async function rejectWithdrawal(idx) {
+      const list = window._W_LIST || [];
+      const item = list[idx];
       if (!item) return;
-
       item.status = 'rejected';
-      localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
-      alert("❌ Withdrawal marked as REJECTED.");
+      try {
+        await fetch(API_BASE + '/api/withdrawals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_status', ...item })
+        });
+      } catch (e) {}
+      toast("❌ Withdrawal rejected.", "err");
       loadWithdrawals();
     }
 
-    function deleteWithdrawal(idx) {
-      const wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
-      wList.splice(idx, 1);
-      localStorage.setItem('admin_withdrawals', JSON.stringify(wList));
+    async function deleteWithdrawal(idx) {
+      const list = window._W_LIST || [];
+      const item = list[idx];
+      if (!item) return;
+      if (!confirm("Delete this withdrawal record?")) return;
+      try {
+        await fetch(API_BASE + '/api/withdrawals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', tx_id: item.tx_id })
+        });
+      } catch (e) {}
+      toast("🗑️ Deleted.", "ok");
       loadWithdrawals();
     }
 
-    // ================= USERS MANAGEMENT (REAL USERNAMES & PERMANENT TELEGRAM ID) =================
+    // ================= USERS =================
     async function loadUsers() {
       const tbody = document.getElementById('userListBody');
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#38bdf8; padding:20px;">Fetching all registered members...</td></tr>`;
 
-      let members = [...INITIAL_MEMBERS];
-
-      // Fetch live data from backend endpoint
+      let members = [];
       try {
-        const res = await fetch('/api/get-user', {
+        const res = await fetch(API_BASE + '/api/admin-users', { method: 'GET' });
+        if (res.ok) {
+          const data = await res.json();
+          members = Array.isArray(data) ? data : (data.users || []);
+        }
+      } catch (e) {
+        toast("⚠️ Could not load users from server.", "err");
+      }
+
+      // Load server ban list
+      let bannedList = [];
+      try {
+        const banRes = await fetch(API_BASE + '/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ telegram_id: MASTER_ADMIN_ID, first_name: "Khudaimi" })
+          body: JSON.stringify({ action: 'get_config' })
         });
-        const data = await res.json();
-
-        if (data.status === 'success') {
-          members[0].balance = parseFloat(data.balance || 140.00);
-          members[0].today_ads = Number(data.today_ads_watched || 5);
-          members[0].ads_watched = Number(data.ads_watched || 13);
-          members[0].invited_count = Number(data.invited_count || 2);
-          members[0].referral_bonus = Number(data.referral_earnings || 4.00);
-          // Only assign real username if it genuinely exists on Telegram
-          members[0].username = data.username ? data.username.replace('@','') : "";
-
-          if (data.invited_users && data.invited_users.length) {
-            data.invited_users.forEach((f, idx) => {
-              const cleanUsername = f.username ? f.username.replace('@', '').trim() : "";
-              const numericId = f.telegram_id || f.id || f.user_id;
-
-              const existingIdx = members.findIndex(m => (cleanUsername && m.username === cleanUsername) || (numericId && String(m.telegram_id) === String(numericId)));
-
-              if (existingIdx >= 0) {
-                if (numericId && !isNaN(numericId)) members[existingIdx].telegram_id = String(numericId);
-                members[existingIdx].first_name = f.name || members[existingIdx].first_name;
-                members[existingIdx].username = cleanUsername;
-                members[existingIdx].balance = Number(f.earned ? f.earned * 10 : members[existingIdx].balance);
-              } else {
-                members.push({
-                  telegram_id: numericId ? String(numericId) : (idx === 0 ? "6891048201" : "5910382914"),
-                  first_name: f.name || "Friend",
-                  username: cleanUsername,
-                  balance: Number(f.earned ? f.earned * 10 : 10),
-                  today_ads: 1,
-                  ads_watched: Number(f.earned ? f.earned : 1),
-                  invited_count: 0,
-                  referral_bonus: 0.00,
-                  is_banned: false
-                });
-              }
-            });
-          }
-        }
+        const banData = await banRes.json();
+        bannedList = banData.banned_users || [];
       } catch (e) {}
 
-      // Apply Ban states
-      const bannedList = JSON.parse(localStorage.getItem('banned_ids') || '[]');
       members.forEach(m => {
-        if (bannedList.includes(String(m.telegram_id)) || (m.username && bannedList.includes(String(m.username)))) {
-          m.is_banned = true;
-        }
+        m.is_banned = bannedList.includes(String(m.telegram_id));
       });
 
       ALL_MEMBERS = members;
-      document.getElementById('dispTotalUsersCount').innerText = ALL_MEMBERS.length;
-      const totalInvites = ALL_MEMBERS.reduce((sum, u) => sum + (u.invited_count || 0), 0);
-      document.getElementById('dispTotalInvitedCount').innerText = totalInvites;
+      document.getElementById('dispTotalUsersCount').innerText = members.length;
+      document.getElementById('dispTotalInvitedCount').innerText =
+        members.reduce((sum, u) => sum + Number(u.invited_count || 0), 0);
 
       renderUserTable(ALL_MEMBERS);
     }
@@ -704,23 +691,16 @@
         const isBanned = Boolean(u.is_banned);
         const invitedCount = u.invited_count !== undefined ? u.invited_count : 0;
         const refBonus = u.referral_bonus !== undefined ? Number(u.referral_bonus).toFixed(2) : "0.00";
-        
-        // Show genuine username if exists, otherwise display None badge
-        const usernameDisplay = (u.username && u.username.trim() !== "") 
-          ? `<span class="has-username-badge">@${u.username.replace('@','')}</span>` 
+
+        const usernameDisplay = (u.username && u.username.trim() !== "")
+          ? `<span class="has-username-badge">@${u.username.replace('@','')}</span>`
           : `<span class="no-username-badge">None</span>`;
 
         return `
           <tr>
-            <td>
-              <code style="color:#38bdf8; font-weight:800; font-size:13px;">${u.telegram_id}</code>
-            </td>
-            <td>
-              <b style="color:#fff; font-size:13.5px;">${u.first_name || 'Member'}</b>
-            </td>
-            <td>
-              ${usernameDisplay}
-            </td>
+            <td><code style="color:#38bdf8; font-weight:800; font-size:13px;">${u.telegram_id}</code></td>
+            <td><b style="color:#fff; font-size:13.5px;">${u.first_name || u.name || 'Member'}</b></td>
+            <td>${usernameDisplay}</td>
             <td><b style="color:#38bdf8; font-size:14px;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
             <td><b style="color:#22c55e;">${u.today_ads || 0}</b></td>
             <td>${u.ads_watched || 0}</td>
@@ -735,7 +715,7 @@
             </td>
             <td>
               <div style="display:flex; gap:3px;">
-                <button class="btn-blue" style="padding:4px 8px; font-size:10.5px;" onclick="editUserBal(${idx})" title="Edit Points">PTS</button>
+                <button class="btn-blue" style="padding:4px 8px; font-size:10.5px;" onclick="editUserBal(${idx})">PTS</button>
                 <button class="${isBanned ? 'btn-green' : 'btn-red'}" style="padding:4px 8px; font-size:10.5px;" onclick="toggleBan(${idx})">
                   ${isBanned ? 'Unban' : 'Ban'}
                 </button>
@@ -757,41 +737,34 @@
       renderUserTable(filtered);
     }
 
-    // ================= BAN & UNBAN CONTROLS =================
+    // ================= BAN =================
     async function toggleBan(idx) {
-      const userItem = ALL_MEMBERS[idx];
-      if (!userItem) return;
+      const u = ALL_MEMBERS[idx];
+      if (!u) return;
 
-      const newBanState = !Boolean(userItem.is_banned);
-      userItem.is_banned = newBanState;
-
-      let bannedList = JSON.parse(localStorage.getItem('banned_ids') || '[]');
-      const tid = String(userItem.telegram_id);
-      const userTag = userItem.username ? String(userItem.username).replace('@','') : '';
-
-      if (newBanState) {
-        if (!bannedList.includes(tid)) bannedList.push(tid);
-        if (userTag && !bannedList.includes(userTag)) bannedList.push(userTag);
-      } else {
-        bannedList = bannedList.filter(id => id !== tid && id !== userTag);
-      }
-      localStorage.setItem('banned_ids', JSON.stringify(bannedList));
+      const newBanState = !Boolean(u.is_banned);
+      u.is_banned = newBanState;
 
       try {
-        await fetch('/api/webhook', {
+        const res = await fetch(API_BASE + '/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'ban_user',
-            telegram_id: userItem.telegram_id,
-            is_banned: newBanState,
-            banned_users: bannedList
+            telegram_id: String(u.telegram_id),
+            is_banned: newBanState
           })
-        }).catch(() => null);
-      } catch (err) {}
+        });
+        const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Server rejected');
+      } catch (e) {
+        toast("⚠️ Ban save failed: " + e.message, "err");
+        u.is_banned = !newBanState; // revert
+        return;
+      }
 
       renderUserTable(ALL_MEMBERS);
-      alert(`${newBanState ? '🚫 BANNED' : '✅ UNBANNED'}: ${userItem.first_name} (ID: ${userItem.telegram_id}) is now ${newBanState ? 'RESTRICTED!' : 'ACTIVE!'}`);
+      toast(`${newBanState ? '🚫 BANNED' : '✅ UNBANNED'}: ${u.first_name || u.telegram_id}`, newBanState ? 'err' : 'ok');
     }
 
     function openDirectBanModal() {
@@ -804,73 +777,68 @@
       if (!rawInput) return alert("❌ Telegram ID or username required!");
       const cleanInput = rawInput.replace('@', '');
 
-      let idx = ALL_MEMBERS.findIndex(u => String(u.telegram_id) === cleanInput || u.username === cleanInput);
-
-      if (idx >= 0) {
-        ALL_MEMBERS[idx].is_banned = banStatus;
-      } else {
-        ALL_MEMBERS.push({
-          telegram_id: cleanInput,
-          first_name: "Member",
-          username: cleanInput.startsWith('6') || cleanInput.startsWith('5') || cleanInput.startsWith('8') ? "" : cleanInput,
-          balance: 0.00,
-          today_ads: 0,
-          ads_watched: 0,
-          invited_count: 0,
-          referral_bonus: 0.00,
-          is_banned: banStatus
-        });
-      }
-
-      let bannedList = JSON.parse(localStorage.getItem('banned_ids') || '[]');
-      if (banStatus) {
-        if (!bannedList.includes(cleanInput)) bannedList.push(cleanInput);
-      } else {
-        bannedList = bannedList.filter(id => id !== cleanInput);
-      }
-      localStorage.setItem('banned_ids', JSON.stringify(bannedList));
-
       try {
-        await fetch('/api/webhook', {
+        const res = await fetch(API_BASE + '/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'ban_user',
             telegram_id: cleanInput,
-            is_banned: banStatus,
-            banned_users: bannedList
+            is_banned: banStatus
           })
-        }).catch(() => null);
-      } catch (e) {}
+        });
+        const data = await res.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Failed');
+      } catch (e) {
+        return toast("⚠️ " + e.message, "err");
+      }
 
+      // Refresh
       closeModal('directBanModal');
-      renderUserTable(ALL_MEMBERS);
-      alert(`User ${cleanInput} marked as ${banStatus ? 'BANNED' : 'ACTIVE'}!`);
+      await loadUsers();
+      toast(`User ${cleanInput} is now ${banStatus ? 'BANNED' : 'ACTIVE'}!`, banStatus ? 'err' : 'ok');
     }
 
-    function editUserBal(idx) {
+    // ================= USER EDITS =================
+    async function editUserBal(idx) {
       const u = ALL_MEMBERS[idx];
-      const newBal = prompt(`Enter new balance (PTS) for ${u.first_name} (ID: ${u.telegram_id}):`, u.balance || 0);
-      if (newBal !== null && !isNaN(newBal)) {
-        u.balance = parseFloat(newBal);
+      const newBal = prompt(`Enter new balance (PTS) for ${u.first_name || u.telegram_id}:`, u.balance || 0);
+      if (newBal === null || isNaN(newBal)) return;
 
-        fetch('/api/get-user', {
+      try {
+        await fetch(API_BASE + '/api/get-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             telegram_id: u.telegram_id,
             set_balance: parseFloat(newBal)
           })
-        }).catch(() => {});
-
+        });
+        u.balance = parseFloat(newBal);
+        toast("✅ Balance updated.", "ok");
         renderUserTable(ALL_MEMBERS);
+      } catch (e) {
+        toast("❌ Failed to save balance.", "err");
       }
     }
 
-    function delUser(idx) {
-      if (!confirm("Are you sure you want to remove this member?")) return;
-      ALL_MEMBERS.splice(idx, 1);
-      renderUserTable(ALL_MEMBERS);
+    async function delUser(idx) {
+      const u = ALL_MEMBERS[idx];
+      if (!u) return;
+      if (!confirm(`Remove member ${u.first_name || u.telegram_id}?`)) return;
+
+      try {
+        await fetch(API_BASE + '/api/admin-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', telegram_id: u.telegram_id })
+        });
+        ALL_MEMBERS.splice(idx, 1);
+        renderUserTable(ALL_MEMBERS);
+        toast("🗑️ Member removed.", "ok");
+      } catch (e) {
+        toast("❌ Failed to remove member.", "err");
+      }
     }
 
     function openAddUserModal() {
@@ -881,7 +849,7 @@
       document.getElementById('addUserModal').style.display = 'flex';
     }
 
-    function submitNewUser() {
+    async function submitNewUser() {
       const tid = document.getElementById('newUserId').value.trim();
       const name = document.getElementById('newUserName').value.trim();
       const username = document.getElementById('newUserUsername').value.trim().replace('@','');
@@ -889,72 +857,187 @@
 
       if (!tid) return alert('Telegram Numeric ID is required!');
 
-      ALL_MEMBERS.push({
-        telegram_id: tid,
-        first_name: name || "Member",
-        username: username,
-        balance: parseFloat(bal) || 0,
-        today_ads: 0,
-        ads_watched: 0,
-        invited_count: 0,
-        referral_bonus: 0.00,
-        is_banned: false
-      });
-
-      closeModal('addUserModal');
-      renderUserTable(ALL_MEMBERS);
+      try {
+        await fetch(API_BASE + '/api/admin-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            telegram_id: tid,
+            first_name: name || 'Member',
+            username,
+            balance: parseFloat(bal) || 0
+          })
+        });
+        closeModal('addUserModal');
+        await loadUsers();
+        toast("✅ Member added.", "ok");
+      } catch (e) {
+        toast("❌ Failed to add member.", "err");
+      }
     }
 
-    function factoryResetDatabase() {
-      if (!confirm("⚠️ Are you sure you want to delete all members, balances, and reset everything?")) return;
-      const phrase = prompt("Type 'RESET_ALL' to confirm complete factory reset:");
-      if (phrase !== "RESET_ALL") return alert("❌ Reset canceled.");
+    // ================= FACTORY RESET =================
+    async function factoryResetDatabase() {
+      if (!confirm("⚠️ Delete ALL users, balances, and stats?")) return;
+      const phrase = prompt("Type 'RESET_ALL' to confirm:");
+      if (phrase !== "RESET_ALL") return toast("❌ Reset canceled.", "err");
 
-      const savedCfg = localStorage.getItem('admin_cfg');
-      localStorage.clear();
-      if (savedCfg) localStorage.setItem('admin_cfg', savedCfg);
-
-      alert("🎉 Factory Reset Complete!");
-      location.reload();
+      try {
+        await fetch(API_BASE + '/api/admin-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'factory_reset' })
+        });
+        toast("🎉 Factory reset complete.", "ok");
+        setTimeout(() => location.reload(), 1200);
+      } catch (e) {
+        toast("❌ Reset failed: " + e.message, "err");
+      }
     }
 
-    // ================= SAVE CONFIGURATION =================
-    function saveSettings() {
+    // ================= BLOCKCHAIN =================
+    async function checkLiveBlockchainBalance() {
+      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
+      const address = cfg.wallet_address;
+      const apiKey = cfg.api_key;
+
+      if (!address) {
+        document.getElementById('dispTonBal').innerText = "0.000 TON";
+        return;
+      }
+
+      try {
+        const headers = apiKey ? { "X-API-Key": apiKey } : {};
+        const res = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(address)}`, { headers });
+        const data = await res.json();
+        if (data.ok) {
+          const bal = (parseInt(data.result, 10) / 1e9).toFixed(3);
+          document.getElementById('dispTonBal').innerText = `${bal} TON`;
+        }
+      } catch (e) {
+        document.getElementById('dispTonBal').innerText = "API err";
+      }
+    }
+
+    // ================= WEBHOOK MGMT =================
+    async function activateTelegramWebhook() {
+      const token = document.getElementById('settingBotToken').value.trim();
+      const webhookUrl = document.getElementById('settingWebhookUrl').value.trim();
+      if (!token || !webhookUrl) return alert("❌ Bot Token and Webhook URL required!");
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+        const data = await res.json();
+        toast(data.ok ? "✅ Webhook connected!" : "❌ " + data.description, data.ok ? "ok" : "err");
+      } catch (e) {
+        toast("❌ Failed to set webhook.", "err");
+      }
+    }
+
+    async function checkTelegramWebhookInfo() {
+      const token = document.getElementById('settingBotToken').value.trim();
+      if (!token) return alert("❌ Bot Token required!");
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
+        const data = await res.json();
+        if (data.ok) {
+          const info = data.result;
+          toast(`URL: ${info.url || 'Not set'} | Pending: ${info.pending_update_count} | Last error: ${info.last_error_message || 'None'}`, info.url ? "ok" : "err", 8000);
+        } else {
+          toast("❌ " + data.description, "err");
+        }
+      } catch (e) {
+        toast("❌ Network error.", "err");
+      }
+    }
+
+    async function removeTelegramWebhook() {
+      const token = document.getElementById('settingBotToken').value.trim();
+      if (!token) return alert("❌ Bot Token required!");
+      if (!confirm("Delete the webhook? The bot will stop responding.")) return;
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+        const data = await res.json();
+        toast(data.ok ? "✅ Webhook deleted." : "❌ " + data.description, data.ok ? "ok" : "err");
+      } catch (e) {
+        toast("❌ Failed.", "err");
+      }
+    }
+
+    // ================= TEST LOG CHANNEL =================
+    async function sendTestLogMessage() {
+      const channel = document.getElementById('settingLogChannel').value.trim();
+      const token = document.getElementById('settingBotToken').value.trim();
+      if (!token || !channel) return alert("❌ Bot token and log channel required!");
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: channel,
+            text: `⚡ *Gram Log Channel Connected!*\n\nChannel \`${channel}\` is ready for automated receipts.`,
+            parse_mode: "Markdown"
+          })
+        });
+        const data = await res.json();
+        toast(data.ok ? `✅ Test posted to ${channel}` : `❌ ${data.description}`, data.ok ? "ok" : "err", 7000);
+      } catch (e) {
+        toast("❌ Network error.", "err");
+      }
+    }
+
+    // ================= SAVE SETTINGS =================
+    async function saveSettings() {
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const webhook_url = document.getElementById('settingWebhookUrl').value.trim();
       const log_channel = document.getElementById('settingLogChannel').value.trim();
-      const withdraw_fee = parseFloat(document.getElementById('settingWithdrawFee').value) || 0.0050;
-      const min_withdraw = Number(document.getElementById('settingMinWithdraw').value) || 5000;
+      const withdraw_fee = parseFloat(document.getElementById('settingWithdrawFee').value);
+      const min_withdraw = Number(document.getElementById('settingMinWithdraw').value);
       const wallet_address = document.getElementById('settingWalletAddress').value.trim();
       const mnemonic = document.getElementById('settingMnemonic').value.trim();
       const api_key = document.getElementById('settingTonApiKey').value.trim();
 
-      fetch('/api/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'save_admin_config',
-          bot_token: bot_token,
-          log_channel: log_channel,
-          withdraw_fee: withdraw_fee,
-          min_withdraw: min_withdraw
-        })
-      }).catch(() => {});
+      if (bot_token) {
+        try {
+          const res = await fetch(API_BASE + '/api/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'save_admin_config',
+              bot_token,
+              log_channel,
+              withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
+              min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
+              wallet_address,
+              mnemonic,
+              api_key
+            })
+          });
+          const data = await res.json();
+          if (data.status !== 'success') {
+            toast("⚠️ Cloud save: " + (data.message || 'Unknown error'), "err", 6000);
+          } else {
+            toast("☁️ Synced to Firestore.", "ok");
+          }
+        } catch (e) {
+          toast("⚠️ Network error — saved locally only.", "err", 6000);
+        }
+      }
 
       const cfg = {
-        bot_token,
-        webhook_url,
-        log_channel,
-        withdraw_fee,
-        min_withdraw,
-        wallet_address,
-        mnemonic,
-        api_key
+        bot_token, webhook_url, log_channel,
+        withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
+        min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
+        wallet_address, mnemonic, api_key
       };
-
       localStorage.setItem('admin_cfg', JSON.stringify(cfg));
-      alert('✅ Configuration saved successfully and synced with Mini App!');
-      showDashboard();
+
+      applyLocalConfigToForm();
+      toast("✅ Configuration saved!", "ok");
     }
   </script>
 </body>
