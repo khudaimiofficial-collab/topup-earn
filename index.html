@@ -917,7 +917,8 @@
        ============================================================ */
     const BOT_NAME = "Free Gram Token";
     const BOT_USERNAME = "AdBoostEarningBot";
-    const BOT_LOGO_URL = "";
+    // Telegram's public bot avatar endpoint — works inside the WebView
+    const BOT_LOGO_URL = "https://t.me/i/userpic/320/AdBoostEarningBot.jpg";
     const BOT_SUBTITLE = "Instant Auto Payout";
 
     /* ============================================================
@@ -948,6 +949,7 @@
     (function applyBotLogo() {
       const photoEl = document.getElementById('botHeaderPhoto');
       const fallback = document.getElementById('botFallbackIcon');
+
       if (BOT_LOGO_URL) {
         photoEl.onload = () => { photoEl.style.display = 'block'; fallback.style.display = 'none'; };
         photoEl.onerror = () => { photoEl.style.display = 'none'; fallback.style.display = 'block'; };
@@ -1205,7 +1207,7 @@
     }
 
     /* ============================================================
-       WITHDRAWALS — real blockchain broadcast attempt
+       WITHDRAWALS — real blockchain attempt + proper error display
        ============================================================ */
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
@@ -1244,9 +1246,8 @@
 
       const netGrams = Math.max(0.0001, (amount * PTS_TO_GRAM_RATE) - currentAdminFee);
 
-      // ---------- 1. Try real on-chain broadcast ----------
-      let onChainHash = "";
       let onChainSuccess = false;
+      let onChainHash = "";
       let onChainError = "";
 
       try {
@@ -1259,27 +1260,22 @@
           })
         });
 
-        if (gramRes.ok) {
-          const gramData = await gramRes.json();
-          if (gramData.status === 'success' && gramData.data) {
-            onChainSuccess = true;
-            // The TON SDK returns seqno + sender, not the final tx hash immediately.
-            // We store a marker so the admin panel can resolve the real hash later.
-            onChainHash = `pending_seqno_${gramData.data.seqno || 0}`;
-          } else {
-            onChainError = gramData.message || "Broadcast failed";
-          }
+        // Always try to parse JSON — even on error responses
+        let gramData = {};
+        try { gramData = await gramRes.json(); } catch (e) {}
+
+        if (gramRes.ok && gramData.status === 'success' && gramData.data) {
+          onChainSuccess = true;
+          onChainHash = `pending_seqno_${gramData.data.seqno || 0}`;
         } else {
-          onChainError = `HTTP ${gramRes.status}`;
+          // Real error from the server
+          onChainError = gramData.message || gramData.error || `HTTP ${gramRes.status}`;
         }
       } catch (e) {
         onChainError = e.message;
       }
 
-      // ---------- 2. Build withdrawal record ----------
-      const txId = onChainSuccess
-        ? onChainHash
-        : `pending_${Date.now()}`;
+      const txId = onChainSuccess ? onChainHash : `pending_${Date.now()}`;
 
       const withdrawRecord = {
         tx_id: txId,
@@ -1295,7 +1291,6 @@
         created_at: new Date().toISOString()
       };
 
-      // ---------- 3. Deduct balance locally (optimistic) ----------
       currentBalance -= amount;
       document.getElementById('balance').innerText = currentBalance.toFixed(2);
       document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
@@ -1303,7 +1298,6 @@
       document.getElementById('withdrawAmount').value = '';
       document.getElementById('gramPreview').innerText = '0.0000';
 
-      // ---------- 4. Persist locally + backend ----------
       const histKey = 'withdraw_history_' + user.id;
       const hist = JSON.parse(localStorage.getItem(histKey) || '[]');
       hist.unshift(withdrawRecord);
@@ -1317,7 +1311,6 @@
         });
       } catch (e) {}
 
-      // Deduct points server-side
       try {
         await fetch('/api/get-user', {
           method: 'POST',
@@ -1336,21 +1329,19 @@
 
       try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
 
-      // ---------- 5. User feedback ----------
       if (onChainSuccess) {
         alert(
           `🎉 Withdrawal Broadcast!\n\n` +
           `Amount: ${netGrams.toFixed(4)} GRAM\n` +
           `Fee: ${currentAdminFee.toFixed(4)} GRAM\n` +
-          `Status: Confirming on-chain (pending)\n\n` +
-          `The transaction will appear on-chain shortly.`
+          `Status: Confirming on-chain`
         );
       } else {
         alert(
           `⚠️ Withdrawal Submitted\n\n` +
           `Amount: ${netGrams.toFixed(4)} GRAM\n\n` +
           `On-chain broadcast could not be completed automatically.\n` +
-          `Reason: ${onChainError || 'Hot wallet not configured'}\n\n` +
+          `Reason: ${onChainError || 'Unknown'}\n\n` +
           `Your request is queued for manual processing.`
         );
       }
@@ -1374,7 +1365,7 @@
 
         const status = (item.status || 'pending').toLowerCase();
         const isOnChain = Boolean(item.on_chain);
-        const isRealHash = isOnChain && txHash && !txHash.startsWith('pending_');
+        const isRealHash = isOnChain && txHash && !txHash.startsWith('pending_') && txHash.length >= 40;
 
         const badgeClass =
           status === 'success' ? 'status-success' :
@@ -1405,8 +1396,10 @@
               ${isRealHash
                 ? `<span>Tx: <b>${shortTx}</b></span>
                    <a href="https://tonviewer.com/transaction/${txHash}" target="_blank">Explorer ↗</a>`
-                : `<span style="color:#facc15;">⏳ Awaiting on-chain confirmation</span>
-                   ${item.error ? `<span style="font-size:10px;">${item.error.slice(0,30)}</span>` : ''}`
+                : `<span style="color:${status === 'failed' ? '#ef4444' : '#facc15'};">
+                     ${status === 'failed' ? '❌ Broadcast failed' : '⏳ Awaiting on-chain confirmation'}
+                   </span>
+                   ${item.error ? `<span style="font-size:10px; color:#94a3b8;">${String(item.error).slice(0,40)}</span>` : ''}`
               }
             </div>
           </div>
@@ -1415,7 +1408,7 @@
     }
 
     /* ============================================================
-       FRIENDS LIST — compute earned from ads_watched if backend empty
+       FRIENDS LIST — compute earned points
        ============================================================ */
     function renderFriends() {
       const container = document.getElementById('friendsListContainer');
@@ -1434,18 +1427,20 @@
         const autoTgAvatar = rawUser ? `https://t.me/i/userpic/320/${rawUser}.jpg` : '';
         const photoUrl = f.photo_url || autoTgAvatar;
 
-        // ---------- compute earned ----------
-        // Backend returns 'earned' as the referral_earnings value, but that field
-        // is populated only when the friend acts as a referrer (not the referrer himself).
-        // The reliable source is the friend's ads_watched count × 1.00 PTS per ad.
-        let commissionPTS = Number(f.earned || 0);
-        if (commissionPTS === 0 && f.ads_watched) {
+        // ---------- Compute earned points ----------
+        // Priority: backend "contributed" → backend "earned" → computed from ads_watched
+        let commissionPTS = 0;
+        if (f.contributed !== undefined) {
+          commissionPTS = Number(f.contributed);
+        } else if (f.earned !== undefined && Number(f.earned) > 0) {
+          commissionPTS = Number(f.earned);
+        } else if (f.ads_watched !== undefined) {
+          // Every friend's ad = +1.00 PTS to you
           commissionPTS = Number(f.ads_watched) * 1.00;
         }
-        // Also try a 'contributed' field if the backend ever adds it
-        if (commissionPTS === 0 && f.contributed) {
-          commissionPTS = Number(f.contributed);
-        }
+
+        const hasEarned = commissionPTS > 0;
+        const subtitle = hasEarned ? 'Added to balance' : 'No ads watched yet';
 
         return `
           <div class="list-row">
@@ -1464,8 +1459,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:13px; font-weight:800; color:${commissionPTS > 0 ? '#22c55e' : '#94a3b8'};">+${commissionPTS.toFixed(2)} PTS</div>
-              <div style="font-size:9.5px; color:var(--text-dim);">${commissionPTS > 0 ? 'Added to balance' : 'No ads watched yet'}</div>
+              <div style="font-size:13px; font-weight:800; color:${hasEarned ? '#22c55e' : '#94a3b8'};">+${commissionPTS.toFixed(2)} PTS</div>
+              <div style="font-size:9.5px; color:var(--text-dim);">${subtitle}</div>
             </div>
           </div>
         `;
