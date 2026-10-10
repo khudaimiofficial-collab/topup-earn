@@ -22,53 +22,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
 
-  const { telegram_id, first_name, username, referrer_id, add_points, set_balance } = req.body || {};
+  const { telegram_id, first_name, username, referrer_id, add_points, set_balance, is_ad_reward, is_referral_bonus } = req.body || {};
   if (!telegram_id) {
     return res.status(400).json({ error: "telegram_id is required" });
-  }
-
-  const botToken = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
-  let photo_url = null;
-  let bot_name = "";
-  let bot_username = "";
-  let bot_photo_url = "";
-
-  async function fetchTelegramPhoto(userId) {
-    if (!botToken || !userId) return null;
-    try {
-      const pRes = await fetch(
-        `https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${userId}&limit=1`
-      );
-      const pData = await pRes.json();
-      if (pData.ok && pData.result.total_count > 0) {
-        const fileId = pData.result.photos[0][0].file_id;
-        const fRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
-        const fData = await fRes.json();
-        if (fData.ok && fData.result.file_path) {
-          // Proxy through our own endpoint so bot token never leaks
-          return `/api/bot-avatar?path=${encodeURIComponent(fData.result.file_path)}`;
-        }
-      }
-    } catch (e) {
-      console.warn("Photo fetch error:", e.message);
-    }
-    return null;
-  }
-
-  // Fetch bot info + user photo
-  if (botToken) {
-    try {
-      const botRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
-      const botData = await botRes.json();
-      if (botData.ok) {
-        bot_name = botData.result.first_name || "";
-        bot_username = botData.result.username || "";
-        bot_photo_url = `/api/bot-avatar?bot=1`;
-      }
-      photo_url = await fetchTelegramPhoto(telegram_id);
-    } catch (err) {
-      console.error("Telegram API fetch error:", err.message);
-    }
   }
 
   try {
@@ -78,6 +34,9 @@ export default async function handler(req, res) {
 
     let userData;
 
+    // ============================================================
+    // NEW USER
+    // ============================================================
     if (!userDoc.exists) {
       userData = {
         telegram_id: String(telegram_id),
@@ -103,39 +62,39 @@ export default async function handler(req, res) {
     } else {
       userData = userDoc.data();
 
-      // Apply explicit balance edits (admin) — no counter side-effects
+      // ---------- Admin balance override ----------
       if (typeof set_balance === "number" && !isNaN(set_balance)) {
         await userRef.update({ balance: set_balance });
         userData.balance = set_balance;
       }
 
-      // Apply point delta (ad reward, withdrawal, referral) — with proper counter tracking
+      // ---------- Point delta ----------
       if (typeof add_points === "number" && add_points !== 0 && typeof set_balance !== "number") {
         const updates = {
           balance: admin.firestore.FieldValue.increment(add_points)
         };
 
-        // Only treat as an "ad watch" if we're crediting exactly the ad reward and the caller flagged it
-        if (add_points > 0 && req.body.is_ad_reward === true) {
+        // Only increment ads_watched when the caller explicitly says so
+        if (add_points > 0 && is_ad_reward === true) {
           updates.ads_watched = admin.firestore.FieldValue.increment(1);
           updates.today_ads_watched = admin.firestore.FieldValue.increment(1);
           updates.last_ad_date = todayStr;
         }
 
-        // Crediting a referral commission
-        if (add_points > 0 && req.body.is_referral_bonus === true) {
+        // Referral commission
+        if (add_points > 0 && is_referral_bonus === true) {
           updates.referral_earnings = admin.firestore.FieldValue.increment(add_points);
         }
 
         await userRef.update(updates);
         userData.balance = Number(userData.balance || 0) + add_points;
-        if (req.body.is_ad_reward) {
+        if (is_ad_reward) {
           userData.ads_watched = Number(userData.ads_watched || 0) + 1;
           userData.today_ads_watched = Number(userData.today_ads_watched || 0) + 1;
         }
       }
 
-      // Midnight reset for today's counter
+      // Midnight reset
       if (userData.last_ad_date !== todayStr) {
         await userRef.update({ today_ads_watched: 0, last_ad_date: todayStr });
         userData.today_ads_watched = 0;
@@ -148,7 +107,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: "banned", is_banned: true });
     }
 
-    // Referral list
+    // Referral list (no photo fetch — mini app fetches Telegram photos directly)
     let invitedUsers = [];
     try {
       const snapString = await db.collection("users")
@@ -162,27 +121,17 @@ export default async function handler(req, res) {
       const merged = new Map();
       [...snapString.docs, ...snapNum.docs].forEach(d => merged.set(d.id, d.data()));
 
-      invitedUsers = await Promise.all(
-        Array.from(merged.values()).map(async (d) => {
-          let uPhoto = null;
-          if (d.telegram_id) {
-            uPhoto = await fetchTelegramPhoto(d.telegram_id);
-          }
-          return {
-            id: d.telegram_id,
-            name: d.first_name || "Telegram User",
-            username: d.username ? d.username.replace('@', '') : "",
-            photo_url: uPhoto,
-            earned: Number(d.referral_earnings || 0).toFixed(2)
-          };
-        })
-      );
+      invitedUsers = Array.from(merged.values()).map(d => ({
+        id: d.telegram_id,
+        name: d.first_name || "Telegram User",
+        username: d.username ? d.username.replace('@', '') : "",
+        earned: Number(d.referral_earnings || 0).toFixed(2)
+      }));
     } catch (fErr) {
       console.warn("Friends query error:", fErr.message);
     }
 
     const calculatedInvitedCount = Math.max(invitedUsers.length, Number(userData.invited_count || 0));
-    const calculatedEarnings = Number(userData.referral_earnings || 0);
 
     return res.status(200).json({
       status: "success",
@@ -190,12 +139,8 @@ export default async function handler(req, res) {
       ads_watched: Number(userData.ads_watched || 0),
       today_ads_watched: Number(userData.today_ads_watched || 0),
       invited_count: calculatedInvitedCount,
-      referral_earnings: calculatedEarnings,
+      referral_earnings: Number(userData.referral_earnings || 0),
       channel_joined: userData.channel_joined !== false,
-      bot_name: bot_name,
-      bot_username: bot_username,
-      bot_photo_url: bot_photo_url,
-      photo_url: photo_url,
       invited_users: invitedUsers
     });
 
