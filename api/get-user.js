@@ -17,7 +17,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Referral commission rate: 10% of the +10 PTS ad reward = +1.00 PTS
+// Referral commission: 10% of the +10 PTS ad reward = +1.00 PTS per friend's ad
 const REFERRAL_BONUS_PER_AD = 1.00;
 
 export default async function handler(req, res) {
@@ -40,9 +40,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "telegram_id is required" });
   }
 
+  const uid = String(telegram_id);
+
   try {
     const todayStr = new Date().toISOString().slice(0, 10);
-    const userRef = db.collection("users").doc(String(telegram_id));
+    const userRef = db.collection("users").doc(uid);
     const userDoc = await userRef.get();
 
     let userData;
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
     // ============================================================
     if (!userDoc.exists) {
       userData = {
-        telegram_id: String(telegram_id),
+        telegram_id: uid,
         first_name: first_name || "Friend",
         username: username || "",
         balance: 0.0,
@@ -61,6 +63,7 @@ export default async function handler(req, res) {
         last_ad_date: todayStr,
         invited_count: 0,
         referral_earnings: 0.0,
+        referral_map: {},                                // per-friend commission tracker
         referrer_id: referrer_id ? String(referrer_id) : null,
         channel_joined: true,
         created_at: new Date().toISOString()
@@ -68,13 +71,18 @@ export default async function handler(req, res) {
       await userRef.set(userData);
 
       // Increment referrer's invited_count when a new user joins via their link
-      if (referrer_id && String(referrer_id) !== String(telegram_id)) {
+      if (referrer_id && String(referrer_id) !== uid) {
         await db.collection("users").doc(String(referrer_id)).update({
           invited_count: admin.firestore.FieldValue.increment(1)
         }).catch(() => {});
       }
     } else {
       userData = userDoc.data();
+
+      // Ensure referral_map exists on older records
+      if (!userData.referral_map || typeof userData.referral_map !== "object") {
+        userData.referral_map = {};
+      }
 
       // ============================================================
       // ADMIN BALANCE OVERRIDE (no counter side-effects)
@@ -92,14 +100,14 @@ export default async function handler(req, res) {
           balance: admin.firestore.FieldValue.increment(add_points)
         };
 
-        // Only increment ad counters when the caller explicitly says this is an ad reward
+        // Only increment ad counters when the caller explicitly flags an ad reward
         if (add_points > 0 && is_ad_reward === true) {
           updates.ads_watched = admin.firestore.FieldValue.increment(1);
           updates.today_ads_watched = admin.firestore.FieldValue.increment(1);
           updates.last_ad_date = todayStr;
         }
 
-        // If caller explicitly says this is a referral bonus
+        // Explicit referral bonus to self (rare — used for admin corrections)
         if (add_points > 0 && is_referral_bonus === true) {
           updates.referral_earnings = admin.firestore.FieldValue.increment(add_points);
         }
@@ -115,17 +123,19 @@ export default async function handler(req, res) {
         // ============================================================
         // ⚡ INSTANT REFERRAL BONUS
         // When the user just watched an ad, credit their referrer +1.00 PTS
-        // in the SAME request, so the referrer's balance updates immediately.
+        // AND track per-friend contribution in referral_map.
         // ============================================================
         if (is_ad_reward === true && userData.referrer_id) {
           const refId = String(userData.referrer_id);
-          if (refId !== String(telegram_id)) {
+          if (refId !== uid) {
             try {
+              const mapKey = `referral_map.${uid}`;
               await db.collection("users").doc(refId).update({
                 balance: admin.firestore.FieldValue.increment(REFERRAL_BONUS_PER_AD),
-                referral_earnings: admin.firestore.FieldValue.increment(REFERRAL_BONUS_PER_AD)
+                referral_earnings: admin.firestore.FieldValue.increment(REFERRAL_BONUS_PER_AD),
+                [mapKey]: admin.firestore.FieldValue.increment(REFERRAL_BONUS_PER_AD)
               });
-              console.log(`💸 Credited referrer ${refId} +${REFERRAL_BONUS_PER_AD} PTS`);
+              console.log(`💸 Credited referrer ${refId} +${REFERRAL_BONUS_PER_AD} PTS from user ${uid}`);
             } catch (refErr) {
               console.warn("Referral credit note:", refErr.message);
             }
@@ -143,33 +153,48 @@ export default async function handler(req, res) {
     // ============================================================
     // BAN CHECK
     // ============================================================
-    const banDoc = await db.collection("banned_users").doc(String(telegram_id)).get();
+    const banDoc = await db.collection("banned_users").doc(uid).get();
     if (banDoc.exists) {
       return res.status(200).json({ status: "banned", is_banned: true });
     }
 
     // ============================================================
-    // REFERRAL LIST
+    // REFERRAL LIST — with per-friend commission from referral_map
     // ============================================================
     let invitedUsers = [];
     try {
       const snapString = await db.collection("users")
-        .where("referrer_id", "==", String(telegram_id))
-        .limit(25).get();
+        .where("referrer_id", "==", uid)
+        .limit(50).get();
 
       const snapNum = await db.collection("users")
-        .where("referrer_id", "==", Number(telegram_id))
-        .limit(25).get();
+        .where("referrer_id", "==", Number(uid))
+        .limit(50).get();
 
       const merged = new Map();
       [...snapString.docs, ...snapNum.docs].forEach(d => merged.set(d.id, d.data()));
 
-      invitedUsers = Array.from(merged.values()).map(d => ({
-        id: d.telegram_id,
-        name: d.first_name || "Telegram User",
-        username: d.username ? d.username.replace('@', '') : "",
-        earned: Number(d.referral_earnings || 0).toFixed(2)
-      }));
+      // Reload the referrer's own document to get the freshest referral_map
+      const freshSelf = await userRef.get();
+      const freshData = freshSelf.exists ? freshSelf.data() : {};
+      const referralMap = freshData.referral_map || {};
+
+      invitedUsers = Array.from(merged.entries()).map(([docId, d]) => {
+        const friendId = String(d.telegram_id || docId);
+        const mappedEarned = Number(referralMap[friendId] || 0);
+        const adsWatched = Number(d.ads_watched || 0);
+        // Use the map as source of truth; fall back to ads × 1.00 if map is empty
+        const contributed = mappedEarned > 0 ? mappedEarned : adsWatched * REFERRAL_BONUS_PER_AD;
+
+        return {
+          id: friendId,
+          name: d.first_name || "Telegram User",
+          username: d.username ? d.username.replace('@', '') : "",
+          ads_watched: adsWatched,
+          contributed: contributed,
+          earned: contributed.toFixed(2)
+        };
+      });
     } catch (fErr) {
       console.warn("Friends query error:", fErr.message);
     }
