@@ -648,10 +648,10 @@
           <img id="botHeaderPhoto" referrerpolicy="no-referrer" src="" alt="Bot Logo"
                style="display:none;"
                onerror="this.style.display='none'; document.getElementById('botFallbackIcon').style.display='block';" />
-          <span id="botFallbackIcon" style="font-size:20px; display:none;">⚡</span>
+          <span id="botFallbackIcon" style="font-size:20px; display:block;">⚡</span>
         </div>
         <div class="brand-text">
-          <h1 id="botTitle"></h1>
+          <h1 id="botTitle">Free Gram Token</h1>
           <span id="botSubtitle">Instant Auto Payout</span>
         </div>
       </div>
@@ -801,7 +801,7 @@
           Earn <b>10% commission (+1.00 PTS)</b> automatically credited to your main balance every time a friend watches an ad!
         </p>
 
-        <input type="text" id="inviteLinkInput" class="input-field" readonly value="Loading referral link..." />
+        <input type="text" id="inviteLinkInput" class="input-field" readonly value="" />
 
         <button class="btn btn-withdraw" onclick="shareInvite()" style="margin-bottom:8px;">
           🚀 Share on Telegram
@@ -913,6 +913,14 @@
 
   <script>
     /* ============================================================
+       BOT INFO — edit these to change the header & referral link
+       ============================================================ */
+    const BOT_NAME = "Free Gram Token";
+    const BOT_USERNAME = "AdBoostEarningBot";
+    const BOT_LOGO_URL = "";
+    const BOT_SUBTITLE = "Instant Auto Payout";
+
+    /* ============================================================
        TELEGRAM ENVIRONMENT
        ============================================================ */
     const tg = window.Telegram?.WebApp;
@@ -932,11 +940,28 @@
     }
 
     /* ============================================================
-       USER DATA (from Telegram)
+       APPLY BOT INFO
+       ============================================================ */
+    document.getElementById('botTitle').textContent = BOT_NAME;
+    document.getElementById('botSubtitle').textContent = BOT_SUBTITLE;
+
+    (function applyBotLogo() {
+      const photoEl = document.getElementById('botHeaderPhoto');
+      const fallback = document.getElementById('botFallbackIcon');
+      if (BOT_LOGO_URL) {
+        photoEl.onload = () => { photoEl.style.display = 'block'; fallback.style.display = 'none'; };
+        photoEl.onerror = () => { photoEl.style.display = 'none'; fallback.style.display = 'block'; };
+        photoEl.src = BOT_LOGO_URL;
+      } else {
+        fallback.style.display = 'block';
+      }
+    })();
+
+    /* ============================================================
+       USER DATA
        ============================================================ */
     const defaultUser = { id: "0", first_name: "", username: "" };
     const user = tg?.initDataUnsafe?.user || defaultUser;
-    const todayDateKey = new Date().toISOString().slice(0, 10);
 
     let currentBalance = 0.00;
     let todayAds = 0;
@@ -948,7 +973,6 @@
     const PTS_TO_GRAM_RATE = 0.00001;
 
     window.CURRENT_FRIENDS = [];
-    window.BOT_USERNAME = "";
 
     function applyAvatar(url) {
       if (!url) return;
@@ -976,6 +1000,15 @@
     document.getElementById('userHeaderFallback').innerText = initialLetter;
     document.getElementById('profFallback').innerText = initialLetter;
 
+    (function buildReferralLink() {
+      const linkInput = document.getElementById('inviteLinkInput');
+      if (BOT_USERNAME && user.id) {
+        linkInput.value = `https://t.me/${BOT_USERNAME}?start=${user.id}`;
+      } else {
+        linkInput.value = "Referral link unavailable";
+      }
+    })();
+
     function triggerBanModal() {
       isUserBanned = true;
       document.getElementById('bannedUserDisplayId').innerText = user.id;
@@ -985,58 +1018,6 @@
       const adBtn = document.getElementById('adBtn');
       if (adBtn) { adBtn.disabled = true; adBtn.innerText = 'Account Banned'; }
     }
-
-    /* ============================================================
-       BOT IDENTITY — from /api/bot-info
-       ============================================================ */
-    async function hydrateBotIdentity() {
-      const titleEl = document.getElementById('botTitle');
-      const subEl = document.getElementById('botSubtitle');
-      const photoEl = document.getElementById('botHeaderPhoto');
-      const fallback = document.getElementById('botFallbackIcon');
-
-      const init = tg?.initDataUnsafe || {};
-      const botObj = init.bot || {};
-
-      let botName = botObj.first_name || botObj.name || init.bot_name || "";
-      let botUsername = botObj.username || init.bot_username || "";
-      let botPhoto = botObj.photo_url || init.bot_photo_url || "";
-      let botSubtitle = "";
-
-      try {
-        const r = await fetch('/api/bot-info', { cache: 'no-store' });
-        const info = await r.json();
-        botName = botName || info.name || "";
-        botUsername = botUsername || info.username || "";
-        botPhoto = botPhoto || info.photo_url || "";
-        botSubtitle = info.subtitle || "";
-      } catch (e) {
-        console.warn("bot-info fetch failed:", e.message);
-      }
-
-      if (titleEl) titleEl.textContent = botName || "Free Gram Token";
-      if (subEl) subEl.textContent = botSubtitle || "Instant Auto Payout";
-
-      if (botPhoto) {
-        photoEl.onload = () => { photoEl.style.display = 'block'; fallback.style.display = 'none'; };
-        photoEl.onerror = () => { photoEl.style.display = 'none'; fallback.style.display = 'block'; };
-        photoEl.src = botPhoto;
-      } else {
-        fallback.style.display = 'block';
-      }
-
-      window.BOT_USERNAME = botUsername;
-
-      // Build referral link
-      if (botUsername && user.id) {
-        document.getElementById('inviteLinkInput').value =
-          `https://t.me/${botUsername}?start=${user.id}`;
-      } else {
-        document.getElementById('inviteLinkInput').value =
-          "Referral link unavailable";
-      }
-    }
-    hydrateBotIdentity();
 
     /* ============================================================
        LIVE ADMIN CONFIG
@@ -1113,11 +1094,7 @@
           document.getElementById('referralEarnings').innerText =
             `${Number(data.referral_earnings || 0).toFixed(2)} PTS`;
 
-          if (Array.isArray(data.invited_users)) {
-            window.CURRENT_FRIENDS = data.invited_users;
-          } else {
-            window.CURRENT_FRIENDS = [];
-          }
+          window.CURRENT_FRIENDS = Array.isArray(data.invited_users) ? data.invited_users : [];
           renderFriends();
         }
       } catch (e) {
@@ -1127,7 +1104,7 @@
     loadUserData();
 
     /* ============================================================
-       TAB SWITCHING
+       TABS
        ============================================================ */
     function switchTab(tab) {
       if (isUserBanned) return;
@@ -1149,7 +1126,7 @@
     }
 
     /* ============================================================
-       AD REWARD (with instant referral credit on backend)
+       AD REWARD
        ============================================================ */
     async function giveReward() {
       if (isUserBanned) return;
@@ -1228,7 +1205,7 @@
     }
 
     /* ============================================================
-       WITHDRAWALS
+       WITHDRAWALS — real blockchain broadcast attempt
        ============================================================ */
     function updateGramPreview() {
       const pts = parseFloat(document.getElementById('withdrawAmount').value) || 0;
@@ -1243,13 +1220,6 @@
       else if (val === 'max') input.value = Math.max(0, Math.floor(currentBalance));
       else input.value = val;
       updateGramPreview();
-    }
-
-    function generateTonTxHash() {
-      const chars = "0123456789abcdef";
-      let hash = "0x";
-      for (let i = 0; i < 64; i++) hash += chars[Math.floor(Math.random() * chars.length)];
-      return hash;
     }
 
     async function processWithdrawal() {
@@ -1273,8 +1243,59 @@
       submitBtn.innerText = "Broadcasting to TON Blockchain...";
 
       const netGrams = Math.max(0.0001, (amount * PTS_TO_GRAM_RATE) - currentAdminFee);
-      const generatedTxId = generateTonTxHash();
 
+      // ---------- 1. Try real on-chain broadcast ----------
+      let onChainHash = "";
+      let onChainSuccess = false;
+      let onChainError = "";
+
+      try {
+        const gramRes = await fetch('/api/gram-service', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient_address: wallet,
+            gram_amount: netGrams
+          })
+        });
+
+        if (gramRes.ok) {
+          const gramData = await gramRes.json();
+          if (gramData.status === 'success' && gramData.data) {
+            onChainSuccess = true;
+            // The TON SDK returns seqno + sender, not the final tx hash immediately.
+            // We store a marker so the admin panel can resolve the real hash later.
+            onChainHash = `pending_seqno_${gramData.data.seqno || 0}`;
+          } else {
+            onChainError = gramData.message || "Broadcast failed";
+          }
+        } else {
+          onChainError = `HTTP ${gramRes.status}`;
+        }
+      } catch (e) {
+        onChainError = e.message;
+      }
+
+      // ---------- 2. Build withdrawal record ----------
+      const txId = onChainSuccess
+        ? onChainHash
+        : `pending_${Date.now()}`;
+
+      const withdrawRecord = {
+        tx_id: txId,
+        telegram_id: user.id,
+        first_name: user.first_name,
+        points: amount,
+        fee_deducted: currentAdminFee.toFixed(4),
+        gram_amount: netGrams.toFixed(4),
+        wallet_address: wallet,
+        status: onChainSuccess ? 'pending' : 'failed',
+        on_chain: onChainSuccess,
+        error: onChainError || null,
+        created_at: new Date().toISOString()
+      };
+
+      // ---------- 3. Deduct balance locally (optimistic) ----------
       currentBalance -= amount;
       document.getElementById('balance').innerText = currentBalance.toFixed(2);
       document.getElementById('withdrawBalDisplay').innerText = currentBalance.toFixed(2);
@@ -1282,18 +1303,7 @@
       document.getElementById('withdrawAmount').value = '';
       document.getElementById('gramPreview').innerText = '0.0000';
 
-      const withdrawRecord = {
-        tx_id: generatedTxId,
-        telegram_id: user.id,
-        first_name: user.first_name,
-        points: amount,
-        fee_deducted: currentAdminFee.toFixed(4),
-        gram_amount: netGrams.toFixed(4),
-        wallet_address: wallet,
-        status: 'success',
-        created_at: new Date().toISOString()
-      };
-
+      // ---------- 4. Persist locally + backend ----------
       const histKey = 'withdraw_history_' + user.id;
       const hist = JSON.parse(localStorage.getItem(histKey) || '[]');
       hist.unshift(withdrawRecord);
@@ -1307,11 +1317,44 @@
         });
       } catch (e) {}
 
+      // Deduct points server-side
+      try {
+        await fetch('/api/get-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegram_id: user.id,
+            first_name: user.first_name,
+            username: user.username,
+            add_points: -amount
+          })
+        });
+      } catch (e) {}
+
       submitBtn.disabled = false;
       submitBtn.innerText = "🚀 Withdraw Gram Instantly";
 
       try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
-      alert(`🎉 On-Chain Payout Dispatched!\n\nNet Amount: ${netGrams.toFixed(4)} GRAM\nFee: ${currentAdminFee.toFixed(4)} GRAM`);
+
+      // ---------- 5. User feedback ----------
+      if (onChainSuccess) {
+        alert(
+          `🎉 Withdrawal Broadcast!\n\n` +
+          `Amount: ${netGrams.toFixed(4)} GRAM\n` +
+          `Fee: ${currentAdminFee.toFixed(4)} GRAM\n` +
+          `Status: Confirming on-chain (pending)\n\n` +
+          `The transaction will appear on-chain shortly.`
+        );
+      } else {
+        alert(
+          `⚠️ Withdrawal Submitted\n\n` +
+          `Amount: ${netGrams.toFixed(4)} GRAM\n\n` +
+          `On-chain broadcast could not be completed automatically.\n` +
+          `Reason: ${onChainError || 'Hot wallet not configured'}\n\n` +
+          `Your request is queued for manual processing.`
+        );
+      }
+
       renderWithdrawHistory();
     }
 
@@ -1325,9 +1368,23 @@
       }
 
       container.innerHTML = hist.map(item => {
-        const txHash = item.tx_id || generateTonTxHash();
-        const shortTx = `${txHash.slice(0, 8)}...${txHash.slice(-8)}`;
+        const txHash = item.tx_id || '';
+        const shortTx = txHash.length > 20 ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}` : (txHash || 'Pending');
         const shortAddr = item.wallet_address ? `${item.wallet_address.slice(0, 6)}...${item.wallet_address.slice(-6)}` : '-';
+
+        const status = (item.status || 'pending').toLowerCase();
+        const isOnChain = Boolean(item.on_chain);
+        const isRealHash = isOnChain && txHash && !txHash.startsWith('pending_');
+
+        const badgeClass =
+          status === 'success' ? 'status-success' :
+          status === 'failed'  ? 'status-failed'  :
+                                 'status-pending';
+
+        const badgeText =
+          status === 'success' ? 'SUCCESS' :
+          status === 'failed'  ? 'FAILED'  :
+                                 'PENDING';
 
         return `
           <div class="tx-card">
@@ -1336,7 +1393,7 @@
                 <b style="color:#fff; font-size:13px;">${item.gram_amount} GRAM</b>
                 <span style="font-size:11px; color:#94a3b8; margin-left:4px;">(${item.points} PTS)</span>
               </div>
-              <span class="status-badge status-success">SUCCESS</span>
+              <span class="status-badge ${badgeClass}">${badgeText}</span>
             </div>
 
             <div style="font-size:11px; color:#94a3b8; display:flex; justify-content:space-between;">
@@ -1345,8 +1402,12 @@
             </div>
 
             <div class="tx-hash-row">
-              <span>Tx ID: <b>${shortTx}</b></span>
-              <a href="https://tonviewer.com/transaction/${txHash}" target="_blank">Explorer ↗</a>
+              ${isRealHash
+                ? `<span>Tx: <b>${shortTx}</b></span>
+                   <a href="https://tonviewer.com/transaction/${txHash}" target="_blank">Explorer ↗</a>`
+                : `<span style="color:#facc15;">⏳ Awaiting on-chain confirmation</span>
+                   ${item.error ? `<span style="font-size:10px;">${item.error.slice(0,30)}</span>` : ''}`
+              }
             </div>
           </div>
         `;
@@ -1354,7 +1415,7 @@
     }
 
     /* ============================================================
-       FRIENDS LIST
+       FRIENDS LIST — compute earned from ads_watched if backend empty
        ============================================================ */
     function renderFriends() {
       const container = document.getElementById('friendsListContainer');
@@ -1372,7 +1433,19 @@
         const rawUser = (f.username || '').replace('@', '').trim();
         const autoTgAvatar = rawUser ? `https://t.me/i/userpic/320/${rawUser}.jpg` : '';
         const photoUrl = f.photo_url || autoTgAvatar;
-        const commissionPTS = Number(f.earned || 0).toFixed(2);
+
+        // ---------- compute earned ----------
+        // Backend returns 'earned' as the referral_earnings value, but that field
+        // is populated only when the friend acts as a referrer (not the referrer himself).
+        // The reliable source is the friend's ads_watched count × 1.00 PTS per ad.
+        let commissionPTS = Number(f.earned || 0);
+        if (commissionPTS === 0 && f.ads_watched) {
+          commissionPTS = Number(f.ads_watched) * 1.00;
+        }
+        // Also try a 'contributed' field if the backend ever adds it
+        if (commissionPTS === 0 && f.contributed) {
+          commissionPTS = Number(f.contributed);
+        }
 
         return `
           <div class="list-row">
@@ -1391,8 +1464,8 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:13px; font-weight:800; color:#22c55e;">+${commissionPTS} PTS</div>
-              <div style="font-size:9.5px; color:var(--text-dim);">Added to balance</div>
+              <div style="font-size:13px; font-weight:800; color:${commissionPTS > 0 ? '#22c55e' : '#94a3b8'};">+${commissionPTS.toFixed(2)} PTS</div>
+              <div style="font-size:9.5px; color:var(--text-dim);">${commissionPTS > 0 ? 'Added to balance' : 'No ads watched yet'}</div>
             </div>
           </div>
         `;
@@ -1402,7 +1475,7 @@
     function copyInviteLink() {
       const input = document.getElementById('inviteLinkInput');
       if (!input.value || input.value === "Referral link unavailable") {
-        return alert("Referral link not ready yet. Please reload in a moment.");
+        return alert("Referral link not ready yet.");
       }
       input.select();
       navigator.clipboard.writeText(input.value).then(() => {
@@ -1414,7 +1487,7 @@
     function shareInvite() {
       const link = document.getElementById('inviteLinkInput').value;
       if (!link || link === "Referral link unavailable") {
-        return alert("Referral link not ready yet. Please reload in a moment.");
+        return alert("Referral link not ready yet.");
       }
       const text = encodeURIComponent("💎 Earn Free Gram Tokens with me! Watch short ads and withdraw instantly directly on-chain:");
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`;
