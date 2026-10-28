@@ -3,35 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Master Admin - Free Gram Token</title>
+  <title>Master Admin - Free Bitcoin Sats</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #090d16; color: #fff; padding: 16px; min-height: 100vh; }
     .card { background: #131b2e; padding: 22px; border-radius: 14px; max-width: 1050px; margin: 0 auto 20px auto; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-    h2, h3 { color: #38bdf8; margin-bottom: 8px; }
+    h2, h3 { color: #f59e0b; margin-bottom: 8px; }
     p { font-size: 13px; color: #94a3b8; margin-bottom: 14px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
     label { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
     input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 14px; outline: none; }
-    input:focus { border-color: #38bdf8; }
+    input:focus { border-color: #f59e0b; }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     button { padding: 12px 16px; border-radius: 10px; border: none; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.1s ease; }
     button:active { transform: scale(0.98); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-orange { background: #f59e0b; color: #000; }
     .btn-blue { background: #38bdf8; color: #042f2e; }
     .btn-purple { background: #a855f7; color: #fff; }
     .btn-green { background: #22c55e; color: #052e16; }
     .btn-red { background: #ef4444; color: #fff; }
-    .btn-yellow { background: #facc15; color: #713f12; }
 
     .wallet-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .wallet-stat-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 14px; text-align: center; }
+    .wallet-stat-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 14px; text-align: center; }
     .wallet-stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
     .wallet-stat-val { font-size: 22px; font-weight: 900; color: #fff; margin-top: 4px; }
 
     .admin-nav { display: flex; gap: 8px; margin-bottom: 18px; max-width: 1050px; margin-left: auto; margin-right: auto; flex-wrap: wrap; }
     .nav-btn { background: #131b2e; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; }
-    .nav-btn.active { background: #38bdf8; color: #042f2e; border-color: #38bdf8; }
+    .nav-btn.active { background: #f59e0b; color: #000; border-color: #f59e0b; }
 
     .table-container { overflow-x: auto; margin-top: 14px; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
     table { width: 100%; border-collapse: collapse; min-width: 820px; }
@@ -43,43 +43,27 @@
     .active-user { color: #22c55e; font-weight: 800; }
     .top-bar { display: flex; justify-content: space-between; align-items: center; }
 
-    .no-username-badge { font-size: 11px; color: #64748b; font-style: italic; background: rgba(255,255,255,0.04); padding: 2px 6px; border-radius: 4px; }
-    .has-username-badge { color: #a855f7; font-weight: 700; font-family: monospace; font-size: 12.5px; }
-
-    .scroll-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; display: block; }
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
-    .modal-box { background: #131b2e; width: 100%; max-width: 400px; padding: 24px; border-radius: 16px; border: 1px solid rgba(56, 189, 248, 0.2); }
-
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #131b2e; border: 1px solid #38bdf8; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.6); max-width: 90vw; }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #131b2e; border: 1px solid #f59e0b; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.6); max-width: 90vw; }
     .toast.err { border-color: #ef4444; color: #fca5a5; }
     .toast.ok { border-color: #22c55e; color: #86efac; }
-
-    /* Hot Wallet panel responsive tweaks */
-    .hw-grid { display: grid; grid-template-columns: 1fr 190px; gap: 18px; align-items: start; }
-    @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; } }
-    .hw-send-grid { display: grid; grid-template-columns: 1fr 130px auto; gap: 8px; }
-    @media (max-width: 620px) { .hw-send-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 
   <div class="toast" id="toast"></div>
 
-  <!-- ================= AUTH OTP BOX ================= -->
+  <!-- AUTH BOX -->
   <div class="card" id="authBox" style="max-width: 400px; margin-top: 50px;">
-    <h2>🔐 Telegram OTP Sign In</h2>
-    <p>Authentication code will be sent to master Telegram account <code>(ID: 8960497898)</code>.</p>
+    <h2>🔐 Master Admin Sign In</h2>
+    <p>Authentication code will be sent to Telegram ID: <code>8960497898</code>.</p>
 
     <div id="stepSendOtp">
-      <div class="form-group" style="margin-bottom:12px;">
+      <div class="form-group">
         <label>Telegram Bot Token:</label>
-        <div style="display: flex; gap: 8px;">
-          <input type="password" id="loginBotToken" placeholder="Paste Bot Token" style="flex: 1;" />
-          <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('loginBotToken')">👁️</button>
-        </div>
+        <input type="password" id="loginBotToken" placeholder="Paste Bot Token" />
       </div>
-      <button class="btn-blue" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
-        📩 Send 6-Digit OTP to Telegram
+      <button class="btn-orange" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
+        📩 Send OTP to Telegram
       </button>
     </div>
 
@@ -91,141 +75,38 @@
       <button class="btn-green" style="width: 100%;" onclick="verifyOtp()">
         ✅ Verify & Access Panel
       </button>
-      <button style="background:transparent; border:none; color:#94a3b8; font-size:12px; margin-top:8px; width:100%; cursor:pointer;" onclick="resetOtpStep()">
-        ← Change Bot Token
-      </button>
     </div>
   </div>
 
-  <!-- ================= MAIN DASHBOARD ================= -->
+  <!-- DASHBOARD -->
   <div id="mainDashboard" style="display: none;">
-
     <div class="card" style="padding: 16px 20px;">
       <div class="top-bar">
-        <h2>⚡ Free Gram Token Master Admin</h2>
+        <h2>⚡ Free Bitcoin Sats Master Admin</h2>
         <button class="btn-red" style="padding: 8px 14px; font-size: 12px;" onclick="logout()">Log Out</button>
       </div>
-      <p style="color: #22c55e; margin: 4px 0 0 0;">● Master Admin Authenticated (ID: 8960497898)</p>
+      <p style="color: #22c55e; margin: 4px 0 0 0;">● Master Admin Authenticated</p>
     </div>
 
-    <!-- LIVE STATS -->
-    <div class="card" style="padding: 16px 20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h3 style="font-size:15px; margin:0;">💎 Live Blockchain, Users & Referral Stats</h3>
-        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="refreshAll()">🔄 Refresh Live</button>
-      </div>
-
-      <div class="wallet-stat-grid">
-        <div class="wallet-stat-card">
-          <div class="wallet-stat-label">Hot Wallet (TON Gas)</div>
-          <div class="wallet-stat-val" id="dispTonBal" style="color:#38bdf8;">--</div>
-        </div>
-        <div class="wallet-stat-card">
-          <div class="wallet-stat-label">Current Fee / Payout</div>
-          <div class="wallet-stat-val" id="dispFeeVal" style="color:#facc15;">--</div>
-        </div>
-        <div class="wallet-stat-card">
-          <div class="wallet-stat-label">Total Registered Users</div>
-          <div class="wallet-stat-val" id="dispTotalUsersCount" style="color:#22c55e;">0</div>
-        </div>
-        <div class="wallet-stat-card">
-          <div class="wallet-stat-label">Total Friends Invited</div>
-          <div class="wallet-stat-val" id="dispTotalInvitedCount" style="color:#a855f7;">0</div>
-        </div>
-      </div>
-      <p style="font-size:11px; margin:0;" id="dispWalletAddr">Wallet Address: <code>Not configured</code></p>
-    </div>
-
-    <!-- ================= HOT WALLET DEPOSIT & SEND ================= -->
-    <div class="card" style="padding: 18px 20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="font-size:15px; margin:0;">💎 Hot Wallet Deposit &amp; Send</h3>
-        <button class="btn-blue" style="padding:6px 12px; font-size:11px;" onclick="refreshHotWallet()">🔄 Refresh</button>
-      </div>
-
-      <div class="hw-grid">
-        <!-- LEFT: Address + Balance -->
-        <div>
-          <label style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Deposit Address (Send TON here)</label>
-          <div id="hwAddressDisplay"
-               style="background:rgba(0,0,0,0.5); padding:10px 12px; border-radius:8px; margin-top:6px;
-                      font-family:monospace; font-size:11px; word-break:break-all;
-                      border:1px solid rgba(56,189,248,0.35); color:#38bdf8;">
-            Not configured
-          </div>
-
-          <div style="display:flex; gap:6px; margin-top:8px;">
-            <button class="btn-blue" style="padding:8px 12px; font-size:11px; flex:1;" onclick="copyHotWalletAddr()">📋 Copy Address</button>
-            <a class="btn-purple" id="hwExplorerLink" href="#" target="_blank"
-               style="padding:8px 12px; font-size:11px; flex:1; text-decoration:none; text-align:center; color:#fff;">🔍 Explorer</a>
-          </div>
-
-          <div style="margin-top:14px; padding:12px; background:rgba(34,197,94,0.08);
-                      border-radius:10px; border:1px solid rgba(34,197,94,0.3);">
-            <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; font-weight:700;">Live Hot Wallet Balance</div>
-            <div id="hwBalanceDisplay" style="font-size:26px; font-weight:900; color:#22c55e; margin-top:2px;">-- TON</div>
-            <div style="font-size:10px; color:#94a3b8; margin-top:4px;">≈ <span id="hwBalanceUsd">--</span> USD</div>
-          </div>
-
-          <div style="margin-top:12px; font-size:11px; color:#94a3b8; line-height:1.5;">
-            💡 <b style="color:#facc15;">How to deposit:</b> Send TON from any wallet or exchange
-            (Tonkeeper, Telegram @wallet, Binance, OKX) to the address above. Funds are used to pay
-            on-chain gas for user withdrawals. <b>Minimum 0.1 TON</b> recommended.
-          </div>
-        </div>
-
-        <!-- RIGHT: QR Code -->
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:8px;">Scan to Deposit</div>
-          <div style="background:#fff; padding:8px; border-radius:12px; display:inline-block;">
-            <img id="hwQrCode" src="" style="width:160px; height:160px; display:block;" alt="Deposit QR" />
-          </div>
-          <p style="font-size:10px; color:#94a3b8; margin-top:8px; line-height:1.4;">Scan with any TON-compatible wallet</p>
-        </div>
-      </div>
-
-      <!-- SEND TON FROM HOT WALLET -->
-      <div style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
-        <h4 style="color:#38bdf8; font-size:13px; margin-bottom:8px;">💸 Send TON from Hot Wallet</h4>
-        <div class="hw-send-grid">
-          <input type="text" id="hwSendAddress" placeholder="Recipient UQ... / EQ..." />
-          <input type="number" id="hwSendAmount" placeholder="0.1" step="0.001" min="0.001" />
-          <button class="btn-green" id="hwSendBtn" style="padding:12px 18px;" onclick="sendFromHotWallet()">Send 🚀</button>
-        </div>
-        <p style="font-size:10px; color:#facc15; margin-top:6px;">
-          ⚠️ Real on-chain transfer from your hot wallet — uses the mnemonic saved in Settings.
-        </p>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
     <div class="admin-nav">
-      <button class="nav-btn" id="btnTabWithdrawals" onclick="switchAdminTab('withdrawals')">⚡ Gram Withdrawals</button>
-      <button class="nav-btn active" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Manage Members & Referrals</button>
-      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Bot & Wallet Settings</button>
+      <button class="nav-btn" id="btnTabWithdrawals" onclick="switchAdminTab('withdrawals')">⚡ Sats Withdrawals</button>
+      <button class="nav-btn active" id="btnTabUsers" onclick="switchAdminTab('users')">👥 Users & Stats</button>
+      <button class="nav-btn" id="btnTabSettings" onclick="switchAdminTab('settings')">⚙️ Adsgram & Speed Settings</button>
     </div>
 
-    <!-- SECTION 1: WITHDRAWALS -->
+    <!-- WITHDRAWALS -->
     <div id="sectionWithdrawals" class="card" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h3>📥 Gram Withdrawal Requests</h3>
-          <p>Real-time audit log of on-chain Gram payouts with Blockchain Tx Hash.</p>
-        </div>
-        <button class="btn-green" onclick="loadWithdrawals()">🔄 Refresh</button>
-      </div>
-
+      <h3>📥 Sats Withdrawal Audit Log</h3>
       <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Telegram ID</th>
-              <th>Recipient Wallet</th>
-              <th>Tx Hash (Explorer)</th>
-              <th>Points / GRAM</th>
+              <th>Lightning Address</th>
+              <th>Payment ID</th>
+              <th>SATS (PTS)</th>
               <th>Status</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="withdrawalListBody"></tbody>
@@ -233,38 +114,23 @@
       </div>
     </div>
 
-    <!-- SECTION 2: USERS -->
+    <!-- USERS -->
     <div id="sectionUsers" class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div>
-          <h3>👥 Registered Members & Referral Stats</h3>
-          <p>Real-time Telegram IDs, Genuine Usernames, Balances, and Invite Counts.</p>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn-purple" onclick="openDirectBanModal()">🚫 Ban by ID</button>
-          <button class="btn-blue" onclick="openAddUserModal()">➕ Add User</button>
-          <button class="btn-green" onclick="loadUsers()">🔄 Refresh</button>
-        </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>👥 Registered Members</h3>
+        <button class="btn-green" onclick="loadUsers()">🔄 Refresh Users</button>
       </div>
-
-      <div style="margin: 14px 0;">
-        <input type="text" id="userSearchInput" placeholder="Search by Telegram ID, Username, or Name..." onkeyup="filterUsers()">
-        <span class="scroll-hint">👉 Scroll horizontally on mobile table to view all actions & details</span>
-      </div>
-
       <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Telegram ID</th>
-              <th>Member Name</th>
-              <th>Real Username</th>
+              <th>Name</th>
+              <th>Username</th>
               <th>PTS Balance</th>
               <th>Today Ads</th>
               <th>Total Ads</th>
-              <th>Invited</th>
               <th>Status</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="userListBody"></tbody>
@@ -272,978 +138,224 @@
       </div>
     </div>
 
-    <!-- SECTION 3: SETTINGS -->
+    <!-- SETTINGS -->
     <div id="sectionSettings" class="card" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3>⚙️ Bot, Log Channel & Fee Settings</h3>
-        <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 8px; font-weight: 700;">Encrypted</span>
+      <h3>⚙️ Adsgram, Speed API & Bot Settings</h3>
+      <p>Configure your Adsgram Block ID, Speed Lightning Secret Key, and bot parameters.</p>
+
+      <!-- ADSGRAM BLOCK ID -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 14px;">
+        <h4 style="color: #f59e0b; font-size: 13px; margin-bottom: 8px;">📺 Adsgram Ad Network Configuration</h4>
+        <div class="form-group">
+          <label>Adsgram Block ID (From Adsgram.ai dashboard):</label>
+          <input type="text" id="settingAdsgramBlockId" placeholder="e.g. 1234" />
+        </div>
+        <p style="font-size:11px; color:#94a3b8; margin:0;">
+          💡 When configured, user clicks on "Watch Ad" will load real Adsgram rewarded video banners.
+        </p>
       </div>
-      <p>Configure bot token, webhook, log channel, withdrawal fees, and hot wallet keys.</p>
 
-      <!-- BOT TOKEN & WEBHOOK -->
-      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
-        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">🤖 Telegram Bot & Webhook</h4>
+      <!-- SPEED BITCOIN LIGHTNING API -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 14px;">
+        <h4 style="color: #f59e0b; font-size: 13px; margin-bottom: 8px;">⚡ Speed Bitcoin Lightning API Key</h4>
+        <div class="form-group">
+          <label>Speed Secret Key (sk_live_... / sk_test_...):</label>
+          <input type="password" id="settingSpeedSecretKey" placeholder="sk_live_..." />
+        </div>
+        <p style="font-size:11px; color:#94a3b8; margin:0;">
+          🔒 Used by your server to automatically sign and dispatch instant Lightning payouts.
+        </p>
+      </div>
 
+      <!-- BOT SETTINGS -->
+      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 14px;">
+        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 8px;">🤖 Telegram Bot Settings</h4>
         <div class="form-group">
           <label>Telegram Bot Token:</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="password" id="settingBotToken" placeholder="Paste your Telegram Bot Token" style="flex: 1;" />
-            <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('settingBotToken')">👁️</button>
-          </div>
+          <input type="password" id="settingBotToken" />
         </div>
-
         <div class="form-group">
-          <label>Webhook URL (Vercel Domain):</label>
-          <input type="text" id="settingWebhookUrl" value="https://pheizubot.vercel.app/api/webhook" />
+          <label>Bot Username (Without @):</label>
+          <input type="text" id="settingBotUsername" placeholder="AdBoostEarningBot" />
         </div>
-
-        <div class="btn-row">
-          <button class="btn-purple" onclick="activateTelegramWebhook()">⚡ Set Webhook</button>
-          <button class="btn-blue" onclick="checkTelegramWebhookInfo()">🔍 Check Webhook Info</button>
-          <button class="btn-red" style="padding: 10px 14px; font-size: 12px;" onclick="removeTelegramWebhook()">❌ Delete Webhook</button>
-        </div>
-      </div>
-
-      <!-- LOG CHANNEL -->
-      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25); margin-bottom: 14px;">
-        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 6px;">📢 Log Channel Broadcast</h4>
-        <div class="form-group">
-          <label>Telegram Log Channel Username / ID:</label>
-          <input type="text" id="settingLogChannel" placeholder="@pheizu_wallet" />
-        </div>
-        <button class="btn-blue" style="padding: 8px 14px; font-size: 12px;" onclick="sendTestLogMessage()">📢 Send Test Message to Log Channel</button>
-      </div>
-
-      <!-- FEE & LIMITS -->
-      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.25); margin-bottom: 14px;">
-        <h4 style="color: #22c55e; font-size: 13px; margin-bottom: 10px;">💰 Withdrawal Fee & Limits</h4>
-
-        <div class="form-group">
-          <label>Network Fee Deducted per Withdrawal (in GRAM):</label>
-          <input type="number" id="settingWithdrawFee" step="0.0001" placeholder="0.0050" />
-        </div>
-
         <div class="form-group">
           <label>Minimum Withdrawal Points (PTS):</label>
-          <input type="number" id="settingMinWithdraw" placeholder="5000" />
+          <input type="number" id="settingMinWithdraw" placeholder="100" />
         </div>
       </div>
 
-      <!-- HOT WALLET -->
-      <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2); margin-bottom: 14px;">
-        <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 10px;">💎 Blockchain Hot Wallet Credentials</h4>
-
-        <div class="form-group">
-          <label>Hot Wallet Public Address (UQ... / EQ...):</label>
-          <input type="text" id="settingWalletAddress" placeholder="UQ..." />
-        </div>
-
-        <div class="form-group">
-          <label>Hot Wallet 24-Word Secret Phrase (Mnemonic):</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="password" id="settingMnemonic" placeholder="word1 word2 word3 ... word24" style="flex: 1;" />
-            <button type="button" class="btn-blue" style="padding: 10px 14px;" onclick="togglePasswordVisibility('settingMnemonic')">👁️</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>TonCenter / Gram API Key (Optional):</label>
-          <input type="text" id="settingTonApiKey" placeholder="Your TonCenter API Key" />
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-blue" onclick="saveSettings()">💾 Save All Configurations</button>
-        <button class="btn-green" onclick="loadConfigFromServer()">☁️ Load From Cloud</button>
-      </div>
-
-      <!-- DANGER ZONE -->
-      <div style="background: rgba(239, 68, 68, 0.08); padding: 18px; border-radius: 14px; border: 1px solid rgba(239, 68, 68, 0.4); margin-top: 24px;">
-        <h4 style="color: #ef4444; font-size: 14px; margin-bottom: 6px;">⚠️ Danger Zone: Factory Reset All Users</h4>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">
-          Permanently wipes all registered users, balances, ad statistics, and withdrawal logs.
-        </p>
-        <button class="btn-red" style="width: 100%; padding: 14px; font-size: 13px;" onclick="factoryResetDatabase()">
-          💥 Factory Reset All Users & Balances
-        </button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- MODAL: ADD USER -->
-  <div class="overlay" id="addUserModal">
-    <div class="modal-box">
-      <h3 style="margin-bottom: 12px;">➕ Add Member</h3>
-
-      <div class="form-group">
-        <label>Telegram Numeric ID:</label>
-        <input type="text" id="newUserId" placeholder="e.g. 6849201940">
-      </div>
-
-      <div class="form-group">
-        <label>First Name:</label>
-        <input type="text" id="newUserName" placeholder="e.g. Alex">
-      </div>
-
-      <div class="form-group">
-        <label>Username (Without @ or leave empty):</label>
-        <input type="text" id="newUserUsername" placeholder="e.g. alex_tg or leave blank">
-      </div>
-
-      <div class="form-group">
-        <label>Initial Balance (PTS):</label>
-        <input type="number" id="newUserBalance" placeholder="0.00" value="0.00">
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 14px;">
-        <button class="btn-green" style="flex: 1;" onclick="submitNewUser()">Save</button>
-        <button class="btn-red" style="flex: 1;" onclick="closeModal('addUserModal')">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: DIRECT BAN USER -->
-  <div class="overlay" id="directBanModal">
-    <div class="modal-box">
-      <h3 style="color:#ef4444; margin-bottom: 12px;">🚫 Ban User by Telegram ID</h3>
-      <p style="font-size:12px; color:#94a3b8; margin-bottom:12px;">
-        Enter any Telegram ID or username to instantly restrict access immediately.
-      </p>
-      <div class="form-group">
-        <label>Telegram ID or Username:</label>
-        <input type="text" id="directBanUserId" placeholder="e.g. 8960497898 or Khudaimi_official">
-      </div>
-      <div style="display: flex; gap: 10px; margin-top: 14px;">
-        <button class="btn-red" style="flex: 1;" onclick="submitDirectBan(true)">🚫 Ban</button>
-        <button class="btn-green" style="flex: 1;" onclick="submitDirectBan(false)">✅ Unban</button>
-        <button class="btn-blue" style="flex: 1;" onclick="closeModal('directBanModal')">Cancel</button>
-      </div>
+      <button class="btn-orange" style="width:100%; padding:14px;" onclick="saveSettings()">
+        💾 Save All Configurations
+      </button>
     </div>
   </div>
 
   <script>
     const MASTER_ADMIN_ID = "8960497898";
-    const API_BASE = "";
 
-    let generatedOtp = null;
-    let otpExpiresAt = 0;
-    let ALL_MEMBERS = [];
-
-    /* ================= UI HELPERS ================= */
-    function toast(msg, type = "ok", ms = 3500) {
+    function toast(msg, type = "ok") {
       const el = document.getElementById('toast');
       el.textContent = msg;
       el.className = 'toast ' + (type === 'err' ? 'err' : 'ok');
       el.style.display = 'block';
-      clearTimeout(el._t);
-      el._t = setTimeout(() => { el.style.display = 'none'; }, ms);
+      setTimeout(() => { el.style.display = 'none'; }, 3500);
     }
 
-    function togglePasswordVisibility(fieldId) {
-      const el = document.getElementById(fieldId);
-      if (el) el.type = el.type === 'password' ? 'text' : 'password';
-    }
+    let generatedOtp = null;
+    let otpExpiresAt = 0;
 
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      if (cfg.bot_token) document.getElementById('loginBotToken').value = cfg.bot_token;
-
-      if (sessionStorage.getItem('admin_logged') === 'true') {
-        showDashboard();
-      }
-    });
-
-    /* ================= OTP AUTH ================= */
     async function sendTelegramOtp() {
-      let botToken = document.getElementById('loginBotToken').value.trim();
-      if (!botToken) {
-        const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-        botToken = cfg.bot_token || "";
-      }
-      if (!botToken) return alert("❌ Please enter your Telegram Bot Token!");
-
-      const btn = document.getElementById('btnSendOtp');
-      btn.disabled = true;
-      btn.innerText = "Dispatching code to Telegram...";
+      const botToken = document.getElementById('loginBotToken').value.trim();
+      if (!botToken) return alert("Please enter Bot Token!");
 
       generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       otpExpiresAt = Date.now() + 5 * 60 * 1000;
 
       try {
-        const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             chat_id: MASTER_ADMIN_ID,
-            text: `🔐 *Admin Verification Code*\n\nYour 6-Digit OTP is: \`${generatedOtp}\`\n\n_Valid for 5 minutes._`,
+            text: `🔐 *Admin Verification Code*\n\nYour OTP is: \`${generatedOtp}\``,
             parse_mode: "Markdown"
           })
         });
-
-        const data = await tgRes.json();
+        const data = await res.json();
         if (data.ok) {
-          toast("📩 OTP sent to your Telegram!", "ok");
+          toast("📩 OTP sent to Telegram!");
           document.getElementById('stepSendOtp').style.display = 'none';
           document.getElementById('stepVerifyOtp').style.display = 'block';
-
-          const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-          cfg.bot_token = botToken;
-          localStorage.setItem('admin_cfg', JSON.stringify(cfg));
         } else {
-          toast("❌ " + (data.description || "Start the bot in Telegram first!"), "err", 6000);
+          toast("❌ " + data.description, "err");
         }
-      } catch (err) {
-        toast("❌ Network error connecting to Telegram.", "err");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "📩 Send 6-Digit OTP to Telegram";
+      } catch (e) {
+        toast("❌ Connection Error", "err");
       }
     }
 
     function verifyOtp() {
-      const enteredOtp = document.getElementById('inputOtp').value.trim();
-      if (!enteredOtp || enteredOtp.length !== 6) return toast("❌ Enter the complete 6-digit OTP!", "err");
-      if (Date.now() > otpExpiresAt) { toast("❌ OTP expired. Request a new one.", "err"); resetOtpStep(); return; }
-      if (enteredOtp === generatedOtp) {
+      const input = document.getElementById('inputOtp').value.trim();
+      if (input === generatedOtp && Date.now() < otpExpiresAt) {
         sessionStorage.setItem('admin_logged', 'true');
-        toast("✅ Verified successfully!", "ok");
         showDashboard();
       } else {
-        toast("❌ Invalid OTP!", "err");
+        toast("❌ Invalid or expired OTP", "err");
       }
     }
 
-    function resetOtpStep() {
-      document.getElementById('stepVerifyOtp').style.display = 'none';
-      document.getElementById('stepSendOtp').style.display = 'block';
-      document.getElementById('inputOtp').value = '';
-    }
-
-    /* ================= DASHBOARD ================= */
     function showDashboard() {
       document.getElementById('authBox').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
-
-      applyLocalConfigToForm();
-      refreshHotWallet();
-      loadWithdrawals();
+      loadSettings();
       loadUsers();
+      loadWithdrawals();
     }
 
-    function applyLocalConfigToForm() {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      document.getElementById('settingBotToken').value = cfg.bot_token || '';
-      document.getElementById('settingWebhookUrl').value = cfg.webhook_url || 'https://pheizubot.vercel.app/api/webhook';
-      document.getElementById('settingLogChannel').value = cfg.log_channel || '';
-      document.getElementById('settingWithdrawFee').value = cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '';
-      document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || '';
-      document.getElementById('settingWalletAddress').value = cfg.wallet_address || '';
-      document.getElementById('settingMnemonic').value = cfg.mnemonic || '';
-      document.getElementById('settingTonApiKey').value = cfg.api_key || '';
-
-      document.getElementById('dispFeeVal').innerText = (cfg.withdraw_fee !== undefined ? cfg.withdraw_fee : '0.0050') + ' GRAM';
-      document.getElementById('dispWalletAddr').innerHTML =
-        `Wallet Address: <code>${cfg.wallet_address || 'Not configured'}</code>`;
-    }
-
-    async function loadConfigFromServer() {
-      try {
-        const res = await fetch(API_BASE + '/api/webhook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_config' })
-        });
-        const data = await res.json();
-        const merged = {
-          ...JSON.parse(localStorage.getItem('admin_cfg') || '{}'),
-          withdraw_fee: data.withdraw_fee,
-          min_withdraw: data.min_withdraw,
-          wallet_address: data.wallet_address || ''
-        };
-        localStorage.setItem('admin_cfg', JSON.stringify(merged));
-        applyLocalConfigToForm();
-        refreshHotWallet();
-        toast("☁️ Config loaded from server.", "ok");
-      } catch (e) {
-        toast("❌ Failed to load config from server.", "err");
-      }
-    }
-
-    function logout() {
-      sessionStorage.removeItem('admin_logged');
-      location.reload();
-    }
-
-    function switchAdminTab(tabName) {
+    function switchAdminTab(tab) {
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('sectionWithdrawals').style.display = 'none';
       document.getElementById('sectionUsers').style.display = 'none';
       document.getElementById('sectionSettings').style.display = 'none';
 
-      if (tabName === 'withdrawals') {
+      if (tab === 'withdrawals') {
         document.getElementById('btnTabWithdrawals').classList.add('active');
         document.getElementById('sectionWithdrawals').style.display = 'block';
         loadWithdrawals();
-      } else if (tabName === 'users') {
+      } else if (tab === 'users') {
         document.getElementById('btnTabUsers').classList.add('active');
         document.getElementById('sectionUsers').style.display = 'block';
         loadUsers();
-      } else if (tabName === 'settings') {
+      } else if (tab === 'settings') {
         document.getElementById('btnTabSettings').classList.add('active');
         document.getElementById('sectionSettings').style.display = 'block';
       }
     }
 
-    async function refreshAll() {
-      refreshHotWallet();
-      await Promise.all([loadUsers(), loadWithdrawals()]);
-      toast("🔄 Refreshed.", "ok", 1800);
-    }
-
-    /* ================= HOT WALLET DEPOSIT & SEND ================= */
-    function refreshHotWallet() {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      const address = (cfg.wallet_address || '').trim();
-
-      const addrEl  = document.getElementById('hwAddressDisplay');
-      const qrEl    = document.getElementById('hwQrCode');
-      const balEl   = document.getElementById('hwBalanceDisplay');
-      const usdEl   = document.getElementById('hwBalanceUsd');
-      const expLink = document.getElementById('hwExplorerLink');
-      if (!addrEl) return; // panel not present
-
-      if (!address) {
-        addrEl.innerText = 'Not configured — set it in the Settings tab';
-        qrEl.src = '';
-        balEl.innerText = '-- TON';
-        usdEl.innerText = '--';
-        expLink.href = '#';
-        return;
-      }
-
-      addrEl.innerText = address;
-      expLink.href = `https://tonviewer.com/${address}`;
-
-      // QR: public QR generator API (wallet addresses are public anyway)
-      qrEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=${encodeURIComponent(address)}`;
-
-      // Live balance refresh
-      checkLiveBlockchainBalance();
-    }
-
-    function copyHotWalletAddr() {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      const address = (cfg.wallet_address || '').trim();
-      if (!address) return toast('❌ No wallet address configured', 'err');
-
-      const done = () => toast('📋 Wallet address copied!', 'ok');
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(address).then(done).catch(done);
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = address;
-        document.body.appendChild(ta);
-        ta.select();
-        try { document.execCommand('copy'); } catch (e) {}
-        document.body.removeChild(ta);
-        done();
-      }
-    }
-
-    async function sendFromHotWallet() {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      const to  = document.getElementById('hwSendAddress').value.trim();
-      const amt = parseFloat(document.getElementById('hwSendAmount').value);
-
-      if (!to || (!to.startsWith('UQ') && !to.startsWith('EQ'))) {
-        return toast('❌ Invalid recipient address (must start with UQ or EQ)', 'err');
-      }
-      if (isNaN(amt) || amt <= 0) {
-        return toast('❌ Enter a valid positive TON amount', 'err');
-      }
-      if (!cfg.mnemonic) {
-        return toast('❌ Hot wallet mnemonic not configured (Settings tab)', 'err');
-      }
-
-      const shortTo = `${to.slice(0, 8)}...${to.slice(-8)}`;
-      const ok = confirm(
-        `⚠️ CONFIRM ON-CHAIN SEND\n\n` +
-        `Amount: ${amt} TON\n` +
-        `To: ${shortTo}\n\n` +
-        `This is a REAL blockchain transfer and cannot be reversed.`
-      );
-      if (!ok) return;
-
-      const btn = document.getElementById('hwSendBtn');
-      const originalText = btn.innerText;
-      btn.disabled = true;
-      btn.innerText = 'Sending...';
-
+    async function loadSettings() {
       try {
-        const res = await fetch('/api/gram-service', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipient_address: to, gram_amount: amt })
-        });
-
-        let data = {};
-        try { data = await res.json(); } catch (e) {}
-
-        if (res.ok && data.status === 'success') {
-          toast(
-            `✅ Broadcast: ${amt} TON\nSeqno: ${data.data?.seqno ?? 'N/A'}`,
-            'ok', 8000
-          );
-          document.getElementById('hwSendAddress').value = '';
-          document.getElementById('hwSendAmount').value = '';
-          setTimeout(refreshHotWallet, 3000);
-        } else {
-          toast('❌ ' + (data.message || data.error || `HTTP ${res.status}`), 'err', 8000);
-        }
-      } catch (e) {
-        toast('❌ ' + e.message, 'err', 8000);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
-      }
-    }
-
-    /* ================= WITHDRAWALS ================= */
-    async function loadWithdrawals() {
-      const tbody = document.getElementById('withdrawalListBody');
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#38bdf8; padding:20px;">Loading withdrawals...</td></tr>`;
-
-      let wList = [];
-      try {
-        const res = await fetch(API_BASE + '/api/withdrawals', { method: 'GET' });
-        if (res.ok) {
-          const data = await res.json();
-          wList = Array.isArray(data) ? data : (data.withdrawals || []);
-        }
-      } catch (e) {
-        wList = JSON.parse(localStorage.getItem('admin_withdrawals') || '[]');
-      }
-
-      if (!wList.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">No withdrawal requests found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = wList.map((w, idx) => {
-        const txHash = w.tx_id || '';
-        const shortTx = txHash.length > 20 ? `${txHash.slice(0, 8)}...${txHash.slice(-8)}` : (txHash || 'Pending');
-        const shortAddr = w.wallet_address ? `${w.wallet_address.slice(0, 6)}...${w.wallet_address.slice(-6)}` : '-';
-        const st = (w.status || 'success').toLowerCase();
-        const isRealHash = txHash && !txHash.startsWith('pending') && txHash.length >= 40;
-
-        return `
-          <tr>
-            <td><code>${w.telegram_id || 'User'}</code></td>
-            <td><code style="color:#38bdf8;">${shortAddr}</code></td>
-            <td>
-              ${isRealHash ? `
-                <a href="https://tonviewer.com/transaction/${txHash}" target="_blank" style="color:#38bdf8; text-decoration:none; font-family:monospace; font-weight:700;">
-                  ${shortTx} ↗
-                </a>
-              ` : `<span style="color:#94a3b8; font-family:monospace;">${shortTx}</span>`}
-            </td>
-            <td>
-              <b>${w.points} PTS</b><br>
-              <b style="color:#22c55e;">${w.gram_amount} GRAM</b>
-            </td>
-            <td class="${st}">${st.toUpperCase()}</td>
-            <td style="color:#94a3b8; font-size:11px;">${new Date(w.created_at || Date.now()).toLocaleDateString()}</td>
-            <td>
-              <button class="btn-green" style="padding:4px 8px; font-size:11px;" onclick="approveWithdrawal(${idx})">Approve 📢</button>
-              <button class="btn-yellow" style="padding:4px 8px; font-size:11px; margin-left:2px;" onclick="rejectWithdrawal(${idx})">Reject</button>
-              <button class="btn-red" style="padding:4px 8px; font-size:11px; margin-left:2px;" onclick="deleteWithdrawal(${idx})">🗑️</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      window._W_LIST = wList;
-    }
-
-    async function approveWithdrawal(idx) {
-      const list = window._W_LIST || [];
-      const item = list[idx];
-      if (!item) return;
-      item.status = 'success';
-      try {
-        await fetch(API_BASE + '/api/withdrawals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_status', ...item })
-        });
-      } catch (e) {}
-      toast("✅ Withdrawal approved.", "ok");
-      loadWithdrawals();
-    }
-
-    async function rejectWithdrawal(idx) {
-      const list = window._W_LIST || [];
-      const item = list[idx];
-      if (!item) return;
-      item.status = 'rejected';
-      try {
-        await fetch(API_BASE + '/api/withdrawals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_status', ...item })
-        });
-      } catch (e) {}
-      toast("❌ Withdrawal rejected.", "err");
-      loadWithdrawals();
-    }
-
-    async function deleteWithdrawal(idx) {
-      const list = window._W_LIST || [];
-      const item = list[idx];
-      if (!item) return;
-      if (!confirm("Delete this withdrawal record?")) return;
-      try {
-        await fetch(API_BASE + '/api/withdrawals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', tx_id: item.tx_id })
-        });
-      } catch (e) {}
-      toast("🗑️ Deleted.", "ok");
-      loadWithdrawals();
-    }
-
-    /* ================= USERS ================= */
-    async function loadUsers() {
-      const tbody = document.getElementById('userListBody');
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#38bdf8; padding:20px;">Fetching all registered members...</td></tr>`;
-
-      let members = [];
-      try {
-        const res = await fetch(API_BASE + '/api/admin-users', { method: 'GET' });
-        if (res.ok) {
-          const data = await res.json();
-          members = Array.isArray(data) ? data : (data.users || []);
-        }
-      } catch (e) {
-        toast("⚠️ Could not load users from server.", "err");
-      }
-
-      let bannedList = [];
-      try {
-        const banRes = await fetch(API_BASE + '/api/webhook', {
+        const res = await fetch('/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_config' })
         });
-        const banData = await banRes.json();
-        bannedList = banData.banned_users || [];
+        const cfg = await res.json();
+        document.getElementById('settingAdsgramBlockId').value = cfg.adsgram_block_id || '';
+        document.getElementById('settingSpeedSecretKey').value = cfg.speed_secret_key || '';
+        document.getElementById('settingBotToken').value = cfg.bot_token || '';
+        document.getElementById('settingBotUsername').value = cfg.bot_username || '';
+        document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 100;
       } catch (e) {}
-
-      members.forEach(m => {
-        m.is_banned = bannedList.includes(String(m.telegram_id));
-      });
-
-      ALL_MEMBERS = members;
-      document.getElementById('dispTotalUsersCount').innerText = members.length;
-      document.getElementById('dispTotalInvitedCount').innerText =
-        members.reduce((sum, u) => sum + Number(u.invited_count || 0), 0);
-
-      renderUserTable(ALL_MEMBERS);
     }
 
-    function renderUserTable(users) {
-      const tbody = document.getElementById('userListBody');
-      if (!users.length) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#94a3b8; padding:20px;">No registered members found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = users.map((u, idx) => {
-        const isBanned = Boolean(u.is_banned);
-        const invitedCount = u.invited_count !== undefined ? u.invited_count : 0;
-        const refBonus = u.referral_bonus !== undefined ? Number(u.referral_bonus).toFixed(2) : "0.00";
-
-        const usernameDisplay = (u.username && u.username.trim() !== "")
-          ? `<span class="has-username-badge">@${u.username.replace('@','')}</span>`
-          : `<span class="no-username-badge">None</span>`;
-
-        return `
-          <tr>
-            <td><code style="color:#38bdf8; font-weight:800; font-size:13px;">${u.telegram_id}</code></td>
-            <td><b style="color:#fff; font-size:13.5px;">${u.first_name || u.name || 'Member'}</b></td>
-            <td>${usernameDisplay}</td>
-            <td><b style="color:#38bdf8; font-size:14px;">${Number(u.balance || 0).toFixed(2)} PTS</b></td>
-            <td><b style="color:#22c55e;">${u.today_ads || 0}</b></td>
-            <td>${u.ads_watched || 0}</td>
-            <td>
-              <b style="color:#facc15; font-size:13px;">👥 ${invitedCount}</b>
-              <div style="font-size:9.5px; color:#94a3b8;">(${refBonus} PTS)</div>
-            </td>
-            <td>
-              <span class="${isBanned ? 'banned' : 'active-user'}">
-                ${isBanned ? '⛔ BANNED' : '● ACTIVE'}
-              </span>
-            </td>
-            <td>
-              <div style="display:flex; gap:3px;">
-                <button class="btn-blue" style="padding:4px 8px; font-size:10.5px;" onclick="editUserBal(${idx})">PTS</button>
-                <button class="${isBanned ? 'btn-green' : 'btn-red'}" style="padding:4px 8px; font-size:10.5px;" onclick="toggleBan(${idx})">
-                  ${isBanned ? 'Unban' : 'Ban'}
-                </button>
-                <button class="btn-red" style="padding:4px 8px; font-size:10.5px;" onclick="delUser(${idx})">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function filterUsers() {
-      const q = document.getElementById('userSearchInput').value.toLowerCase().trim();
-      const filtered = ALL_MEMBERS.filter(u =>
-        String(u.telegram_id).toLowerCase().includes(q) ||
-        (u.first_name || '').toLowerCase().includes(q) ||
-        (u.username || '').toLowerCase().includes(q)
-      );
-      renderUserTable(filtered);
-    }
-
-    /* ================= BAN ================= */
-    async function toggleBan(idx) {
-      const u = ALL_MEMBERS[idx];
-      if (!u) return;
-
-      const newBanState = !Boolean(u.is_banned);
-      u.is_banned = newBanState;
-
-      try {
-        const res = await fetch(API_BASE + '/api/webhook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'ban_user',
-            telegram_id: String(u.telegram_id),
-            is_banned: newBanState
-          })
-        });
-        const data = await res.json();
-        if (data.status !== 'success') throw new Error(data.message || 'Server rejected');
-      } catch (e) {
-        toast("⚠️ Ban save failed: " + e.message, "err");
-        u.is_banned = !newBanState;
-        return;
-      }
-
-      renderUserTable(ALL_MEMBERS);
-      toast(`${newBanState ? '🚫 BANNED' : '✅ UNBANNED'}: ${u.first_name || u.telegram_id}`, newBanState ? 'err' : 'ok');
-    }
-
-    function openDirectBanModal() {
-      document.getElementById('directBanUserId').value = '';
-      document.getElementById('directBanModal').style.display = 'flex';
-    }
-
-    async function submitDirectBan(banStatus) {
-      const rawInput = document.getElementById('directBanUserId').value.trim();
-      if (!rawInput) return alert("❌ Telegram ID or username required!");
-      const cleanInput = rawInput.replace('@', '');
-
-      try {
-        const res = await fetch(API_BASE + '/api/webhook', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'ban_user',
-            telegram_id: cleanInput,
-            is_banned: banStatus
-          })
-        });
-        const data = await res.json();
-        if (data.status !== 'success') throw new Error(data.message || 'Failed');
-      } catch (e) {
-        return toast("⚠️ " + e.message, "err");
-      }
-
-      closeModal('directBanModal');
-      await loadUsers();
-      toast(`User ${cleanInput} is now ${banStatus ? 'BANNED' : 'ACTIVE'}!`, banStatus ? 'err' : 'ok');
-    }
-
-    /* ================= USER EDITS ================= */
-    async function editUserBal(idx) {
-      const u = ALL_MEMBERS[idx];
-      const newBal = prompt(`Enter new balance (PTS) for ${u.first_name || u.telegram_id}:`, u.balance || 0);
-      if (newBal === null || isNaN(newBal)) return;
-
-      try {
-        await fetch(API_BASE + '/api/get-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            telegram_id: u.telegram_id,
-            set_balance: parseFloat(newBal)
-          })
-        });
-        u.balance = parseFloat(newBal);
-        toast("✅ Balance updated.", "ok");
-        renderUserTable(ALL_MEMBERS);
-      } catch (e) {
-        toast("❌ Failed to save balance.", "err");
-      }
-    }
-
-    async function delUser(idx) {
-      const u = ALL_MEMBERS[idx];
-      if (!u) return;
-      if (!confirm(`Remove member ${u.first_name || u.telegram_id}?`)) return;
-
-      try {
-        await fetch(API_BASE + '/api/admin-users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', telegram_id: u.telegram_id })
-        });
-        ALL_MEMBERS.splice(idx, 1);
-        renderUserTable(ALL_MEMBERS);
-        toast("🗑️ Member removed.", "ok");
-      } catch (e) {
-        toast("❌ Failed to remove member.", "err");
-      }
-    }
-
-    function openAddUserModal() {
-      document.getElementById('newUserId').value = '';
-      document.getElementById('newUserName').value = '';
-      document.getElementById('newUserUsername').value = '';
-      document.getElementById('newUserBalance').value = '0.00';
-      document.getElementById('addUserModal').style.display = 'flex';
-    }
-
-    async function submitNewUser() {
-      const tid = document.getElementById('newUserId').value.trim();
-      const name = document.getElementById('newUserName').value.trim();
-      const username = document.getElementById('newUserUsername').value.trim().replace('@','');
-      const bal = document.getElementById('newUserBalance').value.trim();
-
-      if (!tid) return alert('Telegram Numeric ID is required!');
-
-      try {
-        await fetch(API_BASE + '/api/admin-users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'create',
-            telegram_id: tid,
-            first_name: name || 'Member',
-            username,
-            balance: parseFloat(bal) || 0
-          })
-        });
-        closeModal('addUserModal');
-        await loadUsers();
-        toast("✅ Member added.", "ok");
-      } catch (e) {
-        toast("❌ Failed to add member.", "err");
-      }
-    }
-
-    /* ================= FACTORY RESET ================= */
-    async function factoryResetDatabase() {
-      if (!confirm("⚠️ Delete ALL users, balances, and stats?")) return;
-      const phrase = prompt("Type 'RESET_ALL' to confirm:");
-      if (phrase !== "RESET_ALL") return toast("❌ Reset canceled.", "err");
-
-      try {
-        await fetch(API_BASE + '/api/admin-users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'factory_reset' })
-        });
-        toast("🎉 Factory reset complete.", "ok");
-        setTimeout(() => location.reload(), 1200);
-      } catch (e) {
-        toast("❌ Reset failed: " + e.message, "err");
-      }
-    }
-
-    /* ================= BLOCKCHAIN ================= */
-    async function checkLiveBlockchainBalance() {
-      const cfg = JSON.parse(localStorage.getItem('admin_cfg') || '{}');
-      const address = (cfg.wallet_address || '').trim();
-      const apiKey = cfg.api_key;
-
-      const hwBal = document.getElementById('hwBalanceDisplay');
-      const hwUsd = document.getElementById('hwBalanceUsd');
-
-      if (!address) {
-        document.getElementById('dispTonBal').innerText = '0.000 TON';
-        if (hwBal) hwBal.innerText = '-- TON';
-        if (hwUsd) hwUsd.innerText = '--';
-        return;
-      }
-
-      try {
-        const headers = apiKey ? { 'X-API-Key': apiKey } : {};
-        const res = await fetch(
-          `https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(address)}`,
-          { headers }
-        );
-        const data = await res.json();
-
-        if (data.ok) {
-          const balTon = parseInt(data.result, 10) / 1e9;
-          const balStr = balTon.toFixed(4);
-
-          document.getElementById('dispTonBal').innerText = `${balStr} TON`;
-          if (hwBal) hwBal.innerText = `${balStr} TON`;
-          if (hwUsd) hwUsd.innerText = (balTon * 5.5).toFixed(2); // rough USD estimate
-        } else {
-          document.getElementById('dispTonBal').innerText = 'API err';
-          if (hwBal) hwBal.innerText = 'API err';
-        }
-      } catch (e) {
-        document.getElementById('dispTonBal').innerText = 'Network err';
-        if (hwBal) hwBal.innerText = 'Network err';
-      }
-    }
-
-    /* ================= WEBHOOK MGMT ================= */
-    async function activateTelegramWebhook() {
-      const token = document.getElementById('settingBotToken').value.trim();
-      const webhookUrl = document.getElementById('settingWebhookUrl').value.trim();
-      if (!token || !webhookUrl) return alert("❌ Bot Token and Webhook URL required!");
-
-      try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
-        const data = await res.json();
-        toast(data.ok ? "✅ Webhook connected!" : "❌ " + data.description, data.ok ? "ok" : "err");
-      } catch (e) {
-        toast("❌ Failed to set webhook.", "err");
-      }
-    }
-
-    async function checkTelegramWebhookInfo() {
-      const token = document.getElementById('settingBotToken').value.trim();
-      if (!token) return alert("❌ Bot Token required!");
-
-      try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`);
-        const data = await res.json();
-        if (data.ok) {
-          const info = data.result;
-          toast(`URL: ${info.url || 'Not set'} | Pending: ${info.pending_update_count} | Last error: ${info.last_error_message || 'None'}`, info.url ? "ok" : "err", 8000);
-        } else {
-          toast("❌ " + data.description, "err");
-        }
-      } catch (e) {
-        toast("❌ Network error.", "err");
-      }
-    }
-
-    async function removeTelegramWebhook() {
-      const token = document.getElementById('settingBotToken').value.trim();
-      if (!token) return alert("❌ Bot Token required!");
-      if (!confirm("Delete the webhook? The bot will stop responding.")) return;
-
-      try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
-        const data = await res.json();
-        toast(data.ok ? "✅ Webhook deleted." : "❌ " + data.description, data.ok ? "ok" : "err");
-      } catch (e) {
-        toast("❌ Failed.", "err");
-      }
-    }
-
-    /* ================= TEST LOG CHANNEL ================= */
-    async function sendTestLogMessage() {
-      const channel = document.getElementById('settingLogChannel').value.trim();
-      const token = document.getElementById('settingBotToken').value.trim();
-      if (!token || !channel) return alert("❌ Bot token and log channel required!");
-
-      try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: channel,
-            text: `⚡ *Gram Log Channel Connected!*\n\nChannel \`${channel}\` is ready for automated receipts.`,
-            parse_mode: "Markdown"
-          })
-        });
-        const data = await res.json();
-        toast(data.ok ? `✅ Test posted to ${channel}` : `❌ ${data.description}`, data.ok ? "ok" : "err", 7000);
-      } catch (e) {
-        toast("❌ Network error.", "err");
-      }
-    }
-
-    /* ================= SAVE SETTINGS ================= */
     async function saveSettings() {
+      const adsgram_block_id = document.getElementById('settingAdsgramBlockId').value.trim();
+      const speed_secret_key = document.getElementById('settingSpeedSecretKey').value.trim();
       const bot_token = document.getElementById('settingBotToken').value.trim();
-      const webhook_url = document.getElementById('settingWebhookUrl').value.trim();
-      const log_channel = document.getElementById('settingLogChannel').value.trim();
-      const withdraw_fee = parseFloat(document.getElementById('settingWithdrawFee').value);
-      const min_withdraw = Number(document.getElementById('settingMinWithdraw').value);
-      const wallet_address = document.getElementById('settingWalletAddress').value.trim();
-      const mnemonic = document.getElementById('settingMnemonic').value.trim();
-      const api_key = document.getElementById('settingTonApiKey').value.trim();
-
-      if (!bot_token) {
-        toast("❌ Bot token is required!", "err");
-        return;
-      }
-
-      if (!wallet_address || !mnemonic) {
-        if (!confirm("⚠️ Wallet address or mnemonic missing. Real withdrawals won't work. Save anyway?")) return;
-      }
-
-      if (mnemonic) {
-        const words = mnemonic.split(/\s+/).filter(Boolean);
-        if (words.length !== 24 && words.length !== 12) {
-          if (!confirm(`⚠️ Mnemonic has ${words.length} words, should be 24. Save anyway?`)) return;
-        }
-      }
+      const bot_username = document.getElementById('settingBotUsername').value.trim().replace('@', '');
+      const min_withdraw = parseInt(document.getElementById('settingMinWithdraw').value, 10) || 100;
 
       try {
-        const res = await fetch(API_BASE + '/api/webhook', {
+        const res = await fetch('/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'save_admin_config',
+            adsgram_block_id,
+            speed_secret_key,
             bot_token,
-            log_channel,
-            withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
-            min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
-            wallet_address,
-            mnemonic,
-            api_key
+            bot_username,
+            min_withdraw
           })
         });
-        const data = await res.json();
-        if (data.status !== 'success') {
-          toast("⚠️ Cloud save failed: " + (data.message || 'Unknown error'), "err", 7000);
-        } else {
-          toast("☁️ Synced to Firestore.", "ok");
-        }
+        toast("✅ Configuration saved!");
       } catch (e) {
-        toast("⚠️ Network error — saved locally only.", "err", 6000);
+        toast("❌ Failed to save configuration", "err");
       }
+    }
 
-      const cfg = {
-        bot_token, webhook_url, log_channel,
-        withdraw_fee: isNaN(withdraw_fee) ? 0.005 : withdraw_fee,
-        min_withdraw: isNaN(min_withdraw) ? 5000 : min_withdraw,
-        wallet_address, mnemonic, api_key
-      };
-      localStorage.setItem('admin_cfg', JSON.stringify(cfg));
+    async function loadUsers() {
+      const tbody = document.getElementById('userListBody');
+      try {
+        const res = await fetch('/api/admin-users');
+        const data = await res.json();
+        const users = Array.isArray(data) ? data : (data.users || []);
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td><code>${u.telegram_id}</code></td>
+            <td>${u.first_name || 'Member'}</td>
+            <td>@${u.username || 'None'}</td>
+            <td><b>${Number(u.balance || 0).toFixed(2)} PTS</b></td>
+            <td>${u.today_ads || 0}</td>
+            <td>${u.ads_watched || 0}</td>
+            <td style="color:#22c55e;">● Active</td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
 
-      applyLocalConfigToForm();
-      refreshHotWallet();
-      toast("✅ Configuration saved!", "ok");
+    async function loadWithdrawals() {
+      const tbody = document.getElementById('withdrawalListBody');
+      try {
+        const res = await fetch('/api/withdrawals');
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.withdrawals || []);
+        tbody.innerHTML = list.map(w => `
+          <tr>
+            <td><code>${w.telegram_id}</code></td>
+            <td style="color:#f59e0b;">${w.wallet_address}</td>
+            <td><code>${(w.tx_id || '').slice(0, 16)}...</code></td>
+            <td><b>${w.sats_amount || 0} SATS</b> (${w.points} PTS)</td>
+            <td style="color:#22c55e;">${(w.status || 'success').toUpperCase()}</td>
+            <td>${new Date(w.created_at || Date.now()).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+      } catch (e) {}
+    }
+
+    function logout() {
+      sessionStorage.removeItem('admin_logged');
+      location.reload();
     }
   </script>
 </body>
