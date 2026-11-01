@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Free Gram Token</title>
 
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://libtl.com/sdk.js" data-zone="11862560" data-sdk="show_11862560"></script>
+  <!-- Adsgram SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
   <style>
     :root {
@@ -974,6 +976,10 @@
     let minPointsRequired = 5000;
     const PTS_TO_GRAM_RATE = 0.00001;
 
+    // Adsgram Controller & Block ID
+    let adsgramBlockId = "";
+    let adsgramController = null;
+
     window.CURRENT_FRIENDS = [];
 
     function applyAvatar(url) {
@@ -1022,8 +1028,19 @@
     }
 
     /* ============================================================
-       LIVE ADMIN CONFIG
+       LIVE ADMIN CONFIG & ADSGRAM INIT
        ============================================================ */
+    function initAdsgram(blockId) {
+      if (!blockId) return;
+      try {
+        if (window.Adsgram) {
+          adsgramController = window.Adsgram.init({ blockId: String(blockId).trim() });
+        }
+      } catch (e) {
+        console.warn("Adsgram initialization error:", e);
+      }
+    }
+
     async function loadDynamicAdminConfig() {
       try {
         const cfgRes = await fetch('/api/webhook', {
@@ -1038,6 +1055,10 @@
           }
           if (cfg.min_withdraw !== undefined && !isNaN(parseInt(cfg.min_withdraw, 10))) {
             minPointsRequired = parseInt(cfg.min_withdraw, 10);
+          }
+          if (cfg.adsgram_block_id) {
+            adsgramBlockId = String(cfg.adsgram_block_id).trim();
+            initAdsgram(adsgramBlockId);
           }
           if (cfg.banned_users && Array.isArray(cfg.banned_users)) {
             const uid = String(user.id);
@@ -1164,24 +1185,37 @@
       btn.innerText = "▶ Watch Ad (+10.00 PTS)";
     }
 
+    /* ============================================================
+       ADSGRAM TRIGGER
+       ============================================================ */
     function triggerAd() {
       if (isUserBanned) return triggerBanModal();
       const btn = document.getElementById('adBtn');
       btn.innerText = "Loading ad...";
       btn.disabled = true;
 
-      try {
-        if (typeof window.show_11862560 === 'function') {
-          const res = window.show_11862560();
-          if (res && typeof res.then === 'function') {
-            res.then(() => giveReward()).catch(() => runFallbackAd());
-          } else {
+      // Lazy re-check controller if block ID is present
+      if (!adsgramController && window.Adsgram && adsgramBlockId) {
+        initAdsgram(adsgramBlockId);
+      }
+
+      if (adsgramController) {
+        adsgramController.show().then((result) => {
+          // User completed the ad reward
+          giveReward();
+        }).catch((err) => {
+          console.warn("Adsgram returned error or user dismissed:", err);
+          btn.disabled = false;
+          btn.innerText = "▶ Watch Ad (+10.00 PTS)";
+          // If ad failed to load, fallback gracefully
+          if (err && (err.state === 'load_failed' || err.error)) {
             runFallbackAd();
+          } else {
+            alert("⚠️ Please watch the video ad until the end to claim your 10.00 PTS reward.");
           }
-        } else {
-          runFallbackAd();
-        }
-      } catch (err) {
+        });
+      } else {
+        // Fallback ad countdown if Adsgram is not yet configured or unavailable
         runFallbackAd();
       }
     }
@@ -1480,7 +1514,7 @@
     }
 
     function shareInvite() {
-      const link = document.getElementById('inviteLinkInput').value;
+      const link = document.getElementById('inviteLinkInput');
       if (!link || link === "Referral link unavailable") {
         return alert("Referral link not ready yet.");
       }
