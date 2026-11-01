@@ -14,6 +14,7 @@
     label { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
     input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 14px; outline: none; }
     input:focus { border-color: #f59e0b; }
+    .code-input { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; letter-spacing: 0.5px; color: #38bdf8; }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     button { padding: 12px 16px; border-radius: 10px; border: none; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.1s ease; }
     button:active { transform: scale(0.98); }
@@ -144,17 +145,17 @@
     <!-- SETTINGS -->
     <div id="sectionSettings" class="card" style="display: none;">
       <h3>⚙️ Adsgram, Speed API & Bot Settings</h3>
-      <p>Configure your Adsgram Block ID, Speed Lightning Secret Key, and bot parameters.</p>
+      <p>Configure your settings below. All keys and tokens stay visible once saved.</p>
 
       <!-- ADSGRAM BLOCK ID -->
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 14px;">
         <h4 style="color: #f59e0b; font-size: 13px; margin-bottom: 8px;">📺 Adsgram Ad Network Configuration</h4>
         <div class="form-group">
           <label>Adsgram Block ID (From Adsgram.ai dashboard):</label>
-          <input type="text" id="settingAdsgramBlockId" placeholder="e.g. 1234" />
+          <input type="text" id="settingAdsgramBlockId" class="code-input" placeholder="e.g. 1234" />
         </div>
         <p style="font-size:11px; color:#94a3b8; margin:0;">
-          💡 When configured, user clicks on "Watch Ad" will load real Adsgram rewarded video banners.
+          💡 Shown in plain text and permanently remembered once saved.
         </p>
       </div>
 
@@ -162,11 +163,11 @@
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3); margin-bottom: 14px;">
         <h4 style="color: #f59e0b; font-size: 13px; margin-bottom: 8px;">⚡ Speed Bitcoin Lightning API Key</h4>
         <div class="form-group">
-          <label>Speed Secret Key (sk_live_... / sk_test_...):</label>
-          <input type="password" id="settingSpeedSecretKey" placeholder="sk_live_..." />
+          <label>Speed Secret Key (Visible):</label>
+          <input type="text" id="settingSpeedSecretKey" class="code-input" placeholder="sk_live_... or sk_test_..." />
         </div>
         <p style="font-size:11px; color:#94a3b8; margin:0;">
-          🔒 Used by your server to automatically sign and dispatch instant Lightning payouts.
+          🔓 Plain text key. Not hidden or masked.
         </p>
       </div>
 
@@ -174,8 +175,8 @@
       <div style="background: rgba(0,0,0,0.35); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 14px;">
         <h4 style="color: #38bdf8; font-size: 13px; margin-bottom: 8px;">🤖 Telegram Bot Settings</h4>
         <div class="form-group">
-          <label>Telegram Bot Token:</label>
-          <input type="password" id="settingBotToken" />
+          <label>Telegram Bot Token (Visible):</label>
+          <input type="text" id="settingBotToken" class="code-input" placeholder="e.g. 123456789:ABCDefghIJKLmnOPQRstuvw" />
         </div>
         <div class="form-group">
           <label>Bot Username (Without @):</label>
@@ -188,14 +189,14 @@
       </div>
 
       <button class="btn-orange" style="width:100%; padding:14px;" onclick="saveSettings()">
-        💾 Save All Configurations
+        💾 Save All Configurations (Keep Visible)
       </button>
     </div>
   </div>
 
   <script>
     const MASTER_ADMIN_ID = "8960497898";
-    const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 Days in milliseconds
+    const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 Days
 
     function toast(msg, type = "ok") {
       const el = document.getElementById('toast');
@@ -224,7 +225,6 @@
           }
           return true;
         } else {
-          // Session expired
           localStorage.removeItem('admin_session_expires');
           localStorage.removeItem('admin_saved_chat_id');
         }
@@ -251,8 +251,15 @@
       btn.innerText = "⏳ Requesting OTP...";
 
       try {
-        // Fetch the server-configured bot token
         let botToken = "";
+
+        // Check local cache first so it works seamlessly without hiding
+        const cached = JSON.parse(localStorage.getItem('admin_saved_config') || '{}');
+        if (cached.bot_token) {
+          botToken = cached.bot_token;
+        }
+
+        // Also attempt to get latest from server
         try {
           const res = await fetch('/api/webhook', {
             method: 'POST',
@@ -261,7 +268,7 @@
           });
           if (res.ok) {
             const cfg = await res.json();
-            botToken = cfg.bot_token || "";
+            if (cfg.bot_token) botToken = cfg.bot_token;
           }
         } catch (e) {}
 
@@ -269,13 +276,12 @@
         otpExpiresAt = Date.now() + 5 * 60 * 1000;
 
         if (botToken) {
-          // Send OTP directly using the configured Bot Token
           const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chat_id: chatId,
-              text: `🔐 *Admin Verification Code*\n\nYour OTP is: \`${generatedOtp}\`\n\n_Valid for 5 minutes. Approving this login creates a 30-day session._`,
+              text: `🔐 *Admin Verification Code*\n\nYour OTP is: \`${generatedOtp}\`\n\n_Valid for 5 minutes. Logging in grants 30 days active access._`,
               parse_mode: "Markdown"
             })
           });
@@ -288,9 +294,9 @@
             toast("❌ Telegram Error: " + data.description, "err");
           }
         } else {
-          // Fallback if Bot Token is not yet set in settings on fresh deploy
+          // If no token saved yet, allow Master Admin to enter directly to configure it
           const proceed = confirm(
-            "⚠️ Bot Token is not yet saved in settings.\nWould you like to grant 30-day Admin Access to configure it now?"
+            "⚠️ Bot Token is not configured yet.\nGrant 30-day Admin Access to configure it now?"
           );
           if (proceed) {
             create30DaysSession(chatId);
@@ -352,19 +358,40 @@
       }
     }
 
+    // ================= LOAD & DISPLAY SETTINGS (NEVER HIDE) =================
     async function loadSettings() {
+      // 1. Immediately populate from local cache so values never hide/flicker
+      const cached = JSON.parse(localStorage.getItem('admin_saved_config') || '{}');
+      if (cached.adsgram_block_id !== undefined) document.getElementById('settingAdsgramBlockId').value = cached.adsgram_block_id;
+      if (cached.speed_secret_key !== undefined) document.getElementById('settingSpeedSecretKey').value = cached.speed_secret_key;
+      if (cached.bot_token !== undefined) document.getElementById('settingBotToken').value = cached.bot_token;
+      if (cached.bot_username !== undefined) document.getElementById('settingBotUsername').value = cached.bot_username;
+      if (cached.min_withdraw !== undefined) document.getElementById('settingMinWithdraw').value = cached.min_withdraw;
+
+      // 2. Fetch the latest server config and keep them visible
       try {
         const res = await fetch('/api/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'get_config' })
         });
-        const cfg = await res.json();
-        document.getElementById('settingAdsgramBlockId').value = cfg.adsgram_block_id || '';
-        document.getElementById('settingSpeedSecretKey').value = cfg.speed_secret_key || '';
-        document.getElementById('settingBotToken').value = cfg.bot_token || '';
-        document.getElementById('settingBotUsername').value = cfg.bot_username || '';
-        document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 100;
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.adsgram_block_id !== undefined) document.getElementById('settingAdsgramBlockId').value = cfg.adsgram_block_id || '';
+          if (cfg.speed_secret_key !== undefined) document.getElementById('settingSpeedSecretKey').value = cfg.speed_secret_key || '';
+          if (cfg.bot_token !== undefined) document.getElementById('settingBotToken').value = cfg.bot_token || '';
+          if (cfg.bot_username !== undefined) document.getElementById('settingBotUsername').value = cfg.bot_username || '';
+          if (cfg.min_withdraw !== undefined) document.getElementById('settingMinWithdraw').value = cfg.min_withdraw || 100;
+
+          // Save synced values so they are always visible in plain text
+          localStorage.setItem('admin_saved_config', JSON.stringify({
+            adsgram_block_id: cfg.adsgram_block_id || cached.adsgram_block_id || '',
+            speed_secret_key: cfg.speed_secret_key || cached.speed_secret_key || '',
+            bot_token: cfg.bot_token || cached.bot_token || '',
+            bot_username: cfg.bot_username || cached.bot_username || '',
+            min_withdraw: cfg.min_withdraw || cached.min_withdraw || 100
+          }));
+        }
       } catch (e) {}
     }
 
@@ -374,6 +401,15 @@
       const bot_token = document.getElementById('settingBotToken').value.trim();
       const bot_username = document.getElementById('settingBotUsername').value.trim().replace('@', '');
       const min_withdraw = parseInt(document.getElementById('settingMinWithdraw').value, 10) || 100;
+
+      // Store in localStorage immediately so it is permanently visible
+      localStorage.setItem('admin_saved_config', JSON.stringify({
+        adsgram_block_id,
+        speed_secret_key,
+        bot_token,
+        bot_username,
+        min_withdraw
+      }));
 
       try {
         const res = await fetch('/api/webhook', {
@@ -388,9 +424,9 @@
             min_withdraw
           })
         });
-        toast("✅ Configuration saved!");
+        toast("✅ Configurations saved! All keys stay visible.");
       } catch (e) {
-        toast("❌ Failed to save configuration", "err");
+        toast("⚠️ Saved locally! Note: Server sync failed.", "err");
       }
     }
 
