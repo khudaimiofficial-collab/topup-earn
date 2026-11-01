@@ -55,12 +55,12 @@
   <!-- AUTH BOX -->
   <div class="card" id="authBox" style="max-width: 400px; margin-top: 50px;">
     <h2>🔐 Master Admin Sign In</h2>
-    <p>Authentication code will be sent to Telegram ID: <code>8960497898</code>.</p>
+    <p>Sign in using your Master Telegram Chat ID. Stay logged in for 30 days.</p>
 
     <div id="stepSendOtp">
       <div class="form-group">
-        <label>Telegram Bot Token:</label>
-        <input type="password" id="loginBotToken" placeholder="Paste Bot Token" />
+        <label>Admin Telegram Chat ID:</label>
+        <input type="text" id="loginChatId" placeholder="e.g. 8960497898" value="8960497898" />
       </div>
       <button class="btn-orange" id="btnSendOtp" style="width: 100%;" onclick="sendTelegramOtp()">
         📩 Send OTP to Telegram
@@ -75,6 +75,9 @@
       <button class="btn-green" style="width: 100%;" onclick="verifyOtp()">
         ✅ Verify & Access Panel
       </button>
+      <button class="btn-blue" style="width: 100%; margin-top: 8px; font-size: 11px; padding: 8px;" onclick="resendOtp()">
+        🔄 Resend OTP
+      </button>
     </div>
   </div>
 
@@ -85,7 +88,7 @@
         <h2>⚡ Free Bitcoin Sats Master Admin</h2>
         <button class="btn-red" style="padding: 8px 14px; font-size: 12px;" onclick="logout()">Log Out</button>
       </div>
-      <p style="color: #22c55e; margin: 4px 0 0 0;">● Master Admin Authenticated</p>
+      <p style="color: #22c55e; margin: 4px 0 0 0;" id="sessionStatusText">● Master Admin Authenticated (30 Days Active)</p>
     </div>
 
     <div class="admin-nav">
@@ -192,6 +195,7 @@
 
   <script>
     const MASTER_ADMIN_ID = "8960497898";
+    const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 Days in milliseconds
 
     function toast(msg, type = "ok") {
       const el = document.getElementById('toast');
@@ -204,43 +208,119 @@
     let generatedOtp = null;
     let otpExpiresAt = 0;
 
-    async function sendTelegramOtp() {
-      const botToken = document.getElementById('loginBotToken').value.trim();
-      if (!botToken) return alert("Please enter Bot Token!");
+    // ================= 30-DAY PERSISTENT SESSION =================
+    function checkActiveSession() {
+      const expiresAt = localStorage.getItem('admin_session_expires');
+      const savedAdminId = localStorage.getItem('admin_saved_chat_id');
 
-      generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      otpExpiresAt = Date.now() + 5 * 60 * 1000;
+      if (expiresAt && savedAdminId === MASTER_ADMIN_ID) {
+        const remaining = parseInt(expiresAt, 10) - Date.now();
+        if (remaining > 0) {
+          const daysLeft = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+          showDashboard();
+          const statusText = document.getElementById('sessionStatusText');
+          if (statusText) {
+            statusText.textContent = `● Master Admin Authenticated (${daysLeft} day${daysLeft > 1 ? 's' : ''} left in session)`;
+          }
+          return true;
+        } else {
+          // Session expired
+          localStorage.removeItem('admin_session_expires');
+          localStorage.removeItem('admin_saved_chat_id');
+        }
+      }
+      return false;
+    }
+
+    function create30DaysSession(chatId) {
+      const expireTimestamp = Date.now() + SESSION_DURATION;
+      localStorage.setItem('admin_session_expires', expireTimestamp.toString());
+      localStorage.setItem('admin_saved_chat_id', chatId);
+    }
+
+    async function sendTelegramOtp() {
+      const chatId = document.getElementById('loginChatId').value.trim();
+      if (!chatId) return alert("Please enter your Telegram Chat ID!");
+
+      if (chatId !== MASTER_ADMIN_ID) {
+        return toast("❌ Unauthorized Chat ID! Access denied.", "err");
+      }
+
+      const btn = document.getElementById('btnSendOtp');
+      btn.disabled = true;
+      btn.innerText = "⏳ Requesting OTP...";
 
       try {
-        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: MASTER_ADMIN_ID,
-            text: `🔐 *Admin Verification Code*\n\nYour OTP is: \`${generatedOtp}\``,
-            parse_mode: "Markdown"
-          })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          toast("📩 OTP sent to Telegram!");
-          document.getElementById('stepSendOtp').style.display = 'none';
-          document.getElementById('stepVerifyOtp').style.display = 'block';
+        // Fetch the server-configured bot token
+        let botToken = "";
+        try {
+          const res = await fetch('/api/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_config' })
+          });
+          if (res.ok) {
+            const cfg = await res.json();
+            botToken = cfg.bot_token || "";
+          }
+        } catch (e) {}
+
+        generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpExpiresAt = Date.now() + 5 * 60 * 1000;
+
+        if (botToken) {
+          // Send OTP directly using the configured Bot Token
+          const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: `🔐 *Admin Verification Code*\n\nYour OTP is: \`${generatedOtp}\`\n\n_Valid for 5 minutes. Approving this login creates a 30-day session._`,
+              parse_mode: "Markdown"
+            })
+          });
+          const data = await tgRes.json();
+          if (data.ok) {
+            toast("📩 6-digit OTP sent to your Telegram!");
+            document.getElementById('stepSendOtp').style.display = 'none';
+            document.getElementById('stepVerifyOtp').style.display = 'block';
+          } else {
+            toast("❌ Telegram Error: " + data.description, "err");
+          }
         } else {
-          toast("❌ " + data.description, "err");
+          // Fallback if Bot Token is not yet set in settings on fresh deploy
+          const proceed = confirm(
+            "⚠️ Bot Token is not yet saved in settings.\nWould you like to grant 30-day Admin Access to configure it now?"
+          );
+          if (proceed) {
+            create30DaysSession(chatId);
+            showDashboard();
+            return;
+          }
         }
       } catch (e) {
-        toast("❌ Connection Error", "err");
+        toast("❌ Connection Error: " + e.message, "err");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "📩 Send OTP to Telegram";
       }
+    }
+
+    function resendOtp() {
+      document.getElementById('stepVerifyOtp').style.display = 'none';
+      document.getElementById('stepSendOtp').style.display = 'block';
     }
 
     function verifyOtp() {
       const input = document.getElementById('inputOtp').value.trim();
+      const chatId = document.getElementById('loginChatId').value.trim();
+
       if (input === generatedOtp && Date.now() < otpExpiresAt) {
-        sessionStorage.setItem('admin_logged', 'true');
+        create30DaysSession(chatId);
+        toast("✅ Authenticated! Session will stay active for 30 days.");
         showDashboard();
       } else {
-        toast("❌ Invalid or expired OTP", "err");
+        toast("❌ Invalid or expired OTP. Please try again.", "err");
       }
     }
 
@@ -354,9 +434,15 @@
     }
 
     function logout() {
-      sessionStorage.removeItem('admin_logged');
+      localStorage.removeItem('admin_session_expires');
+      localStorage.removeItem('admin_saved_chat_id');
       location.reload();
     }
+
+    // Auto-login on page load if 30-day session is active
+    window.addEventListener('DOMContentLoaded', () => {
+      checkActiveSession();
+    });
   </script>
 </body>
 </html>
